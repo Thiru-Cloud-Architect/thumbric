@@ -1,5 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { NICHES, type NicheId, getNiche, HEIGHT, WIDTH } from './niches'
+import {
+  NICHE_GROUPS,
+  NICHES,
+  type NicheId,
+  filterNiches,
+  getNiche,
+  HEIGHT,
+  WIDTH,
+} from './niches'
 import { downloadThumbnail, renderThumbnail } from './render'
 import './App.css'
 
@@ -15,9 +23,14 @@ const SAMPLES = [
     title: 'How I saved 3 lakhs without cutting fun',
   },
   {
-    niche: 'education' as NicheId,
-    eyebrow: 'WEEK 1',
-    title: 'Kubernetes in 12 minutes for platform engineers',
+    niche: 'travel' as NicheId,
+    eyebrow: 'TRIP',
+    title: '48 hours in Chennai on a student budget',
+  },
+  {
+    niche: 'fitness' as NicheId,
+    eyebrow: 'TRAIN',
+    title: 'Home workout that actually keeps you consistent',
   },
 ]
 
@@ -25,9 +38,11 @@ export default function App() {
   const [nicheId, setNicheId] = useState<NicheId>('tech')
   const [title, setTitle] = useState(SAMPLES[0].title)
   const [eyebrow, setEyebrow] = useState(SAMPLES[0].eyebrow)
+  const [query, setQuery] = useState('')
   const [status, setStatus] = useState('')
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const niche = useMemo(() => getNiche(nicheId), [nicheId])
+  const visible = useMemo(() => filterNiches(query), [query])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -42,13 +57,14 @@ export default function App() {
     setNicheId(sample.niche)
     setTitle(sample.title)
     setEyebrow(sample.eyebrow)
+    setQuery('')
     setStatus('')
   }
 
   function onDownload() {
     try {
       downloadThumbnail({ title, eyebrow, niche, watermark: true })
-      setStatus('Downloaded 1280×720 PNG with a free watermark.')
+      setStatus('PNG saved to your downloads folder (1280×720, free watermark).')
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Download failed.')
     }
@@ -69,24 +85,24 @@ export default function App() {
             <p className="eyebrow">Creator tool</p>
             <h1>Title in. Thumbnail out.</h1>
             <p className="lede">
-              Pick a niche, type the video title, download a 1280×720 PNG. Runs in your browser. The
-              free export carries a small ThumbForge mark.
+              Choose your channel type, type the video title, click Download PNG. The image is drawn
+              in your browser and saved to Downloads. No signup. No server bill.
             </p>
           </div>
           <dl className="facts">
             <div>
-              <dt>Cost today</dt>
-              <dd>Zero. Canvas drawing only. No model bill.</dd>
+              <dt>Channel types</dt>
+              <dd>{NICHES.length} styles across knowledge, money, lifestyle, and more</dd>
+            </div>
+            <div>
+              <dt>How PNG works</dt>
+              <dd>Your browser draws a canvas, then downloads it. Nothing is uploaded.</dd>
             </div>
             <div>
               <dt>Size</dt>
               <dd>
                 {WIDTH}×{HEIGHT} YouTube standard
               </dd>
-            </div>
-            <div>
-              <dt>Later</dt>
-              <dd>Paid HD packs without watermark, then photo/AI fill.</dd>
             </div>
           </dl>
         </section>
@@ -112,21 +128,45 @@ export default function App() {
               ))}
             </div>
 
+            <label>
+              Find your channel type
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="travel, gaming, cooking, news…"
+              />
+            </label>
+
             <fieldset>
-              <legend>Niche</legend>
-              <div className="niches">
-                {NICHES.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    className={item.id === nicheId ? 'niche active' : 'niche'}
-                    aria-pressed={item.id === nicheId}
-                    onClick={() => setNicheId(item.id)}
-                  >
-                    <span>{item.label}</span>
-                    <small>{item.hint}</small>
-                  </button>
-                ))}
+              <legend>Channel type ({visible.length})</legend>
+              <div className="niche-board">
+                {visible.length === 0 ? (
+                  <p className="empty">No match. Try “tech”, “travel”, or “fitness”.</p>
+                ) : (
+                  NICHE_GROUPS.map((group) => {
+                    const items = visible.filter((item) => item.group === group)
+                    if (items.length === 0) return null
+                    return (
+                      <div key={group} className="niche-group">
+                        <p className="group-label">{group}</p>
+                        <div className="niches">
+                          {items.map((item) => (
+                            <button
+                              key={item.id}
+                              type="button"
+                              className={item.id === nicheId ? 'niche active' : 'niche'}
+                              aria-pressed={item.id === nicheId}
+                              onClick={() => setNicheId(item.id)}
+                            >
+                              <span>{item.label}</span>
+                              <small>{item.hint}</small>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })
+                )}
               </div>
             </fieldset>
 
@@ -155,7 +195,9 @@ export default function App() {
               <button type="submit" className="primary">
                 Download PNG
               </button>
-              <p className="hint">{status || 'Preview updates as you type.'}</p>
+              <p className="hint">
+                {status || 'Click Download PNG to save the preview to your computer.'}
+              </p>
             </div>
           </form>
 
@@ -173,8 +215,8 @@ export default function App() {
 
       <footer>
         <p>
-          ThumbForge is the free lane next to Agent Gate. Ship thumbnails, collect demand, charge for
-          clean exports when people ask.
+          ThumbForge draws the thumbnail in your browser with the Canvas API, then triggers a normal
+          file download. Free exports keep a small watermark.
         </p>
       </footer>
     </div>

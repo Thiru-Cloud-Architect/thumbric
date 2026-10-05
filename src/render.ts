@@ -103,6 +103,154 @@ function drawShape(ctx: CanvasRenderingContext2D, niche: Niche) {
       ctx.bezierCurveTo(30, -40, 50, 20, 0, 70)
       ctx.fill()
       break
+    case 'camera':
+      roundRect(ctx, -140, -70, 280, 160, 28)
+      ctx.fill()
+      ctx.fillStyle = niche.panel
+      ctx.beginPath()
+      ctx.arc(0, 10, 48, 0, Math.PI * 2)
+      ctx.fill()
+      break
+    case 'bolt':
+      ctx.beginPath()
+      ctx.moveTo(20, -130)
+      ctx.lineTo(-50, 10)
+      ctx.lineTo(10, 10)
+      ctx.lineTo(-20, 130)
+      ctx.lineTo(60, -10)
+      ctx.lineTo(0, -10)
+      ctx.closePath()
+      ctx.fill()
+      break
+    case 'spark':
+      for (let i = 0; i < 8; i++) {
+        ctx.save()
+        ctx.rotate((Math.PI / 4) * i)
+        roundRect(ctx, -14, -120, 28, 90, 12)
+        ctx.fill()
+        ctx.restore()
+      }
+      ctx.beginPath()
+      ctx.arc(0, 0, 36, 0, Math.PI * 2)
+      ctx.fill()
+      break
+    case 'note':
+      roundRect(ctx, -40, -120, 90, 140, 18)
+      ctx.fill()
+      ctx.beginPath()
+      ctx.ellipse(-20, 70, 70, 45, 0, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.beginPath()
+      ctx.ellipse(70, 50, 55, 36, 0, 0, Math.PI * 2)
+      ctx.fill()
+      break
+    case 'laugh':
+      ctx.beginPath()
+      ctx.arc(0, 0, 110, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.fillStyle = niche.panel
+      ctx.beginPath()
+      ctx.arc(-40, -20, 16, 0, Math.PI * 2)
+      ctx.arc(40, -20, 16, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.lineWidth = 14
+      ctx.strokeStyle = niche.panel
+      ctx.beginPath()
+      ctx.arc(0, 20, 48, 0.15 * Math.PI, 0.85 * Math.PI)
+      ctx.stroke()
+      break
+    case 'boltnews':
+      roundRect(ctx, -150, -90, 300, 60, 16)
+      ctx.fill()
+      roundRect(ctx, -150, -10, 220, 36, 12)
+      ctx.fill()
+      roundRect(ctx, -150, 50, 180, 36, 12)
+      ctx.fill()
+      break
+    case 'plane':
+      ctx.beginPath()
+      ctx.moveTo(-140, 20)
+      ctx.lineTo(20, -20)
+      ctx.lineTo(140, -50)
+      ctx.lineTo(60, 10)
+      ctx.lineTo(100, 70)
+      ctx.lineTo(40, 40)
+      ctx.lineTo(-40, 80)
+      ctx.lineTo(-10, 20)
+      ctx.closePath()
+      ctx.fill()
+      break
+    case 'ball':
+      ctx.beginPath()
+      ctx.arc(0, 0, 110, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.strokeStyle = niche.panel
+      ctx.lineWidth = 10
+      ctx.beginPath()
+      ctx.arc(0, 0, 110, 0, Math.PI * 2)
+      ctx.moveTo(-110, 0)
+      ctx.lineTo(110, 0)
+      ctx.moveTo(0, -110)
+      ctx.lineTo(0, 110)
+      ctx.stroke()
+      break
+    case 'wheel':
+      ctx.beginPath()
+      ctx.arc(0, 0, 110, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.fillStyle = niche.panel
+      ctx.beginPath()
+      ctx.arc(0, 0, 45, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.strokeStyle = niche.panel
+      ctx.lineWidth = 14
+      for (let i = 0; i < 5; i++) {
+        ctx.beginPath()
+        ctx.moveTo(0, 0)
+        ctx.lineTo(Math.cos((i * Math.PI * 2) / 5) * 100, Math.sin((i * Math.PI * 2) / 5) * 100)
+        ctx.stroke()
+      }
+      break
+    case 'bag':
+      roundRect(ctx, -110, -40, 220, 160, 28)
+      ctx.fill()
+      ctx.strokeStyle = niche.accent
+      ctx.lineWidth = 16
+      ctx.beginPath()
+      ctx.arc(0, -40, 55, Math.PI, 0)
+      ctx.stroke()
+      break
+    case 'heart':
+      ctx.beginPath()
+      ctx.moveTo(0, 90)
+      ctx.bezierCurveTo(-140, 10, -100, -100, 0, -40)
+      ctx.bezierCurveTo(100, -100, 140, 10, 0, 90)
+      ctx.fill()
+      break
+    case 'rise':
+      ctx.beginPath()
+      ctx.moveTo(-130, 90)
+      ctx.lineTo(-40, 20)
+      ctx.lineTo(10, 50)
+      ctx.lineTo(130, -80)
+      ctx.lineTo(130, -20)
+      ctx.lineTo(40, 80)
+      ctx.lineTo(-10, 50)
+      ctx.lineTo(-80, 100)
+      ctx.closePath()
+      ctx.fill()
+      break
+    case 'wrench':
+      roundRect(ctx, -30, -120, 60, 200, 20)
+      ctx.fill()
+      ctx.beginPath()
+      ctx.arc(0, -110, 55, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.fillStyle = niche.panel
+      ctx.beginPath()
+      ctx.arc(0, -110, 22, 0, Math.PI * 2)
+      ctx.fill()
+      break
   }
   ctx.restore()
 }
