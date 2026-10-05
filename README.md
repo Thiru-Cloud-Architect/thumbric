@@ -25,13 +25,19 @@ npm run dev
 
 Open http://127.0.0.1:43201
 
+## Live site
+
+Public repo and GitHub Pages:
+
+https://thiru-cloud-architect.github.io/thumbforge/
+
 ## Deploy free
 
 ```bash
 npm run build
 ```
 
-Upload `dist/` to GitHub Pages, Cloudflare Pages, or Netlify. No server required.
+GitHub Pages is already wired via `.github/workflows/pages.yml`. Push to `main` redeploys. You can also upload `dist/` to Cloudflare Pages or Netlify. No server required.
 
 ## Money later
 
