@@ -1141,6 +1141,20 @@ footer {
     display: flex;
   }
 
+  .template-gallery {
+    grid-template-columns: 1fr;
+  }
+
+  .title-style-chip {
+    min-height: 44px;
+    flex: 1 1 calc(50% - 0.35rem);
+  }
+
+  .quick-row .chip.solid {
+    width: 100%;
+    justify-content: center;
+  }
+
   .modal {
     width: min(100%, calc(100vw - 1.5rem));
     max-height: min(90vh, 640px);
