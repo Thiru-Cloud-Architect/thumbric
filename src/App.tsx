@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent, type PointerEvent as ReactPointerEvent } from 'react'
 import {
   FREE_CLEAN_DOWNLOADS,
   PAID_PRICE_LABEL,
@@ -12,6 +12,7 @@ import {
   registerEmail,
   type Entitlement,
 } from './entitlement'
+import { FONTS, FONT_SIZES, type FontId, type FontSizeId } from './fonts'
 import { COLOR_PRESETS, LAYOUTS, PHOTO_SHAPES, type LayoutId, type PhotoShapeId } from './layout'
 import {
   NICHE_GROUPS,
@@ -21,8 +22,14 @@ import {
   getNiche,
 } from './niches'
 import { PLATFORMS, type PlatformId, getPlatform } from './platforms'
-import { downloadThumbnail, renderThumbnail } from './render'
-import { STICKERS, type StickerId } from './stickers'
+import { downloadThumbnail, hitTestSticker, renderThumbnail } from './render'
+import {
+  DEFAULT_STICKER_SLOTS,
+  STICKERS,
+  clampStickerPos,
+  type PlacedSticker,
+  type StickerId,
+} from './stickers'
 import './App.css'
 
 const SAMPLES = [
@@ -30,25 +37,40 @@ const SAMPLES = [
     niche: 'tech' as NicheId,
     tag: 'AI TOOLS',
     title: 'I built an agent that reviews production PRs',
-    stickers: ['new', 'arrow'] as StickerId[],
+    stickers: [
+      { id: 'new' as StickerId, x: 0.78, y: 0.2 },
+      { id: 'arrow' as StickerId, x: 0.7, y: 0.48 },
+    ],
     platform: 'youtube' as PlatformId,
     layout: 'photo-left' as LayoutId,
+    fontId: 'bebas' as FontId,
+    fontSizeId: 'L' as FontSizeId,
   },
   {
     niche: 'finance' as NicheId,
     tag: 'SALARY',
     title: 'How I saved 3 lakhs without cutting fun',
-    stickers: ['rupee', 'wow'] as StickerId[],
+    stickers: [
+      { id: 'rupee' as StickerId, x: 0.76, y: 0.22 },
+      { id: 'wow' as StickerId, x: 0.68, y: 0.7 },
+    ],
     platform: 'linkedin' as PlatformId,
     layout: 'photo-right' as LayoutId,
+    fontId: 'oswald' as FontId,
+    fontSizeId: 'M' as FontSizeId,
   },
   {
     niche: 'travel' as NicheId,
     tag: 'TRIP',
     title: '48 hours in Chennai on a student budget',
-    stickers: ['fire', 'click'] as StickerId[],
+    stickers: [
+      { id: 'fire' as StickerId, x: 0.74, y: 0.18 },
+      { id: 'click' as StickerId, x: 0.66, y: 0.72 },
+    ],
     platform: 'shorts' as PlatformId,
     layout: 'photo-top' as LayoutId,
+    fontId: 'anton' as FontId,
+    fontSizeId: 'L' as FontSizeId,
   },
 ]
 
@@ -60,11 +82,15 @@ export default function App() {
   const [layout, setLayout] = useState<LayoutId>('photo-left')
   const [photoShape, setPhotoShape] = useState<PhotoShapeId>('rounded')
   const [accentOverride, setAccentOverride] = useState('')
+  const [fontId, setFontId] = useState<FontId>('bebas')
+  const [fontSizeId, setFontSizeId] = useState<FontSizeId>('M')
   const [title, setTitle] = useState(SAMPLES[0].title)
   const [tag, setTag] = useState(SAMPLES[0].tag)
   const [query, setQuery] = useState('')
   const [showAllLooks, setShowAllLooks] = useState(false)
-  const [stickers, setStickers] = useState<StickerId[]>(SAMPLES[0].stickers)
+  const [stickers, setStickers] = useState<PlacedSticker[]>(SAMPLES[0].stickers)
+  const [activeStickerIndex, setActiveStickerIndex] = useState<number | null>(null)
+  const [dragging, setDragging] = useState(false)
   const [photo, setPhoto] = useState<HTMLImageElement | null>(null)
   const [photoName, setPhotoName] = useState('')
   const [photoUrl, setPhotoUrl] = useState('')
@@ -74,6 +100,7 @@ export default function App() {
   const [emailDraft, setEmailDraft] = useState('')
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+  const dragIndexRef = useRef<number | null>(null)
 
   const niche = useMemo(() => getNiche(nicheId), [nicheId])
   const platform = useMemo(() => getPlatform(platformId), [platformId])
@@ -97,8 +124,24 @@ export default function App() {
       watermark: true,
       photo,
       stickers,
+      fontId,
+      fontSizeId,
+      activeStickerIndex: activeStickerIndex ?? undefined,
     }),
-    [title, tag, niche, platform, layout, photoShape, accentOverride, photo, stickers],
+    [
+      title,
+      tag,
+      niche,
+      platform,
+      layout,
+      photoShape,
+      accentOverride,
+      photo,
+      stickers,
+      fontId,
+      fontSizeId,
+      activeStickerIndex,
+    ],
   )
 
   useEffect(() => {
@@ -131,16 +174,84 @@ export default function App() {
     setStickers(sample.stickers)
     setPlatformId(sample.platform)
     setLayout(sample.layout)
+    setFontId(sample.fontId)
+    setFontSizeId(sample.fontSizeId)
+    setActiveStickerIndex(null)
     setQuery('')
-    setStatus('Example loaded. Change anything you want, then save.')
+    setStatus('Example loaded. Drag stickers on the preview to move them.')
   }
 
   function toggleSticker(id: StickerId) {
-    setStickers((current) => {
-      if (current.includes(id)) return current.filter((item) => item !== id)
-      if (current.length >= 3) return [...current.slice(1), id]
-      return [...current, id]
-    })
+    const existing = stickers.findIndex((item) => item.id === id)
+    if (existing >= 0) {
+      setStickers(stickers.filter((item) => item.id !== id))
+      setActiveStickerIndex(null)
+      setStatus('Sticker removed.')
+      return
+    }
+    const slot = DEFAULT_STICKER_SLOTS[stickers.length % DEFAULT_STICKER_SLOTS.length]
+    const next = [...stickers, { id, x: slot.x, y: slot.y }]
+    const trimmed = next.length > 3 ? next.slice(next.length - 3) : next
+    setStickers(trimmed)
+    setActiveStickerIndex(trimmed.length - 1)
+    setStatus('Drag the sticker on the preview to place it.')
+  }
+
+  function canvasPoint(event: ReactPointerEvent<HTMLCanvasElement>) {
+    const canvas = canvasRef.current
+    if (!canvas) return null
+    const rect = canvas.getBoundingClientRect()
+    if (rect.width === 0 || rect.height === 0) return null
+    return {
+      x: ((event.clientX - rect.left) / rect.width) * platform.width,
+      y: ((event.clientY - rect.top) / rect.height) * platform.height,
+    }
+  }
+
+  function onCanvasPointerDown(event: ReactPointerEvent<HTMLCanvasElement>) {
+    const point = canvasPoint(event)
+    if (!point) return
+    const index = hitTestSticker(stickers, platform, point.x, point.y)
+    if (index < 0) {
+      setActiveStickerIndex(null)
+      return
+    }
+    event.currentTarget.setPointerCapture(event.pointerId)
+    dragIndexRef.current = index
+    setActiveStickerIndex(index)
+    setDragging(true)
+    setStatus('Drag to move. Release to place.')
+  }
+
+  function onCanvasPointerMove(event: ReactPointerEvent<HTMLCanvasElement>) {
+    const point = canvasPoint(event)
+    if (!point) return
+    const dragIndex = dragIndexRef.current
+    if (dragIndex === null) {
+      const hover = hitTestSticker(stickers, platform, point.x, point.y)
+      event.currentTarget.style.cursor = hover >= 0 ? 'grab' : 'default'
+      return
+    }
+    setStickers((current) =>
+      current.map((item, index) =>
+        index === dragIndex
+          ? {
+              ...item,
+              x: clampStickerPos(point.x / platform.width),
+              y: clampStickerPos(point.y / platform.height),
+            }
+          : item,
+      ),
+    )
+    event.currentTarget.style.cursor = 'grabbing'
+  }
+
+  function onCanvasPointerUp(event: ReactPointerEvent<HTMLCanvasElement>) {
+    if (dragIndexRef.current === null) return
+    dragIndexRef.current = null
+    setDragging(false)
+    event.currentTarget.style.cursor = 'grab'
+    setStatus('Sticker placed. Drag again anytime.')
   }
 
   function onPickPhoto(file: File | undefined) {
@@ -472,6 +583,38 @@ export default function App() {
                 </label>
               </fieldset>
 
+              <fieldset>
+                <legend>Title font</legend>
+                <div className="choice-row">
+                  {FONTS.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={item.id === fontId ? 'choice active' : 'choice'}
+                      aria-pressed={item.id === fontId}
+                      onClick={() => setFontId(item.id)}
+                    >
+                      <span style={{ fontFamily: item.css, fontWeight: item.weight }}>{item.label}</span>
+                      <small>{item.hint}</small>
+                    </button>
+                  ))}
+                </div>
+                <div className="choice-row compact sizes">
+                  {FONT_SIZES.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={item.id === fontSizeId ? 'choice active' : 'choice'}
+                      aria-pressed={item.id === fontSizeId}
+                      onClick={() => setFontSizeId(item.id)}
+                    >
+                      <span>{item.label}</span>
+                      <small>Size</small>
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+
               <label>
                 Short tag (top line)
                 <input
@@ -525,14 +668,16 @@ export default function App() {
               </div>
 
               <fieldset>
-                <legend>Stickers (tap up to 3)</legend>
+                <legend>Stickers (tap up to 3, then drag on preview)</legend>
                 <div className="sticker-row">
                   {STICKERS.map((sticker) => (
                     <button
                       key={sticker.id}
                       type="button"
-                      className={stickers.includes(sticker.id) ? 'sticker active' : 'sticker'}
-                      aria-pressed={stickers.includes(sticker.id)}
+                      className={
+                        stickers.some((item) => item.id === sticker.id) ? 'sticker active' : 'sticker'
+                      }
+                      aria-pressed={stickers.some((item) => item.id === sticker.id)}
                       onClick={() => toggleSticker(sticker.id)}
                       title={sticker.hint}
                     >
@@ -540,6 +685,11 @@ export default function App() {
                     </button>
                   ))}
                 </div>
+                <p className="photo-help">
+                  {stickers.length
+                    ? 'Grab a sticker on the live preview and drag it where you want.'
+                    : 'Pick a sticker, then drag it on the preview.'}
+                </p>
               </fieldset>
             </section>
 
@@ -586,6 +736,7 @@ export default function App() {
           <div className="preview-panel">
             <p className="preview-label">
               Live preview · {platform.label} · {platform.orientation}
+              {dragging ? ' · dragging sticker' : stickers.length ? ' · drag stickers' : ''}
             </p>
             <div
               className={`preview-wrap ${platform.orientation}`}
@@ -593,10 +744,14 @@ export default function App() {
             >
               <canvas
                 ref={canvasRef}
-                className="preview"
+                className={`preview${stickers.length ? ' interactive' : ''}`}
                 width={platform.width}
                 height={platform.height}
-                aria-label="Thumbnail preview"
+                aria-label="Thumbnail preview. Drag stickers to move them."
+                onPointerDown={onCanvasPointerDown}
+                onPointerMove={onCanvasPointerMove}
+                onPointerUp={onCanvasPointerUp}
+                onPointerCancel={onCanvasPointerUp}
               />
             </div>
             <p className="preview-note">
@@ -611,7 +766,7 @@ export default function App() {
           Tip: big face + short title + one sticker usually gets more clicks. Clean downloads need
           email registration first.
         </p>
-        <p className="build-tag">ThumbForge UI build 2026.10.05-d</p>
+        <p className="build-tag">ThumbForge UI build 2026.10.05-e</p>
       </footer>
 
       {modal !== 'none' ? (

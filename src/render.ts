@@ -1,7 +1,9 @@
+import type { FontId, FontSizeId } from './fonts'
+import { getFont, getFontSize } from './fonts'
 import type { LayoutId, PhotoShapeId } from './layout'
 import type { Niche } from './niches'
 import type { Platform } from './platforms'
-import type { StickerId } from './stickers'
+import type { PlacedSticker, StickerId } from './stickers'
 
 export type ThumbInput = {
   title: string
@@ -13,7 +15,10 @@ export type ThumbInput = {
   accentOverride: string
   watermark: boolean
   photo: HTMLImageElement | null
-  stickers: StickerId[]
+  stickers: PlacedSticker[]
+  fontId: FontId
+  fontSizeId: FontSizeId
+  activeStickerIndex?: number
 }
 
 type Box = { x: number; y: number; w: number; h: number }
@@ -311,7 +316,10 @@ function drawTextBlock(ctx: CanvasRenderingContext2D, input: ThumbInput, box: Bo
   const tag = (input.tag.trim() || input.niche.badge).toUpperCase()
   const title = input.title.trim() || 'YOUR TITLE HERE'
   const vertical = input.platform.orientation === 'vertical'
-  const titleSize = vertical ? Math.round(box.w * 0.11) : Math.round(Math.min(box.h * 0.18, box.w * 0.12))
+  const font = getFont(input.fontId)
+  const sizeScale = getFontSize(input.fontSizeId).scale
+  const base = vertical ? box.w * 0.11 : Math.min(box.h * 0.18, box.w * 0.12)
+  const titleSize = Math.round(base * sizeScale)
   const tagSize = Math.round(titleSize * 0.34)
   const maxLines = vertical ? 4 : 3
 
@@ -320,7 +328,7 @@ function drawTextBlock(ctx: CanvasRenderingContext2D, input: ThumbInput, box: Bo
   ctx.font = `800 ${tagSize}px "DM Sans", sans-serif`
   drawPunchText(ctx, tag, box.x, box.y + tagSize + 8, accent)
 
-  ctx.font = `400 ${titleSize}px "Bebas Neue", Impact, sans-serif`
+  ctx.font = `${font.weight} ${titleSize}px ${font.css}`
   const lines = wrapLines(ctx, title.toUpperCase(), box.w, maxLines)
   let y = box.y + tagSize + titleSize + 28
   for (const line of lines) {
@@ -343,19 +351,49 @@ function drawTextBlock(ctx: CanvasRenderingContext2D, input: ThumbInput, box: Bo
   )
 }
 
-function drawStickers(ctx: CanvasRenderingContext2D, input: ThumbInput, photo: Box, text: Box) {
+export function stickerUnit(platform: Platform) {
+  return Math.max(56, Math.round(Math.min(platform.width, platform.height) * 0.08))
+}
+
+export function hitTestSticker(
+  stickers: PlacedSticker[],
+  platform: Platform,
+  canvasX: number,
+  canvasY: number,
+): number {
+  const unit = stickerUnit(platform)
+  const radius = unit * 0.75
+  for (let i = stickers.length - 1; i >= 0; i--) {
+    const item = stickers[i]
+    const sx = item.x * platform.width
+    const sy = item.y * platform.height
+    const dx = canvasX - sx
+    const dy = canvasY - sy
+    if (dx * dx + dy * dy <= radius * radius) return i
+  }
+  return -1
+}
+
+function drawStickers(ctx: CanvasRenderingContext2D, input: ThumbInput) {
   const accent = accentOf(input)
   const scale = Math.min(input.platform.width, input.platform.height)
-  const slots = [
-    { x: photo.x + photo.w * 0.82, y: photo.y + photo.h * 0.18 },
-    { x: text.x + text.w * 0.78, y: text.y + text.h * 0.2 },
-    { x: text.x + text.w * 0.72, y: text.y + text.h * 0.72 },
-    { x: photo.x + photo.w * 0.2, y: photo.y + photo.h * 0.82 },
-  ]
+  const unit = stickerUnit(input.platform)
 
-  input.stickers.slice(0, 4).forEach((id, index) => {
-    const slot = slots[index]
-    drawSticker(ctx, accent, id, slot.x, slot.y, index % 2 === 0 ? -10 : 12, scale)
+  input.stickers.slice(0, 3).forEach((item, index) => {
+    const x = item.x * input.platform.width
+    const y = item.y * input.platform.height
+    const angle = index % 2 === 0 ? -10 : 12
+    drawSticker(ctx, accent, item.id, x, y, angle, scale)
+    if (input.activeStickerIndex === index) {
+      ctx.save()
+      ctx.strokeStyle = 'rgba(255,255,255,0.85)'
+      ctx.lineWidth = Math.max(3, Math.round(unit * 0.06))
+      ctx.setLineDash([8, 6])
+      ctx.beginPath()
+      ctx.arc(x, y, unit * 0.78, 0, Math.PI * 2)
+      ctx.stroke()
+      ctx.restore()
+    }
   })
 }
 
@@ -447,7 +485,7 @@ export function renderThumbnail(ctx: CanvasRenderingContext2D, input: ThumbInput
     drawPhoto(ctx, input, boxes.photo)
     drawTextBlock(ctx, input, boxes.text)
   }
-  drawStickers(ctx, input, boxes.photo, boxes.text)
+  drawStickers(ctx, input)
 
   if (input.watermark) {
     drawCenteredWatermark(ctx, boxes.photo)

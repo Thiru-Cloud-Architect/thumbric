@@ -536,6 +536,17 @@ legend {
   display: block;
   width: 100%;
   height: auto;
+  touch-action: none;
+}
+
+.preview.interactive {
+  cursor: grab;
+}
+
+.choice-row.sizes .choice {
+  min-width: calc(25% - 0.4rem);
+  place-items: center;
+  text-align: center;
 }
 
 footer {

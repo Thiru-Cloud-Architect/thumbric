@@ -26,6 +26,23 @@ export type Sticker = {
   hint: string
 }
 
+/** Center of the sticker as fractions of the canvas (0–1). */
+export type PlacedSticker = {
+  id: StickerId
+  x: number
+  y: number
+}
+
+export const DEFAULT_STICKER_SLOTS: Array<{ x: number; y: number }> = [
+  { x: 0.78, y: 0.2 },
+  { x: 0.72, y: 0.48 },
+  { x: 0.68, y: 0.76 },
+]
+
+export function clampStickerPos(value: number) {
+  return Math.min(0.94, Math.max(0.06, value))
+}
+
 export const STICKERS: Sticker[] = [
   { id: 'arrow', label: 'Arrow', hint: 'Point to the face' },
   { id: 'new', label: 'NEW', hint: 'Fresh video badge' },
