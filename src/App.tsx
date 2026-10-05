@@ -600,8 +600,7 @@ export default function App() {
               />
             </div>
             <p className="preview-note">
-              Preview always shows the free mark on the photo. Clean files remove it after register /
-              pay.
+              Free mark sits at the bottom of the photo. Clean files remove it after register / pay.
             </p>
           </div>
         </section>
