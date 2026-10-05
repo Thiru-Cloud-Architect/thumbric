@@ -4,6 +4,13 @@ import type { LayoutId, PhotoShapeId } from './layout'
 import type { Niche } from './niches'
 import type { Platform } from './platforms'
 import type { PlacedSticker, StickerId } from './stickers'
+import type { TextStyleId } from './textStyle'
+import { getTextStyle } from './textStyle'
+
+export type TextPosition = {
+  x: number
+  y: number
+}
 
 export type ThumbInput = {
   title: string
@@ -18,7 +25,11 @@ export type ThumbInput = {
   stickers: PlacedSticker[]
   fontId: FontId
   fontSizeId: FontSizeId
+  textStyleId: TextStyleId
+  textPos: TextPosition
+  showSafeZones?: boolean
   activeStickerIndex?: number
+  highlightText?: boolean
 }
 
 type Box = { x: number; y: number; w: number; h: number }
@@ -131,6 +142,23 @@ function layoutBoxes(platform: Platform, layout: LayoutId): { photo: Box; text: 
   return {
     photo: { x: pad, y: pad, w: photoW, h: H - pad * 2 },
     text: { x: pad * 2 + photoW, y: pad, w: W - photoW - pad * 3, h: H - pad * 2 },
+  }
+}
+
+export function defaultTextPosition(platform: Platform, layout: LayoutId): TextPosition {
+  const text = layoutBoxes(platform, layout).text
+  return { x: text.x / platform.width, y: text.y / platform.height }
+}
+
+export function textBoxFromInput(input: ThumbInput): Box {
+  const base = layoutBoxes(input.platform, input.layout).text
+  const W = input.platform.width
+  const H = input.platform.height
+  return {
+    x: input.textPos.x * W,
+    y: input.textPos.y * H,
+    w: base.w,
+    h: base.h,
   }
 }
 
@@ -301,17 +329,61 @@ function drawPunchText(
   x: number,
   y: number,
   fill: string,
+  styleId: TextStyleId,
 ) {
+  const style = getTextStyle(styleId)
+  const base = Math.max(12, Math.round(ctx.canvas.height * 0.012))
+  const lineWidth =
+    style.id === 'thick' ? Math.round(base * 1.45) : style.id === 'minimal' ? Math.round(base * 0.65) : base
   ctx.lineJoin = 'round'
   ctx.miterLimit = 2
-  ctx.strokeStyle = '#000000'
-  ctx.lineWidth = Math.max(12, Math.round(ctx.canvas.height * 0.012))
-  ctx.strokeText(text, x, y)
+  if (style.id !== 'minimal') {
+    ctx.strokeStyle = '#000000'
+    ctx.lineWidth = lineWidth
+    ctx.strokeText(text, x, y)
+  }
   ctx.fillStyle = fill
   ctx.fillText(text, x, y)
 }
 
-function drawTextBlock(ctx: CanvasRenderingContext2D, input: ThumbInput, box: Box) {
+function measureTextBlockBounds(input: ThumbInput, box: Box): Box {
+  const title = input.title.trim() || 'YOUR TITLE HERE'
+  const vertical = input.platform.orientation === 'vertical'
+  const font = getFont(input.fontId)
+  const sizeScale = getFontSize(input.fontSizeId).scale
+  const base = vertical ? box.w * 0.11 : Math.min(box.h * 0.18, box.w * 0.12)
+  const titleSize = Math.round(base * sizeScale)
+  const tagSize = Math.round(titleSize * 0.34)
+  const maxLines = vertical ? 4 : 3
+
+  const canvas = document.createElement('canvas')
+  const ctx = canvas.getContext('2d')
+  if (!ctx) {
+    return { x: box.x, y: box.y, w: box.w, h: box.h * 0.5 }
+  }
+
+  ctx.font = `${font.weight} ${titleSize}px ${font.css}`
+  const lines = wrapLines(ctx, title.toUpperCase(), box.w, maxLines)
+  const contentH = tagSize + titleSize + 28 + lines.length * (titleSize + 8) + 18
+  const pillH = Math.round(Math.min(44, box.h * 0.1))
+  const totalH = Math.min(box.h, contentH + pillH + 12)
+
+  return { x: box.x, y: box.y, w: box.w, h: totalH }
+}
+
+export function hitTestTextBlock(input: ThumbInput, canvasX: number, canvasY: number): boolean {
+  const bounds = measureTextBlockBounds(input, textBoxFromInput(input))
+  const pad = 12
+  return (
+    canvasX >= bounds.x - pad &&
+    canvasX <= bounds.x + bounds.w + pad &&
+    canvasY >= bounds.y - pad &&
+    canvasY <= bounds.y + bounds.h + pad
+  )
+}
+
+function drawTextBlock(ctx: CanvasRenderingContext2D, input: ThumbInput, layoutText: Box) {
+  const box = textBoxFromInput(input)
   const accent = accentOf(input)
   const tag = (input.tag.trim() || input.niche.badge).toUpperCase()
   const title = input.title.trim() || 'YOUR TITLE HERE'
@@ -322,21 +394,22 @@ function drawTextBlock(ctx: CanvasRenderingContext2D, input: ThumbInput, box: Bo
   const titleSize = Math.round(base * sizeScale)
   const tagSize = Math.round(titleSize * 0.34)
   const maxLines = vertical ? 4 : 3
+  const styleId = input.textStyleId
 
   ctx.textAlign = 'left'
   ctx.textBaseline = 'alphabetic'
   ctx.font = `800 ${tagSize}px "DM Sans", sans-serif`
-  drawPunchText(ctx, tag, box.x, box.y + tagSize + 8, accent)
+  drawPunchText(ctx, tag, box.x, box.y + tagSize + 8, accent, styleId)
 
   ctx.font = `${font.weight} ${titleSize}px ${font.css}`
   const lines = wrapLines(ctx, title.toUpperCase(), box.w, maxLines)
   let y = box.y + tagSize + titleSize + 28
   for (const line of lines) {
-    drawPunchText(ctx, line, box.x, y, '#FFFFFF')
+    drawPunchText(ctx, line, box.x, y, '#FFFFFF', styleId)
     y += titleSize + 8
   }
 
-  const pillH = Math.round(Math.min(44, box.h * 0.1))
+  const pillH = Math.round(Math.min(44, layoutText.h * 0.1))
   const pillW = Math.min(box.w, Math.round(box.w * 0.7))
   const pillY = Math.min(box.y + box.h - pillH - 8, y + 18)
   ctx.fillStyle = accent
@@ -349,6 +422,42 @@ function drawTextBlock(ctx: CanvasRenderingContext2D, input: ThumbInput, box: Bo
     box.x + 16,
     pillY + pillH * 0.68,
   )
+
+  if (input.highlightText) {
+    const bounds = measureTextBlockBounds(input, box)
+    ctx.save()
+    ctx.strokeStyle = 'rgba(214, 255, 60, 0.85)'
+    ctx.lineWidth = Math.max(3, Math.round(input.platform.height * 0.004))
+    ctx.setLineDash([10, 8])
+    roundRect(ctx, bounds.x - 6, bounds.y - 6, bounds.w + 12, bounds.h + 12, 12)
+    ctx.stroke()
+    ctx.restore()
+  }
+}
+
+function drawSafeZones(ctx: CanvasRenderingContext2D, platform: Platform) {
+  const W = platform.width
+  const H = platform.height
+  const pad = Math.round(Math.min(W, H) * 0.04)
+  const badgeW = Math.round(W * 0.14)
+  const badgeH = Math.round(H * 0.12)
+
+  ctx.save()
+  ctx.fillStyle = 'rgba(255, 90, 61, 0.12)'
+  ctx.strokeStyle = 'rgba(255, 90, 61, 0.45)'
+  ctx.lineWidth = 2
+  ctx.setLineDash([6, 6])
+
+  ctx.strokeRect(pad, pad, W - pad * 2, H - pad * 2)
+  ctx.fillRect(W - badgeW - pad, H - badgeH - pad, badgeW, badgeH)
+  ctx.strokeRect(W - badgeW - pad, H - badgeH - pad, badgeW, badgeH)
+
+  ctx.font = `600 ${Math.max(14, Math.round(H * 0.022))}px "DM Sans", sans-serif`
+  ctx.fillStyle = 'rgba(255, 200, 180, 0.9)'
+  ctx.textAlign = 'right'
+  ctx.textBaseline = 'bottom'
+  ctx.fillText('duration zone', W - pad - 6, H - pad - 6)
+  ctx.restore()
 }
 
 export function stickerUnit(platform: Platform) {
@@ -487,6 +596,10 @@ export function renderThumbnail(ctx: CanvasRenderingContext2D, input: ThumbInput
   }
   drawStickers(ctx, input)
 
+  if (input.showSafeZones) {
+    drawSafeZones(ctx, platform)
+  }
+
   if (input.watermark) {
     drawCenteredWatermark(ctx, boxes.photo)
   }
@@ -519,13 +632,22 @@ function drawCenteredWatermark(
   ctx.restore()
 }
 
+export function exportThumbInput(input: ThumbInput): ThumbInput {
+  return {
+    ...input,
+    showSafeZones: false,
+    activeStickerIndex: undefined,
+    highlightText: false,
+  }
+}
+
 export function createThumbnailDataUrl(input: ThumbInput): string {
   const canvas = document.createElement('canvas')
   canvas.width = input.platform.width
   canvas.height = input.platform.height
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('This browser cannot create the image.')
-  renderThumbnail(ctx, input)
+  renderThumbnail(ctx, exportThumbInput(input))
   return canvas.toDataURL('image/png')
 }
 

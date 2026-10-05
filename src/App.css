@@ -543,6 +543,70 @@ legend {
   cursor: grab;
 }
 
+.preview-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.preview-shell {
+  display: grid;
+  justify-items: center;
+}
+
+.preview-mode-dark {
+  background: #0f0f0f;
+  border-radius: 18px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.preview-wrap.squint {
+  width: 168px;
+  max-width: 168px;
+}
+
+.faq {
+  margin-top: 2.5rem;
+  padding: 1.25rem;
+  border-radius: 22px;
+  background: var(--raise);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  max-width: 52rem;
+}
+
+.faq h2 {
+  margin: 0 0 1rem;
+  font-size: 1.35rem;
+}
+
+.faq dl {
+  margin: 0;
+  display: grid;
+  gap: 1rem;
+}
+
+.faq dt {
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.faq dd {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.faq-link {
+  margin: 1rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.faq a {
+  color: var(--accent);
+}
+
 .choice-row.sizes .choice {
   min-width: calc(25% - 0.4rem);
   place-items: center;

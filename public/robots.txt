@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /thumbforge/
+
+Sitemap: https://thiru-cloud-architect.github.io/thumbforge/sitemap.xml

@@ -22,7 +22,15 @@ import {
   getNiche,
 } from './niches'
 import { PLATFORMS, type PlatformId, getPlatform } from './platforms'
-import { downloadThumbnail, hitTestSticker, renderThumbnail } from './render'
+import {
+  defaultTextPosition,
+  downloadThumbnail,
+  hitTestSticker,
+  hitTestTextBlock,
+  renderThumbnail,
+} from './render'
+import { TEXT_STYLES, type TextStyleId } from './textStyle'
+import { THUMB_TEMPLATES, type TemplateId } from './templates'
 import {
   DEFAULT_STICKER_SLOTS,
   STICKERS,
@@ -76,6 +84,9 @@ const SAMPLES = [
 
 const POPULAR: NicheId[] = ['tech', 'finance', 'gaming', 'cooking', 'travel', 'fitness', 'education', 'vlog']
 
+type PreviewMode = 'normal' | 'squint' | 'dark'
+type DragTarget = 'sticker' | 'text' | null
+
 export default function App() {
   const [platformId, setPlatformId] = useState<PlatformId>('youtube')
   const [nicheId, setNicheId] = useState<NicheId>('tech')
@@ -84,12 +95,19 @@ export default function App() {
   const [accentOverride, setAccentOverride] = useState('')
   const [fontId, setFontId] = useState<FontId>('bebas')
   const [fontSizeId, setFontSizeId] = useState<FontSizeId>('M')
+  const [textStyleId, setTextStyleId] = useState<TextStyleId>('classic')
+  const [textPos, setTextPos] = useState(() =>
+    defaultTextPosition(getPlatform('youtube'), 'photo-left'),
+  )
+  const [showSafeZones, setShowSafeZones] = useState(false)
+  const [previewMode, setPreviewMode] = useState<PreviewMode>('normal')
   const [title, setTitle] = useState(SAMPLES[0].title)
   const [tag, setTag] = useState(SAMPLES[0].tag)
   const [query, setQuery] = useState('')
   const [showAllLooks, setShowAllLooks] = useState(false)
   const [stickers, setStickers] = useState<PlacedSticker[]>(SAMPLES[0].stickers)
   const [activeStickerIndex, setActiveStickerIndex] = useState<number | null>(null)
+  const [textSelected, setTextSelected] = useState(false)
   const [dragging, setDragging] = useState(false)
   const [photo, setPhoto] = useState<HTMLImageElement | null>(null)
   const [photoName, setPhotoName] = useState('')
@@ -101,6 +119,7 @@ export default function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const dragIndexRef = useRef<number | null>(null)
+  const dragTargetRef = useRef<DragTarget>(null)
 
   const niche = useMemo(() => getNiche(nicheId), [nicheId])
   const platform = useMemo(() => getPlatform(platformId), [platformId])
@@ -126,7 +145,11 @@ export default function App() {
       stickers,
       fontId,
       fontSizeId,
+      textStyleId,
+      textPos,
+      showSafeZones,
       activeStickerIndex: activeStickerIndex ?? undefined,
+      highlightText: textSelected || dragging,
     }),
     [
       title,
@@ -140,7 +163,12 @@ export default function App() {
       stickers,
       fontId,
       fontSizeId,
+      textStyleId,
+      textPos,
+      showSafeZones,
       activeStickerIndex,
+      textSelected,
+      dragging,
     ],
   )
 
@@ -166,6 +194,32 @@ export default function App() {
     }
   }, [platform.orientation, layout])
 
+  useEffect(() => {
+    setTextPos(defaultTextPosition(getPlatform(platformId), layout))
+    setTextSelected(false)
+  }, [platformId, layout])
+
+  function applyTemplate(id: TemplateId) {
+    const template = THUMB_TEMPLATES.find((item) => item.id === id)
+    if (!template) return
+    setPlatformId(template.platform)
+    setLayout(template.layout)
+    setFontId(template.fontId)
+    setFontSizeId(template.fontSizeId)
+    setTextStyleId(template.textStyleId)
+    setStickers(
+      template.stickers.map((stickerId, index) => ({
+        id: stickerId,
+        x: DEFAULT_STICKER_SLOTS[index]?.x ?? 0.75,
+        y: DEFAULT_STICKER_SLOTS[index]?.y ?? 0.25,
+      })),
+    )
+    setTextPos(defaultTextPosition(getPlatform(template.platform), template.layout))
+    setActiveStickerIndex(null)
+    setTextSelected(false)
+    setStatus(`Template “${template.label}” applied. Drag text or stickers on the preview.`)
+  }
+
   function applySample(index: number) {
     const sample = SAMPLES[index]
     setNicheId(sample.niche)
@@ -176,7 +230,10 @@ export default function App() {
     setLayout(sample.layout)
     setFontId(sample.fontId)
     setFontSizeId(sample.fontSizeId)
+    setTextStyleId('classic')
+    setTextPos(defaultTextPosition(getPlatform(sample.platform), sample.layout))
     setActiveStickerIndex(null)
+    setTextSelected(false)
     setQuery('')
     setStatus('Example loaded. Drag stickers on the preview to move them.')
   }
@@ -211,47 +268,73 @@ export default function App() {
   function onCanvasPointerDown(event: ReactPointerEvent<HTMLCanvasElement>) {
     const point = canvasPoint(event)
     if (!point) return
-    const index = hitTestSticker(stickers, platform, point.x, point.y)
-    if (index < 0) {
-      setActiveStickerIndex(null)
+    const stickerIndex = hitTestSticker(stickers, platform, point.x, point.y)
+    if (stickerIndex >= 0) {
+      event.currentTarget.setPointerCapture(event.pointerId)
+      dragIndexRef.current = stickerIndex
+      dragTargetRef.current = 'sticker'
+      setActiveStickerIndex(stickerIndex)
+      setTextSelected(false)
+      setDragging(true)
+      setStatus('Drag to move sticker. Release to place.')
       return
     }
-    event.currentTarget.setPointerCapture(event.pointerId)
-    dragIndexRef.current = index
-    setActiveStickerIndex(index)
-    setDragging(true)
-    setStatus('Drag to move. Release to place.')
+    if (hitTestTextBlock(previewInput, point.x, point.y)) {
+      event.currentTarget.setPointerCapture(event.pointerId)
+      dragTargetRef.current = 'text'
+      dragIndexRef.current = null
+      setActiveStickerIndex(null)
+      setTextSelected(true)
+      setDragging(true)
+      setStatus('Drag to move title block. Release to place.')
+      return
+    }
+    setActiveStickerIndex(null)
+    setTextSelected(false)
   }
 
   function onCanvasPointerMove(event: ReactPointerEvent<HTMLCanvasElement>) {
     const point = canvasPoint(event)
     if (!point) return
-    const dragIndex = dragIndexRef.current
-    if (dragIndex === null) {
-      const hover = hitTestSticker(stickers, platform, point.x, point.y)
-      event.currentTarget.style.cursor = hover >= 0 ? 'grab' : 'default'
+    const target = dragTargetRef.current
+    if (target === 'sticker') {
+      const dragIndex = dragIndexRef.current
+      if (dragIndex === null) return
+      setStickers((current) =>
+        current.map((item, index) =>
+          index === dragIndex
+            ? {
+                ...item,
+                x: clampStickerPos(point.x / platform.width),
+                y: clampStickerPos(point.y / platform.height),
+              }
+            : item,
+        ),
+      )
+      event.currentTarget.style.cursor = 'grabbing'
       return
     }
-    setStickers((current) =>
-      current.map((item, index) =>
-        index === dragIndex
-          ? {
-              ...item,
-              x: clampStickerPos(point.x / platform.width),
-              y: clampStickerPos(point.y / platform.height),
-            }
-          : item,
-      ),
-    )
-    event.currentTarget.style.cursor = 'grabbing'
+    if (target === 'text') {
+      setTextPos({
+        x: clampStickerPos(point.x / platform.width),
+        y: clampStickerPos(point.y / platform.height),
+      })
+      event.currentTarget.style.cursor = 'grabbing'
+      return
+    }
+
+    const hoverSticker = hitTestSticker(stickers, platform, point.x, point.y)
+    const hoverText = hitTestTextBlock(previewInput, point.x, point.y)
+    event.currentTarget.style.cursor = hoverSticker >= 0 || hoverText ? 'grab' : 'default'
   }
 
   function onCanvasPointerUp(event: ReactPointerEvent<HTMLCanvasElement>) {
-    if (dragIndexRef.current === null) return
+    if (dragTargetRef.current === null) return
+    dragTargetRef.current = null
     dragIndexRef.current = null
     setDragging(false)
     event.currentTarget.style.cursor = 'grab'
-    setStatus('Sticker placed. Drag again anytime.')
+    setStatus('Placed. Drag text or stickers anytime on the preview.')
   }
 
   function onPickPhoto(file: File | undefined) {
@@ -511,6 +594,23 @@ export default function App() {
               </header>
 
               <fieldset>
+                <legend>Quick templates</legend>
+                <div className="choice-row compact">
+                  {THUMB_TEMPLATES.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className="choice"
+                      onClick={() => applyTemplate(item.id)}
+                    >
+                      <span>{item.label}</span>
+                      <small>{item.hint}</small>
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+
+              <fieldset>
                 <legend>Move photo</legend>
                 <div className="choice-row">
                   {LAYOUTS.map((item) => (
@@ -615,6 +715,35 @@ export default function App() {
                 </div>
               </fieldset>
 
+              <fieldset>
+                <legend>Title style</legend>
+                <div className="choice-row compact">
+                  {TEXT_STYLES.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={item.id === textStyleId ? 'choice active' : 'choice'}
+                      aria-pressed={item.id === textStyleId}
+                      onClick={() => setTextStyleId(item.id)}
+                    >
+                      <span>{item.label}</span>
+                      <small>{item.hint}</small>
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  className="linkish"
+                  onClick={() => {
+                    setTextPos(defaultTextPosition(platform, layout))
+                    setTextSelected(false)
+                    setStatus('Title position reset to the default for this layout.')
+                  }}
+                >
+                  Reset title position on preview
+                </button>
+              </fieldset>
+
               <label>
                 Short tag (top line)
                 <input
@@ -686,9 +815,7 @@ export default function App() {
                   ))}
                 </div>
                 <p className="photo-help">
-                  {stickers.length
-                    ? 'Grab a sticker on the live preview and drag it where you want.'
-                    : 'Pick a sticker, then drag it on the preview.'}
+                  Drag the title block or stickers directly on the live preview.
                 </p>
               </fieldset>
             </section>
@@ -736,37 +863,115 @@ export default function App() {
           <div className="preview-panel">
             <p className="preview-label">
               Live preview · {platform.label} · {platform.orientation}
-              {dragging ? ' · dragging sticker' : stickers.length ? ' · drag stickers' : ''}
+              {dragging ? ' · dragging' : ' · drag title & stickers'}
             </p>
+            <div className="preview-tools" role="group" aria-label="Preview checks">
+              <button
+                type="button"
+                className={previewMode === 'normal' ? 'chip solid' : 'chip'}
+                onClick={() => setPreviewMode('normal')}
+              >
+                Full size
+              </button>
+              <button
+                type="button"
+                className={previewMode === 'squint' ? 'chip solid' : 'chip'}
+                onClick={() => setPreviewMode('squint')}
+              >
+                Mobile squint
+              </button>
+              <button
+                type="button"
+                className={previewMode === 'dark' ? 'chip solid' : 'chip'}
+                onClick={() => setPreviewMode('dark')}
+              >
+                Dark feed
+              </button>
+              <button
+                type="button"
+                className={showSafeZones ? 'chip solid' : 'chip'}
+                aria-pressed={showSafeZones}
+                onClick={() => setShowSafeZones((value) => !value)}
+              >
+                Safe zones
+              </button>
+            </div>
             <div
-              className={`preview-wrap ${platform.orientation}`}
-              style={{ aspectRatio: `${platform.width} / ${platform.height}` }}
+              className={`preview-shell preview-mode-${previewMode}`}
             >
-              <canvas
-                ref={canvasRef}
-                className={`preview${stickers.length ? ' interactive' : ''}`}
-                width={platform.width}
-                height={platform.height}
-                aria-label="Thumbnail preview. Drag stickers to move them."
-                onPointerDown={onCanvasPointerDown}
-                onPointerMove={onCanvasPointerMove}
-                onPointerUp={onCanvasPointerUp}
-                onPointerCancel={onCanvasPointerUp}
-              />
+              <div
+                className={`preview-wrap ${platform.orientation}${previewMode === 'squint' ? ' squint' : ''}`}
+                style={{ aspectRatio: `${platform.width} / ${platform.height}` }}
+              >
+                <canvas
+                  ref={canvasRef}
+                  className="preview interactive"
+                  width={platform.width}
+                  height={platform.height}
+                  aria-label="Thumbnail preview. Drag title and stickers to move them."
+                  onPointerDown={onCanvasPointerDown}
+                  onPointerMove={onCanvasPointerMove}
+                  onPointerUp={onCanvasPointerUp}
+                  onPointerCancel={onCanvasPointerUp}
+                />
+              </div>
             </div>
             <p className="preview-note">
-              Free mark sits at the bottom of the photo. Clean files remove it after register / pay.
+              Squint mode mimics a small feed tile (~168px). Safe zones mark edges and the YouTube
+              duration corner. Overlays are preview-only — not saved on download.
             </p>
           </div>
+        </section>
+
+        <section className="faq" aria-labelledby="faq-title">
+          <h2 id="faq-title">Free YouTube & Shorts thumbnail maker (FAQ)</h2>
+          <dl>
+            <div>
+              <dt>What is ThumbForge?</dt>
+              <dd>
+                A free browser thumbnail maker for YouTube (1280×720), Shorts/Reels, Instagram,
+                LinkedIn, and Facebook. Your photo stays on your device until you download the PNG.
+              </dd>
+            </div>
+            <div>
+              <dt>Do I need an account?</dt>
+              <dd>
+                No account for unlimited free preview downloads. Register with email for two clean
+                downloads without the preview mark, then an optional paid plan.
+              </dd>
+            </div>
+            <div>
+              <dt>How is this different from Canva?</dt>
+              <dd>
+                ThumbForge is focused on speed: pick platform size, niche look, title, photo, drag
+                stickers and text, export. No template library yet — built for creators who want a
+                thumbnail in under a minute.
+              </dd>
+            </div>
+            <div>
+              <dt>What file do I get?</dt>
+              <dd>
+                A PNG sized for the platform you chose. Upload it as your custom thumbnail in
+                YouTube Studio or your social app.
+              </dd>
+            </div>
+          </dl>
+          <p className="faq-link">
+            Share feedback: open the{' '}
+            <a href="https://github.com/Thiru-Cloud-Architect/thumbforge" rel="noopener noreferrer">
+              GitHub repo
+            </a>
+            .
+          </p>
         </section>
       </main>
 
       <footer>
         <p>
-          Tip: big face + short title + one sticker usually gets more clicks. Clean downloads need
-          email registration first.
+          Tip: use Mobile squint before you publish — if you cannot read the title, shorten it or
+          bump the font size.
         </p>
-        <p className="build-tag">ThumbForge UI build 2026.10.05-e</p>
+        <p className="build-tag">ThumbForge UI build 2026.10.05-f</p>
       </footer>
 
       {modal !== 'none' ? (
