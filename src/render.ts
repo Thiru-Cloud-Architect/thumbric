@@ -1,5 +1,5 @@
-import type { FontId, FontSizeId } from './fonts'
-import { getFont, getFontSize } from './fonts'
+import type { FontId } from './fonts'
+import { getFont, scaledTitleFontSize } from './fonts'
 import type { LayoutId, PhotoShapeId } from './layout'
 import type { Niche } from './niches'
 import type { Platform } from './platforms'
@@ -24,7 +24,7 @@ export type ThumbInput = {
   photo: HTMLImageElement | null
   stickers: PlacedSticker[]
   fontId: FontId
-  fontSizeId: FontSizeId
+  titleFontSizePx: number
   textStyleId: TextStyleId
   textPos: TextPosition
   showSafeZones?: boolean
@@ -177,89 +177,95 @@ function drawBackground(ctx: CanvasRenderingContext2D, input: ThumbInput) {
 
   const base = ctx.createLinearGradient(0, 0, W, H)
   base.addColorStop(0, niche.background[0])
-  base.addColorStop(0.4, niche.background[1])
+  base.addColorStop(0.45, niche.background[1])
   base.addColorStop(1, niche.background[2])
   ctx.fillStyle = base
   ctx.fillRect(0, 0, W, H)
 
-  // Soft light wash
-  const wash = ctx.createRadialGradient(W * 0.2, H * 0.15, 20, W * 0.2, H * 0.15, Math.max(W, H) * 0.55)
-  wash.addColorStop(0, `${accent}55`)
+  const washStrength = niche.backdrop === 'neon' ? 0.42 : niche.backdrop === 'warm' ? 0.38 : 0.28
+  const wash = ctx.createRadialGradient(W * 0.22, H * 0.12, 20, W * 0.22, H * 0.12, Math.max(W, H) * 0.58)
+  wash.addColorStop(0, `${accent}${Math.round(washStrength * 255)
+    .toString(16)
+    .padStart(2, '0')}`)
   wash.addColorStop(1, `${accent}00`)
   ctx.fillStyle = wash
   ctx.fillRect(0, 0, W, H)
 
-  // Second glow opposite corner
-  const glow = ctx.createRadialGradient(W * 0.9, H * 0.85, 10, W * 0.9, H * 0.85, Math.max(W, H) * 0.5)
-  glow.addColorStop(0, 'rgba(255,255,255,0.16)')
-  glow.addColorStop(1, 'rgba(255,255,255,0)')
-  ctx.fillStyle = glow
-  ctx.fillRect(0, 0, W, H)
-
-  // Diagonal light streak
-  ctx.save()
-  ctx.translate(W * 0.55, H * 0.1)
-  ctx.rotate(-0.55)
-  const streak = ctx.createLinearGradient(0, 0, W * 0.9, 0)
-  streak.addColorStop(0, `${accent}00`)
-  streak.addColorStop(0.5, `${accent}33`)
-  streak.addColorStop(1, `${accent}00`)
-  ctx.fillStyle = streak
-  ctx.fillRect(-W * 0.2, 0, W * 0.9, Math.max(40, H * 0.08))
-  ctx.restore()
-
-  // Subtle grid for depth
-  ctx.save()
-  ctx.strokeStyle = 'rgba(255,255,255,0.045)'
-  ctx.lineWidth = 1
-  const step = Math.max(36, Math.round(Math.min(W, H) * 0.06))
-  for (let x = 0; x <= W; x += step) {
-    ctx.beginPath()
-    ctx.moveTo(x, 0)
-    ctx.lineTo(x, H)
-    ctx.stroke()
+  if (niche.backdrop === 'beam' || niche.backdrop === 'warm') {
+    ctx.save()
+    ctx.translate(W * 0.55, H * 0.08)
+    ctx.rotate(-0.55)
+    const streak = ctx.createLinearGradient(0, 0, W * 0.9, 0)
+    streak.addColorStop(0, `${accent}00`)
+    streak.addColorStop(0.5, `${accent}44`)
+    streak.addColorStop(1, `${accent}00`)
+    ctx.fillStyle = streak
+    ctx.fillRect(-W * 0.2, 0, W * 0.9, Math.max(48, H * 0.1))
+    ctx.restore()
   }
-  for (let y = 0; y <= H; y += step) {
-    ctx.beginPath()
-    ctx.moveTo(0, y)
-    ctx.lineTo(W, y)
-    ctx.stroke()
+
+  if (niche.backdrop === 'stripe') {
+    ctx.save()
+    ctx.globalAlpha = 0.12
+    ctx.fillStyle = accent
+    const band = Math.max(28, Math.round(H * 0.07))
+    for (let y = 0; y < H; y += band * 2) {
+      ctx.fillRect(0, y, W, band)
+    }
+    ctx.restore()
   }
-  ctx.restore()
 
-  // Accent orbs
-  ctx.save()
-  ctx.globalAlpha = 0.2
-  ctx.fillStyle = accent
-  ctx.beginPath()
-  ctx.ellipse(W * 0.78, H * 0.22, W * 0.18, H * 0.14, -0.3, 0, Math.PI * 2)
-  ctx.fill()
-  ctx.beginPath()
-  ctx.ellipse(W * 0.18, H * 0.78, W * 0.16, H * 0.12, 0.4, 0, Math.PI * 2)
-  ctx.fill()
-  ctx.restore()
+  if (niche.backdrop === 'grid') {
+    ctx.save()
+    ctx.strokeStyle = `${accent}22`
+    ctx.lineWidth = 1
+    const step = Math.max(40, Math.round(Math.min(W, H) * 0.065))
+    for (let x = 0; x <= W; x += step) {
+      ctx.beginPath()
+      ctx.moveTo(x, 0)
+      ctx.lineTo(x, H)
+      ctx.stroke()
+    }
+    for (let y = 0; y <= H; y += step) {
+      ctx.beginPath()
+      ctx.moveTo(0, y)
+      ctx.lineTo(W, y)
+      ctx.stroke()
+    }
+    ctx.restore()
+  }
 
-  // Bottom curve
-  ctx.save()
-  ctx.fillStyle = `${accent}18`
-  ctx.beginPath()
-  ctx.moveTo(0, H)
-  ctx.quadraticCurveTo(W * 0.35, H * 0.72, W, H * 0.88)
-  ctx.lineTo(W, H)
-  ctx.closePath()
-  ctx.fill()
-  ctx.restore()
+  if (niche.backdrop === 'neon') {
+    ctx.save()
+    ctx.globalAlpha = 0.35
+    ctx.fillStyle = accent
+    ctx.beginPath()
+    ctx.ellipse(W * 0.82, H * 0.2, W * 0.22, H * 0.16, -0.25, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.beginPath()
+    ctx.ellipse(W * 0.15, H * 0.82, W * 0.2, H * 0.14, 0.35, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.restore()
+  }
+
+  if (niche.backdrop === 'soft') {
+    const soft = ctx.createRadialGradient(W / 2, H / 2, H * 0.1, W / 2, H / 2, Math.max(W, H) * 0.65)
+    soft.addColorStop(0, `${niche.background[1]}88`)
+    soft.addColorStop(1, `${niche.background[0]}00`)
+    ctx.fillStyle = soft
+    ctx.fillRect(0, 0, W, H)
+  }
 
   const vignette = ctx.createRadialGradient(
     W / 2,
     H / 2,
-    Math.min(W, H) * 0.18,
+    Math.min(W, H) * 0.15,
     W / 2,
     H / 2,
-    Math.max(W, H) * 0.78,
+    Math.max(W, H) * 0.82,
   )
   vignette.addColorStop(0, 'rgba(0,0,0,0)')
-  vignette.addColorStop(1, 'rgba(0,0,0,0.38)')
+  vignette.addColorStop(1, niche.backdrop === 'warm' ? 'rgba(0,0,0,0.28)' : 'rgba(0,0,0,0.42)')
   ctx.fillStyle = vignette
   ctx.fillRect(0, 0, W, H)
 }
@@ -350,9 +356,7 @@ function measureTextBlockBounds(input: ThumbInput, box: Box): Box {
   const title = input.title.trim() || 'YOUR TITLE HERE'
   const vertical = input.platform.orientation === 'vertical'
   const font = getFont(input.fontId)
-  const sizeScale = getFontSize(input.fontSizeId).scale
-  const base = vertical ? box.w * 0.11 : Math.min(box.h * 0.18, box.w * 0.12)
-  const titleSize = Math.round(base * sizeScale)
+  const titleSize = scaledTitleFontSize(input.titleFontSizePx, input.platform)
   const tagSize = Math.round(titleSize * 0.34)
   const maxLines = vertical ? 4 : 3
 
@@ -387,13 +391,10 @@ function drawTextBlock(ctx: CanvasRenderingContext2D, input: ThumbInput, layoutT
   const accent = accentOf(input)
   const tag = (input.tag.trim() || input.niche.badge).toUpperCase()
   const title = input.title.trim() || 'YOUR TITLE HERE'
-  const vertical = input.platform.orientation === 'vertical'
   const font = getFont(input.fontId)
-  const sizeScale = getFontSize(input.fontSizeId).scale
-  const base = vertical ? box.w * 0.11 : Math.min(box.h * 0.18, box.w * 0.12)
-  const titleSize = Math.round(base * sizeScale)
+  const titleSize = scaledTitleFontSize(input.titleFontSizePx, input.platform)
   const tagSize = Math.round(titleSize * 0.34)
-  const maxLines = vertical ? 4 : 3
+  const maxLines = input.platform.orientation === 'vertical' ? 4 : 3
   const styleId = input.textStyleId
 
   ctx.textAlign = 'left'

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getFont, getFontSize } from './fonts'
+import { DEFAULT_TITLE_FONT_SIZE, getFont } from './fonts'
 import { getNiche } from './niches'
 import { getPlatform } from './platforms'
 import { defaultTextPosition, hitTestSticker, hitTestTextBlock } from './render'
@@ -25,10 +25,9 @@ describe('sticker placement', () => {
 })
 
 describe('fonts', () => {
-  it('resolves font and size presets', () => {
-    expect(getFont('anton').label).toBe('Heavy')
-    expect(getFontSize('XL').scale).toBeGreaterThan(1)
-    expect(getFontSize('S').scale).toBeLessThan(1)
+  it('resolves font presets', () => {
+    expect(getFont('anton').label).toBe('Anton')
+    expect(DEFAULT_TITLE_FONT_SIZE).toBeGreaterThan(80)
   })
 })
 
@@ -49,13 +48,12 @@ describe('text placement', () => {
       photo: null,
       stickers: [],
       fontId: 'bebas' as const,
-      fontSizeId: 'M' as const,
+      titleFontSizePx: DEFAULT_TITLE_FONT_SIZE,
       textStyleId: 'classic' as const,
       textPos,
     }
-    const box = textPos
     expect(
-      hitTestTextBlock(input, box.x * platform.width + 20, box.y * platform.height + 40),
+      hitTestTextBlock(input, textPos.x * platform.width + 20, textPos.y * platform.height + 40),
     ).toBe(true)
     expect(hitTestTextBlock(input, platform.width * 0.05, platform.height * 0.05)).toBe(false)
   })

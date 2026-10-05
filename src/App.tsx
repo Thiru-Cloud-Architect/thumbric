@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent, type PointerEvent as ReactPointerEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent, type PointerEvent as ReactPointerEvent } from 'react'
 import {
   FREE_CLEAN_DOWNLOADS,
   PAID_PRICE_LABEL,
@@ -12,7 +12,14 @@ import {
   registerEmail,
   type Entitlement,
 } from './entitlement'
-import { FONTS, FONT_SIZES, type FontId, type FontSizeId } from './fonts'
+import {
+  clampTitleFontSize,
+  DEFAULT_TITLE_FONT_SIZE,
+  FONTS,
+  TITLE_FONT_SIZE_MAX,
+  TITLE_FONT_SIZE_MIN,
+  type FontId,
+} from './fonts'
 import { COLOR_PRESETS, LAYOUTS, PHOTO_SHAPES, type LayoutId, type PhotoShapeId } from './layout'
 import {
   NICHE_GROUPS,
@@ -52,7 +59,7 @@ const SAMPLES = [
     platform: 'youtube' as PlatformId,
     layout: 'photo-left' as LayoutId,
     fontId: 'bebas' as FontId,
-    fontSizeId: 'L' as FontSizeId,
+    titleFontSizePx: 110,
   },
   {
     niche: 'finance' as NicheId,
@@ -65,7 +72,7 @@ const SAMPLES = [
     platform: 'linkedin' as PlatformId,
     layout: 'photo-right' as LayoutId,
     fontId: 'oswald' as FontId,
-    fontSizeId: 'M' as FontSizeId,
+    titleFontSizePx: 92,
   },
   {
     niche: 'travel' as NicheId,
@@ -78,14 +85,29 @@ const SAMPLES = [
     platform: 'shorts' as PlatformId,
     layout: 'photo-top' as LayoutId,
     fontId: 'anton' as FontId,
-    fontSizeId: 'L' as FontSizeId,
+    titleFontSizePx: 120,
   },
 ]
 
 const POPULAR: NicheId[] = ['tech', 'finance', 'gaming', 'cooking', 'travel', 'fitness', 'education', 'vlog']
 
-type PreviewMode = 'normal' | 'squint' | 'dark'
+type PreviewAs = 'normal' | 'phone' | 'dark'
 type DragTarget = 'sticker' | 'text' | null
+
+function lookButtonStyle(item: ReturnType<typeof getNiche>, active: boolean): CSSProperties {
+  if (active) {
+    return {
+      borderLeftColor: item.accent,
+      background: `linear-gradient(145deg, ${item.background[1]} 0%, ${item.background[0]} 100%)`,
+      color: item.ink,
+      boxShadow: `inset 0 0 0 1px ${item.accent}88`,
+    }
+  }
+  return {
+    borderLeftColor: item.accent,
+    background: `linear-gradient(145deg, ${item.background[0]} 0%, #0b111a 85%)`,
+  }
+}
 
 export default function App() {
   const [platformId, setPlatformId] = useState<PlatformId>('youtube')
@@ -94,13 +116,13 @@ export default function App() {
   const [photoShape, setPhotoShape] = useState<PhotoShapeId>('rounded')
   const [accentOverride, setAccentOverride] = useState('')
   const [fontId, setFontId] = useState<FontId>('bebas')
-  const [fontSizeId, setFontSizeId] = useState<FontSizeId>('M')
+  const [titleFontSizePx, setTitleFontSizePx] = useState(DEFAULT_TITLE_FONT_SIZE)
   const [textStyleId, setTextStyleId] = useState<TextStyleId>('classic')
   const [textPos, setTextPos] = useState(() =>
     defaultTextPosition(getPlatform('youtube'), 'photo-left'),
   )
-  const [showSafeZones, setShowSafeZones] = useState(false)
-  const [previewMode, setPreviewMode] = useState<PreviewMode>('normal')
+  const [showGuides, setShowGuides] = useState(false)
+  const [previewAs, setPreviewAs] = useState<PreviewAs>('normal')
   const [title, setTitle] = useState(SAMPLES[0].title)
   const [tag, setTag] = useState(SAMPLES[0].tag)
   const [query, setQuery] = useState('')
@@ -144,10 +166,10 @@ export default function App() {
       photo,
       stickers,
       fontId,
-      fontSizeId,
+      titleFontSizePx,
       textStyleId,
       textPos,
-      showSafeZones,
+      showSafeZones: showGuides,
       activeStickerIndex: activeStickerIndex ?? undefined,
       highlightText: textSelected || dragging,
     }),
@@ -162,10 +184,10 @@ export default function App() {
       photo,
       stickers,
       fontId,
-      fontSizeId,
+      titleFontSizePx,
       textStyleId,
       textPos,
-      showSafeZones,
+      showGuides,
       activeStickerIndex,
       textSelected,
       dragging,
@@ -205,7 +227,7 @@ export default function App() {
     setPlatformId(template.platform)
     setLayout(template.layout)
     setFontId(template.fontId)
-    setFontSizeId(template.fontSizeId)
+    setTitleFontSizePx(template.titleFontSizePx)
     setTextStyleId(template.textStyleId)
     setStickers(
       template.stickers.map((stickerId, index) => ({
@@ -229,7 +251,7 @@ export default function App() {
     setPlatformId(sample.platform)
     setLayout(sample.layout)
     setFontId(sample.fontId)
-    setFontSizeId(sample.fontSizeId)
+    setTitleFontSizePx(sample.titleFontSizePx)
     setTextStyleId('classic')
     setTextPos(defaultTextPosition(getPlatform(sample.platform), sample.layout))
     setActiveStickerIndex(null)
@@ -518,7 +540,7 @@ export default function App() {
               <header className="subhead">
                 <div>
                   <h2>Pick a look</h2>
-                  <p>Colors and mood for your channel type.</p>
+                  <p>Each card shows its color mood — backgrounds are tuned per category.</p>
                 </div>
               </header>
               <label className="search">
@@ -544,7 +566,8 @@ export default function App() {
                             <button
                               key={item.id}
                               type="button"
-                              className={item.id === nicheId ? 'niche active' : 'niche'}
+                              className={item.id === nicheId ? 'niche active' : 'niche niche-swatch'}
+                              style={lookButtonStyle(item, item.id === nicheId)}
                               aria-pressed={item.id === nicheId}
                               onClick={() => setNicheId(item.id)}
                             >
@@ -562,7 +585,8 @@ export default function App() {
                       <button
                         key={item.id}
                         type="button"
-                        className={item.id === nicheId ? 'niche active' : 'niche'}
+                        className={item.id === nicheId ? 'niche active' : 'niche niche-swatch'}
+                        style={lookButtonStyle(item, item.id === nicheId)}
                         aria-pressed={item.id === nicheId}
                         onClick={() => setNicheId(item.id)}
                       >
@@ -593,22 +617,25 @@ export default function App() {
                 </div>
               </header>
 
-              <fieldset>
-                <legend>Quick templates</legend>
-                <div className="choice-row compact">
+              <label>
+                Optional starter layout
+                <select
+                  defaultValue=""
+                  onChange={(event) => {
+                    const value = event.target.value as TemplateId | ''
+                    if (!value) return
+                    applyTemplate(value)
+                    event.target.value = ''
+                  }}
+                >
+                  <option value="">Choose one if you want a head start…</option>
                   {THUMB_TEMPLATES.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      className="choice"
-                      onClick={() => applyTemplate(item.id)}
-                    >
-                      <span>{item.label}</span>
-                      <small>{item.hint}</small>
-                    </button>
+                    <option key={item.id} value={item.id}>
+                      {item.label}
+                    </option>
                   ))}
-                </div>
-              </fieldset>
+                </select>
+              </label>
 
               <fieldset>
                 <legend>Move photo</legend>
@@ -684,53 +711,51 @@ export default function App() {
               </fieldset>
 
               <fieldset>
-                <legend>Title font</legend>
-                <div className="choice-row">
-                  {FONTS.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      className={item.id === fontId ? 'choice active' : 'choice'}
-                      aria-pressed={item.id === fontId}
-                      onClick={() => setFontId(item.id)}
-                    >
-                      <span style={{ fontFamily: item.css, fontWeight: item.weight }}>{item.label}</span>
-                      <small>{item.hint}</small>
-                    </button>
-                  ))}
-                </div>
-                <div className="choice-row compact sizes">
-                  {FONT_SIZES.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      className={item.id === fontSizeId ? 'choice active' : 'choice'}
-                      aria-pressed={item.id === fontSizeId}
-                      onClick={() => setFontSizeId(item.id)}
-                    >
-                      <span>{item.label}</span>
-                      <small>Size</small>
-                    </button>
-                  ))}
-                </div>
+                <legend>Title font &amp; size</legend>
+                <label>
+                  Font
+                  <select value={fontId} onChange={(event) => setFontId(event.target.value as FontId)}>
+                    {FONTS.map((item) => (
+                      <option key={item.id} value={item.id} style={{ fontFamily: item.css }}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Title size (pixels at YouTube width)
+                  <input
+                    type="number"
+                    min={TITLE_FONT_SIZE_MIN}
+                    max={TITLE_FONT_SIZE_MAX}
+                    step={1}
+                    value={titleFontSizePx}
+                    onChange={(event) =>
+                      setTitleFontSizePx(clampTitleFontSize(Number(event.target.value)))
+                    }
+                  />
+                </label>
+                <p className="photo-help">
+                  Typical range {TITLE_FONT_SIZE_MIN}–{TITLE_FONT_SIZE_MAX}. Try 96–120 for YouTube
+                  titles.
+                </p>
               </fieldset>
 
               <fieldset>
-                <legend>Title style</legend>
-                <div className="choice-row compact">
-                  {TEXT_STYLES.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      className={item.id === textStyleId ? 'choice active' : 'choice'}
-                      aria-pressed={item.id === textStyleId}
-                      onClick={() => setTextStyleId(item.id)}
-                    >
-                      <span>{item.label}</span>
-                      <small>{item.hint}</small>
-                    </button>
-                  ))}
-                </div>
+                <legend>Title outline</legend>
+                <label>
+                  Style
+                  <select
+                    value={textStyleId}
+                    onChange={(event) => setTextStyleId(event.target.value as TextStyleId)}
+                  >
+                    {TEXT_STYLES.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.label} — {item.hint}
+                      </option>
+                    ))}
+                  </select>
+                </label>
                 <button
                   type="button"
                   className="linkish"
@@ -862,45 +887,27 @@ export default function App() {
 
           <div className="preview-panel">
             <p className="preview-label">
-              Live preview · {platform.label} · {platform.orientation}
-              {dragging ? ' · dragging' : ' · drag title & stickers'}
+              Preview · {platform.label} · drag title &amp; stickers to move
             </p>
-            <div className="preview-tools" role="group" aria-label="Preview checks">
-              <button
-                type="button"
-                className={previewMode === 'normal' ? 'chip solid' : 'chip'}
-                onClick={() => setPreviewMode('normal')}
-              >
-                Full size
-              </button>
-              <button
-                type="button"
-                className={previewMode === 'squint' ? 'chip solid' : 'chip'}
-                onClick={() => setPreviewMode('squint')}
-              >
-                Mobile squint
-              </button>
-              <button
-                type="button"
-                className={previewMode === 'dark' ? 'chip solid' : 'chip'}
-                onClick={() => setPreviewMode('dark')}
-              >
-                Dark feed
-              </button>
-              <button
-                type="button"
-                className={showSafeZones ? 'chip solid' : 'chip'}
-                aria-pressed={showSafeZones}
-                onClick={() => setShowSafeZones((value) => !value)}
-              >
-                Safe zones
-              </button>
-            </div>
-            <div
-              className={`preview-shell preview-mode-${previewMode}`}
-            >
+            <label>
+              View as
+              <select value={previewAs} onChange={(event) => setPreviewAs(event.target.value as PreviewAs)}>
+                <option value="normal">Normal (editing size)</option>
+                <option value="phone">Small — like on a phone feed</option>
+                <option value="dark">YouTube app (dark background)</option>
+              </select>
+            </label>
+            <label className="check-inline">
+              <input
+                type="checkbox"
+                checked={showGuides}
+                onChange={(event) => setShowGuides(event.target.checked)}
+              />
+              Show corner guides on preview (not included in download)
+            </label>
+            <div className={`preview-shell preview-as-${previewAs}`}>
               <div
-                className={`preview-wrap ${platform.orientation}${previewMode === 'squint' ? ' squint' : ''}`}
+                className={`preview-wrap ${platform.orientation}${previewAs === 'phone' ? ' squint' : ''}`}
                 style={{ aspectRatio: `${platform.width} / ${platform.height}` }}
               >
                 <canvas
@@ -917,8 +924,8 @@ export default function App() {
               </div>
             </div>
             <p className="preview-note">
-              Squint mode mimics a small feed tile (~168px). Safe zones mark edges and the YouTube
-              duration corner. Overlays are preview-only — not saved on download.
+              Use “Small — like on a phone feed” before you export. If the title is hard to read,
+              increase the title size number or pick Bold outline.
             </p>
           </div>
         </section>
@@ -971,7 +978,7 @@ export default function App() {
           Tip: use Mobile squint before you publish — if you cannot read the title, shorten it or
           bump the font size.
         </p>
-        <p className="build-tag">ThumbForge UI build 2026.10.05-f</p>
+        <p className="build-tag">ThumbForge UI build 2026.10.05-g</p>
       </footer>
 
       {modal !== 'none' ? (

@@ -1,4 +1,5 @@
-import type { FontId, FontSizeId } from './fonts'
+import type { FontId } from './fonts'
+import { DEFAULT_TITLE_FONT_SIZE } from './fonts'
 import type { LayoutId } from './layout'
 import type { TextStyleId } from './textStyle'
 import type { PlatformId } from './platforms'
@@ -13,11 +14,10 @@ export type TemplateId =
 export type ThumbTemplate = {
   id: TemplateId
   label: string
-  hint: string
   platform: PlatformId
   layout: LayoutId
   fontId: FontId
-  fontSizeId: FontSizeId
+  titleFontSizePx: number
   textStyleId: TextStyleId
   stickers: StickerId[]
 }
@@ -25,45 +25,41 @@ export type ThumbTemplate = {
 export const THUMB_TEMPLATES: ThumbTemplate[] = [
   {
     id: 'youtube-classic',
-    label: 'YouTube classic',
-    hint: 'Photo left, big title',
+    label: 'Standard YouTube layout',
     platform: 'youtube',
     layout: 'photo-left',
     fontId: 'bebas',
-    fontSizeId: 'L',
+    titleFontSizePx: 110,
     textStyleId: 'classic',
     stickers: ['new'],
   },
   {
     id: 'shorts-bold',
-    label: 'Shorts punch',
-    hint: 'Vertical, heavy font',
+    label: 'Vertical Short / Reel',
     platform: 'shorts',
     layout: 'photo-top',
     fontId: 'anton',
-    fontSizeId: 'XL',
+    titleFontSizePx: 128,
     textStyleId: 'thick',
     stickers: ['fire', 'click'],
   },
   {
     id: 'minimal-clean',
-    label: 'Minimal text',
-    hint: 'Less stroke, smaller tag',
+    label: 'Simple text focus',
     platform: 'youtube',
     layout: 'photo-right',
-    fontId: 'dm',
-    fontSizeId: 'M',
+    fontId: 'dm-sans',
+    titleFontSizePx: DEFAULT_TITLE_FONT_SIZE,
     textStyleId: 'minimal',
     stickers: [],
   },
   {
     id: 'linkedin-pro',
-    label: 'LinkedIn pro',
-    hint: 'Condensed, calm look',
+    label: 'LinkedIn / work post',
     platform: 'linkedin',
     layout: 'photo-left',
     fontId: 'oswald',
-    fontSizeId: 'M',
+    titleFontSizePx: 88,
     textStyleId: 'classic',
     stickers: ['tip'],
   },

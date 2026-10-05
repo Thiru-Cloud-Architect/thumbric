@@ -17,8 +17,10 @@ describe('ThumbForge niches', () => {
   it('gives every niche a distinct accent and shape', () => {
     const accents = new Set(NICHES.map((niche) => niche.accent))
     const shapes = new Set(NICHES.map((niche) => niche.shape))
+    const baseColors = new Set(NICHES.map((niche) => niche.background[0]))
     expect(accents.size).toBe(NICHES.length)
     expect(shapes.size).toBe(NICHES.length)
+    expect(baseColors.size).toBe(NICHES.length)
   })
 
   it('filters channel types by search text', () => {

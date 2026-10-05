@@ -303,17 +303,29 @@ h1 {
 }
 
 .chip.solid,
-.sticker.active,
-.niche.active {
+.sticker.active {
   background: var(--accent);
   color: var(--accent-ink);
   border-color: var(--accent);
+}
+
+.niche.niche-swatch.active {
+  color: var(--ink);
+}
+
+.niche.niche-swatch.active small {
+  opacity: 0.88;
 }
 
 .chip:hover,
 .niche:hover,
 .sticker:hover {
   border-color: rgba(214, 255, 60, 0.5);
+}
+
+.niche {
+  border-left-width: 4px;
+  border-left-style: solid;
 }
 
 .choice-row.compact .choice {
@@ -387,7 +399,8 @@ label,
 }
 
 input,
-textarea {
+textarea,
+select {
   width: 100%;
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -554,11 +567,26 @@ legend {
   justify-items: center;
 }
 
+.preview-as-dark,
 .preview-mode-dark {
   background: #0f0f0f;
   border-radius: 18px;
   padding: 14px;
   border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.check-inline {
+  display: flex;
+  gap: 0.55rem;
+  align-items: flex-start;
+  color: var(--muted);
+  font-size: 0.88rem;
+  margin: 0;
+}
+
+.check-inline input {
+  width: auto;
+  margin-top: 0.2rem;
 }
 
 .preview-wrap.squint {
