@@ -336,20 +336,66 @@ function drawPunchText(
   y: number,
   fill: string,
   styleId: TextStyleId,
+  accent: string,
 ) {
   const style = getTextStyle(styleId)
   const base = Math.max(12, Math.round(ctx.canvas.height * 0.012))
-  const lineWidth =
-    style.id === 'thick' ? Math.round(base * 1.45) : style.id === 'minimal' ? Math.round(base * 0.65) : base
+  const thick = Math.round(base * 1.45)
+  const classic = base
+
+  let textFill = fill
+  let stroke = '#000000'
+  let lineWidth = classic
+  let useStroke = true
+  let useShadow = false
+
+  switch (style.id) {
+    case 'thick':
+      lineWidth = thick
+      break
+    case 'minimal':
+    case 'no-outline':
+      useStroke = false
+      break
+    case 'yellow-pop':
+      textFill = '#FFE44D'
+      lineWidth = thick
+      break
+    case 'accent-fill':
+      textFill = accent
+      lineWidth = thick
+      break
+    case 'white-glow':
+      useStroke = false
+      useShadow = true
+      textFill = '#FFFFFF'
+      break
+    case 'red-alert':
+      textFill = '#FF3B30'
+      stroke = '#FFFFFF'
+      lineWidth = Math.round(base * 1.1)
+      break
+    default:
+      break
+  }
+
   ctx.lineJoin = 'round'
   ctx.miterLimit = 2
-  if (style.id !== 'minimal') {
-    ctx.strokeStyle = '#000000'
+  ctx.save()
+  if (useShadow) {
+    ctx.shadowColor = 'rgba(0,0,0,0.85)'
+    ctx.shadowBlur = Math.round(base * 1.2)
+    ctx.shadowOffsetX = Math.round(base * 0.15)
+    ctx.shadowOffsetY = Math.round(base * 0.15)
+  }
+  if (useStroke) {
+    ctx.strokeStyle = stroke
     ctx.lineWidth = lineWidth
     ctx.strokeText(text, x, y)
   }
-  ctx.fillStyle = fill
+  ctx.fillStyle = textFill
   ctx.fillText(text, x, y)
+  ctx.restore()
 }
 
 function measureTextBlockBounds(input: ThumbInput, box: Box): Box {
@@ -400,13 +446,13 @@ function drawTextBlock(ctx: CanvasRenderingContext2D, input: ThumbInput, layoutT
   ctx.textAlign = 'left'
   ctx.textBaseline = 'alphabetic'
   ctx.font = `800 ${tagSize}px "DM Sans", sans-serif`
-  drawPunchText(ctx, tag, box.x, box.y + tagSize + 8, accent, styleId)
+  drawPunchText(ctx, tag, box.x, box.y + tagSize + 8, accent, styleId, accent)
 
   ctx.font = `${font.weight} ${titleSize}px ${font.css}`
   const lines = wrapLines(ctx, title.toUpperCase(), box.w, maxLines)
   let y = box.y + tagSize + titleSize + 28
   for (const line of lines) {
-    drawPunchText(ctx, line, box.x, y, '#FFFFFF', styleId)
+    drawPunchText(ctx, line, box.x, y, '#FFFFFF', styleId, accent)
     y += titleSize + 8
   }
 

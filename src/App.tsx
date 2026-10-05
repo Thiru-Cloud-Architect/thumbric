@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent, type PointerEvent as ReactPointerEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent, type PointerEvent as ReactPointerEvent } from 'react'
 import {
   FREE_CLEAN_DOWNLOADS,
   PAID_PRICE_LABEL,
@@ -15,7 +15,9 @@ import {
 import {
   clampTitleFontSize,
   DEFAULT_TITLE_FONT_SIZE,
+  FONT_CATEGORIES,
   FONTS,
+  getFont,
   TITLE_FONT_SIZE_MAX,
   TITLE_FONT_SIZE_MIN,
   type FontId,
@@ -94,21 +96,6 @@ const POPULAR: NicheId[] = ['tech', 'finance', 'gaming', 'cooking', 'travel', 'f
 type PreviewAs = 'normal' | 'phone' | 'dark'
 type DragTarget = 'sticker' | 'text' | null
 
-function lookButtonStyle(item: ReturnType<typeof getNiche>, active: boolean): CSSProperties {
-  if (active) {
-    return {
-      borderLeftColor: item.accent,
-      background: `linear-gradient(145deg, ${item.background[1]} 0%, ${item.background[0]} 100%)`,
-      color: item.ink,
-      boxShadow: `inset 0 0 0 1px ${item.accent}88`,
-    }
-  }
-  return {
-    borderLeftColor: item.accent,
-    background: `linear-gradient(145deg, ${item.background[0]} 0%, #0b111a 85%)`,
-  }
-}
-
 export default function App() {
   const [platformId, setPlatformId] = useState<PlatformId>('youtube')
   const [nicheId, setNicheId] = useState<NicheId>('tech')
@@ -145,6 +132,7 @@ export default function App() {
 
   const niche = useMemo(() => getNiche(nicheId), [nicheId])
   const platform = useMemo(() => getPlatform(platformId), [platformId])
+  const selectedFont = useMemo(() => getFont(fontId), [fontId])
   const cleanLeft = cleanDownloadsLeft(entitlement)
   const paid = isPaid(entitlement)
   const lookList = useMemo(() => {
@@ -171,7 +159,7 @@ export default function App() {
       textPos,
       showSafeZones: showGuides,
       activeStickerIndex: activeStickerIndex ?? undefined,
-      highlightText: textSelected || dragging,
+      highlightText: textSelected,
     }),
     [
       title,
@@ -491,6 +479,10 @@ export default function App() {
         </section>
 
         <section className="workbench" aria-label="Thumbnail maker">
+          <p className="picks-bar" aria-live="polite">
+            Your picks: <strong>{platform.label}</strong> · Look: <strong>{niche.label}</strong>
+            {accentOverride ? ' · Custom accent' : ''}
+          </p>
           <form
             className="controls"
             onSubmit={(event) => {
@@ -520,13 +512,15 @@ export default function App() {
                   <p>This sets the size: horizontal, square, or vertical.</p>
                 </div>
               </header>
-              <div className="choice-row">
+              <p className="field-help">Choose one platform (only the white ring = selected).</p>
+              <div className="choice-row" role="radiogroup" aria-label="Platform">
                 {PLATFORMS.map((item) => (
                   <button
                     key={item.id}
                     type="button"
-                    className={item.id === platformId ? 'choice active' : 'choice'}
-                    aria-pressed={item.id === platformId}
+                    className={item.id === platformId ? 'choice is-selected' : 'choice'}
+                    role="radio"
+                    aria-checked={item.id === platformId}
                     onClick={() => setPlatformId(item.id)}
                   >
                     <span>{item.label}</span>
@@ -540,7 +534,7 @@ export default function App() {
               <header className="subhead">
                 <div>
                   <h2>Pick a look</h2>
-                  <p>Each card shows its color mood — backgrounds are tuned per category.</p>
+                  <p>Only one card has a checkmark — that is your color mood.</p>
                 </div>
               </header>
               <label className="search">
@@ -566,11 +560,13 @@ export default function App() {
                             <button
                               key={item.id}
                               type="button"
-                              className={item.id === nicheId ? 'niche active' : 'niche niche-swatch'}
-                              style={lookButtonStyle(item, item.id === nicheId)}
-                              aria-pressed={item.id === nicheId}
+                              className={item.id === nicheId ? 'niche is-selected' : 'niche'}
+                              style={{ ['--niche-accent' as string]: item.accent }}
+                              role="radio"
+                              aria-checked={item.id === nicheId}
                               onClick={() => setNicheId(item.id)}
                             >
+                              <span className="niche-dot" style={{ background: item.accent }} aria-hidden />
                               <span>{item.label}</span>
                               <small>{item.hint}</small>
                             </button>
@@ -585,11 +581,13 @@ export default function App() {
                       <button
                         key={item.id}
                         type="button"
-                        className={item.id === nicheId ? 'niche active' : 'niche niche-swatch'}
-                        style={lookButtonStyle(item, item.id === nicheId)}
-                        aria-pressed={item.id === nicheId}
+                        className={item.id === nicheId ? 'niche is-selected' : 'niche'}
+                        style={{ ['--niche-accent' as string]: item.accent }}
+                        role="radio"
+                        aria-checked={item.id === nicheId}
                         onClick={() => setNicheId(item.id)}
                       >
+                        <span className="niche-dot" style={{ background: item.accent }} aria-hidden />
                         <span>{item.label}</span>
                         <small>{item.hint}</small>
                       </button>
@@ -644,8 +642,9 @@ export default function App() {
                     <button
                       key={item.id}
                       type="button"
-                      className={item.id === layout ? 'choice active' : 'choice'}
-                      aria-pressed={item.id === layout}
+                      className={item.id === layout ? 'choice is-selected' : 'choice'}
+                      role="radio"
+                      aria-checked={item.id === layout}
                       onClick={() => setLayout(item.id)}
                     >
                       <span>{item.label}</span>
@@ -662,8 +661,9 @@ export default function App() {
                     <button
                       key={item.id}
                       type="button"
-                      className={item.id === photoShape ? 'choice active' : 'choice'}
-                      aria-pressed={item.id === photoShape}
+                      className={item.id === photoShape ? 'choice is-selected' : 'choice'}
+                      role="radio"
+                      aria-checked={item.id === photoShape}
                       onClick={() => setPhotoShape(item.id)}
                     >
                       <span>{item.label}</span>
@@ -675,19 +675,18 @@ export default function App() {
 
               <fieldset>
                 <legend>Accent color</legend>
-                <div className="choice-row colors">
-                  {COLOR_PRESETS.map((item) => (
+                <p className="field-help">Pick one swatch. “From mood” matches your look card above.</p>
+                <div className="choice-row colors" role="radiogroup" aria-label="Accent color">
+                  {COLOR_PRESETS.map((item) => {
+                    const selected =
+                      item.value === '' ? accentOverride === '' : accentOverride === item.value
+                    return (
                     <button
                       key={item.id}
                       type="button"
-                      className={
-                        (item.value === '' ? accentOverride === '' : accentOverride === item.value)
-                          ? 'swatch active'
-                          : 'swatch'
-                      }
-                      aria-pressed={
-                        item.value === '' ? accentOverride === '' : accentOverride === item.value
-                      }
+                      className={selected ? 'swatch is-selected' : 'swatch'}
+                      role="radio"
+                      aria-checked={selected}
                       onClick={() => setAccentOverride(item.value)}
                       title={item.label}
                       style={
@@ -696,9 +695,10 @@ export default function App() {
                           : { background: niche.accent, color: '#101820' }
                       }
                     >
-                      {item.id === 'look' ? 'Look' : item.label}
+                      {item.id === 'look' ? 'From mood' : item.label}
                     </button>
-                  ))}
+                    )
+                  })}
                 </div>
                 <label className="tiny-color">
                   Or pick any color
@@ -712,13 +712,23 @@ export default function App() {
 
               <fieldset>
                 <legend>Title font &amp; size</legend>
+                <p
+                  className="font-preview"
+                  style={{ fontFamily: selectedFont.css, fontWeight: selectedFont.weight }}
+                >
+                  {title.trim().slice(0, 40) || 'YOUR TITLE HERE'}
+                </p>
                 <label>
-                  Font
+                  Font ({FONTS.length} available)
                   <select value={fontId} onChange={(event) => setFontId(event.target.value as FontId)}>
-                    {FONTS.map((item) => (
-                      <option key={item.id} value={item.id} style={{ fontFamily: item.css }}>
-                        {item.label}
-                      </option>
+                    {FONT_CATEGORIES.map((group) => (
+                      <optgroup key={group.id} label={group.label}>
+                        {FONTS.filter((item) => item.category === group.id).map((item) => (
+                          <option key={item.id} value={item.id}>
+                            {item.label}
+                          </option>
+                        ))}
+                      </optgroup>
                     ))}
                   </select>
                 </label>
@@ -742,7 +752,7 @@ export default function App() {
               </fieldset>
 
               <fieldset>
-                <legend>Title outline</legend>
+                <legend>Title color style</legend>
                 <label>
                   Style
                   <select
@@ -978,7 +988,7 @@ export default function App() {
           Tip: use Mobile squint before you publish — if you cannot read the title, shorten it or
           bump the font size.
         </p>
-        <p className="build-tag">ThumbForge UI build 2026.10.05-g</p>
+        <p className="build-tag">ThumbForge UI build 2026.10.05-h</p>
       </footer>
 
       {modal !== 'none' ? (
