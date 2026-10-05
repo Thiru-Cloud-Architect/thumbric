@@ -12,12 +12,10 @@ import {
   registerEmail,
   type Entitlement,
 } from './entitlement'
+import { FontPicker } from './FontPicker'
 import {
   clampTitleFontSize,
   DEFAULT_TITLE_FONT_SIZE,
-  FONT_CATEGORIES,
-  FONTS,
-  getFont,
   TITLE_FONT_SIZE_MAX,
   TITLE_FONT_SIZE_MIN,
   type FontId,
@@ -132,7 +130,6 @@ export default function App() {
 
   const niche = useMemo(() => getNiche(nicheId), [nicheId])
   const platform = useMemo(() => getPlatform(platformId), [platformId])
-  const selectedFont = useMemo(() => getFont(fontId), [fontId])
   const cleanLeft = cleanDownloadsLeft(entitlement)
   const paid = isPaid(entitlement)
   const lookList = useMemo(() => {
@@ -615,9 +612,10 @@ export default function App() {
                 </div>
               </header>
 
-              <label>
+              <label className="soft-field">
                 Optional starter layout
                 <select
+                  className="soft-select"
                   defaultValue=""
                   onChange={(event) => {
                     const value = event.target.value as TemplateId | ''
@@ -712,27 +710,8 @@ export default function App() {
 
               <fieldset>
                 <legend>Title font &amp; size</legend>
-                <p
-                  className="font-preview"
-                  style={{ fontFamily: selectedFont.css, fontWeight: selectedFont.weight }}
-                >
-                  {title.trim().slice(0, 40) || 'YOUR TITLE HERE'}
-                </p>
-                <label>
-                  Font ({FONTS.length} available)
-                  <select value={fontId} onChange={(event) => setFontId(event.target.value as FontId)}>
-                    {FONT_CATEGORIES.map((group) => (
-                      <optgroup key={group.id} label={group.label}>
-                        {FONTS.filter((item) => item.category === group.id).map((item) => (
-                          <option key={item.id} value={item.id}>
-                            {item.label}
-                          </option>
-                        ))}
-                      </optgroup>
-                    ))}
-                  </select>
-                </label>
-                <label>
+                <FontPicker value={fontId} onChange={setFontId} sampleText={title} />
+                <label className="soft-field">
                   Title size (pixels at YouTube width)
                   <input
                     type="number"
@@ -753,19 +732,24 @@ export default function App() {
 
               <fieldset>
                 <legend>Title color style</legend>
-                <label>
+                <label className="soft-field">
                   Style
                   <select
+                    className="soft-select"
                     value={textStyleId}
                     onChange={(event) => setTextStyleId(event.target.value as TextStyleId)}
                   >
                     {TEXT_STYLES.map((item) => (
                       <option key={item.id} value={item.id}>
-                        {item.label} — {item.hint}
+                        {item.label}
                       </option>
                     ))}
                   </select>
                 </label>
+                <p className="photo-help">
+                  {TEXT_STYLES.find((item) => item.id === textStyleId)?.hint ??
+                    'Pick how the title reads on busy backgrounds.'}
+                </p>
                 <button
                   type="button"
                   className="linkish"
@@ -899,9 +883,13 @@ export default function App() {
             <p className="preview-label">
               Preview · {platform.label} · drag title &amp; stickers to move
             </p>
-            <label>
+            <label className="soft-field">
               View as
-              <select value={previewAs} onChange={(event) => setPreviewAs(event.target.value as PreviewAs)}>
+              <select
+                className="soft-select"
+                value={previewAs}
+                onChange={(event) => setPreviewAs(event.target.value as PreviewAs)}
+              >
                 <option value="normal">Normal (editing size)</option>
                 <option value="phone">Small — like on a phone feed</option>
                 <option value="dark">YouTube app (dark background)</option>
@@ -988,7 +976,7 @@ export default function App() {
           Tip: use Mobile squint before you publish — if you cannot read the title, shorten it or
           bump the font size.
         </p>
-        <p className="build-tag">ThumbForge UI build 2026.10.05-h</p>
+        <p className="build-tag">ThumbForge UI build 2026.10.05-i</p>
       </footer>
 
       {modal !== 'none' ? (
