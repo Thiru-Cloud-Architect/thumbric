@@ -920,7 +920,7 @@ export default function App() {
           Tip: use Mobile squint before you publish — if you cannot read the title, shorten it or
           bump the font size.
         </p>
-        <p className="build-tag">ThumbForge UI build 2026.10.05-m</p>
+        <p className="build-tag">ThumbForge UI build 2026.10.05-n</p>
       </footer>
 
       {modal !== 'none' ? (
