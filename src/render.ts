@@ -142,36 +142,91 @@ function drawBackground(ctx: CanvasRenderingContext2D, input: ThumbInput) {
   const W = platform.width
   const H = platform.height
 
-  const gradient = ctx.createLinearGradient(0, 0, W, H)
-  gradient.addColorStop(0, niche.background[0])
-  gradient.addColorStop(0.45, niche.background[1])
-  gradient.addColorStop(1, niche.background[2])
-  ctx.fillStyle = gradient
+  const base = ctx.createLinearGradient(0, 0, W, H)
+  base.addColorStop(0, niche.background[0])
+  base.addColorStop(0.4, niche.background[1])
+  base.addColorStop(1, niche.background[2])
+  ctx.fillStyle = base
   ctx.fillRect(0, 0, W, H)
 
+  // Soft light wash
+  const wash = ctx.createRadialGradient(W * 0.2, H * 0.15, 20, W * 0.2, H * 0.15, Math.max(W, H) * 0.55)
+  wash.addColorStop(0, `${accent}55`)
+  wash.addColorStop(1, `${accent}00`)
+  ctx.fillStyle = wash
+  ctx.fillRect(0, 0, W, H)
+
+  // Second glow opposite corner
+  const glow = ctx.createRadialGradient(W * 0.9, H * 0.85, 10, W * 0.9, H * 0.85, Math.max(W, H) * 0.5)
+  glow.addColorStop(0, 'rgba(255,255,255,0.16)')
+  glow.addColorStop(1, 'rgba(255,255,255,0)')
+  ctx.fillStyle = glow
+  ctx.fillRect(0, 0, W, H)
+
+  // Diagonal light streak
   ctx.save()
-  ctx.globalAlpha = 0.24
+  ctx.translate(W * 0.55, H * 0.1)
+  ctx.rotate(-0.55)
+  const streak = ctx.createLinearGradient(0, 0, W * 0.9, 0)
+  streak.addColorStop(0, `${accent}00`)
+  streak.addColorStop(0.5, `${accent}33`)
+  streak.addColorStop(1, `${accent}00`)
+  ctx.fillStyle = streak
+  ctx.fillRect(-W * 0.2, 0, W * 0.9, Math.max(40, H * 0.08))
+  ctx.restore()
+
+  // Subtle grid for depth
+  ctx.save()
+  ctx.strokeStyle = 'rgba(255,255,255,0.045)'
+  ctx.lineWidth = 1
+  const step = Math.max(36, Math.round(Math.min(W, H) * 0.06))
+  for (let x = 0; x <= W; x += step) {
+    ctx.beginPath()
+    ctx.moveTo(x, 0)
+    ctx.lineTo(x, H)
+    ctx.stroke()
+  }
+  for (let y = 0; y <= H; y += step) {
+    ctx.beginPath()
+    ctx.moveTo(0, y)
+    ctx.lineTo(W, y)
+    ctx.stroke()
+  }
+  ctx.restore()
+
+  // Accent orbs
+  ctx.save()
+  ctx.globalAlpha = 0.2
   ctx.fillStyle = accent
   ctx.beginPath()
-  ctx.ellipse(W * 0.85, H * 0.12, W * 0.28, H * 0.18, -0.4, 0, Math.PI * 2)
+  ctx.ellipse(W * 0.78, H * 0.22, W * 0.18, H * 0.14, -0.3, 0, Math.PI * 2)
   ctx.fill()
   ctx.beginPath()
-  ctx.ellipse(W * 0.12, H * 0.88, W * 0.24, H * 0.16, 0.3, 0, Math.PI * 2)
+  ctx.ellipse(W * 0.18, H * 0.78, W * 0.16, H * 0.12, 0.4, 0, Math.PI * 2)
   ctx.fill()
   ctx.restore()
 
+  // Bottom curve
   ctx.save()
-  ctx.strokeStyle = `${accent}40`
-  ctx.lineWidth = Math.max(8, Math.round(Math.min(W, H) * 0.01))
+  ctx.fillStyle = `${accent}18`
   ctx.beginPath()
-  ctx.moveTo(0, H * 0.78)
-  ctx.bezierCurveTo(W * 0.25, H * 0.68, W * 0.55, H * 0.92, W, H * 0.55)
-  ctx.stroke()
+  ctx.moveTo(0, H)
+  ctx.quadraticCurveTo(W * 0.35, H * 0.72, W, H * 0.88)
+  ctx.lineTo(W, H)
+  ctx.closePath()
+  ctx.fill()
   ctx.restore()
 
-  const vignette = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.2, W / 2, H / 2, Math.max(W, H) * 0.75)
+  const vignette = ctx.createRadialGradient(
+    W / 2,
+    H / 2,
+    Math.min(W, H) * 0.18,
+    W / 2,
+    H / 2,
+    Math.max(W, H) * 0.78,
+  )
   vignette.addColorStop(0, 'rgba(0,0,0,0)')
-  vignette.addColorStop(1, 'rgba(0,0,0,0.42)')
+  vignette.addColorStop(1, 'rgba(0,0,0,0.38)')
   ctx.fillStyle = vignette
   ctx.fillRect(0, 0, W, H)
 }
@@ -331,29 +386,50 @@ function drawSticker(
     ctx.closePath()
     ctx.fill()
   } else {
-    const label =
-      id === 'new'
-        ? 'NEW'
-        : id === 'fire'
-          ? '🔥'
-          : id === 'wow'
-            ? 'WOW'
-            : id === 'rupee'
-              ? '₹'
-              : id === 'vs'
-                ? 'VS'
-                : 'CLICK'
-    const width = id === 'fire' || id === 'rupee' ? unit * 1.3 : unit * 1.7
-    ctx.fillStyle = id === 'fire' ? '#FF4D2E' : accent
+    const map: Record<Exclude<StickerId, 'arrow'>, string> = {
+      new: 'NEW',
+      fire: '🔥',
+      wow: 'WOW',
+      rupee: '₹',
+      vs: 'VS',
+      click: 'CLICK',
+      live: 'LIVE',
+      hot: 'HOT',
+      free: 'FREE',
+      pro: 'PRO',
+      tip: 'TIP',
+      part: 'PART 1',
+      yes: 'YES',
+      no: 'NO',
+      love: '❤',
+      go: 'GO',
+      day1: 'DAY 1',
+      '100': '100%',
+      alert: '!',
+    }
+    const label = map[id]
+    const wide = label.length > 3
+    const width = wide ? unit * (label.length > 4 ? 2.15 : 1.85) : unit * (label.length === 1 ? 1.15 : 1.45)
+    const fill =
+      id === 'fire' || id === 'hot' || id === 'alert'
+        ? '#FF4D2E'
+        : id === 'live'
+          ? '#FF3B5C'
+          : id === 'yes' || id === 'free'
+            ? '#7CFFB2'
+            : id === 'no'
+              ? '#FF8A7A'
+              : accent
+    ctx.fillStyle = fill
     roundRect(ctx, -width / 2, -unit * 0.45, width, unit * 0.9, unit * 0.22)
     ctx.fill()
     ctx.fillStyle = '#101820'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.font =
-      id === 'fire' || id === 'rupee'
-        ? `700 ${Math.round(unit * 0.5)}px "DM Sans", sans-serif`
-        : `700 ${Math.round(unit * 0.42)}px "Bebas Neue", Impact, sans-serif`
+    ctx.font = `700 ${Math.round(unit * (label.length > 4 ? 0.34 : 0.42))}px "Bebas Neue", Impact, sans-serif`
+    if (id === 'fire' || id === 'love' || id === 'rupee') {
+      ctx.font = `700 ${Math.round(unit * 0.5)}px "DM Sans", sans-serif`
+    }
     ctx.fillText(label, 0, 2)
   }
   ctx.restore()

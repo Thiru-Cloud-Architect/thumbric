@@ -44,9 +44,10 @@ describe('platforms and layout', () => {
 })
 
 describe('stickers', () => {
-  it('offers simple click-boost stickers', () => {
-    expect(STICKERS.length).toBeGreaterThanOrEqual(6)
+  it('offers many simple click-boost stickers', () => {
+    expect(STICKERS.length).toBeGreaterThanOrEqual(16)
     expect(STICKERS.some((sticker) => sticker.id === 'arrow')).toBe(true)
-    expect(STICKERS.some((sticker) => sticker.id === 'rupee')).toBe(true)
+    expect(STICKERS.some((sticker) => sticker.id === 'live')).toBe(true)
+    expect(STICKERS.some((sticker) => sticker.id === 'day1')).toBe(true)
   })
 })
