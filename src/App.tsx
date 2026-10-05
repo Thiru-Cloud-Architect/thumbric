@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { COLOR_PRESETS, LAYOUTS, PHOTO_SHAPES, type LayoutId, type PhotoShapeId } from './layout'
 import {
   NICHE_GROUPS,
   NICHES,
@@ -6,6 +7,7 @@ import {
   filterNiches,
   getNiche,
 } from './niches'
+import { PLATFORMS, type PlatformId, getPlatform } from './platforms'
 import { downloadThumbnail, renderThumbnail } from './render'
 import { STICKERS, type StickerId } from './stickers'
 import './App.css'
@@ -16,31 +18,35 @@ const SAMPLES = [
     tag: 'AI TOOLS',
     title: 'I built an agent that reviews production PRs',
     stickers: ['new', 'arrow'] as StickerId[],
+    platform: 'youtube' as PlatformId,
+    layout: 'photo-left' as LayoutId,
   },
   {
     niche: 'finance' as NicheId,
     tag: 'SALARY',
     title: 'How I saved 3 lakhs without cutting fun',
     stickers: ['rupee', 'wow'] as StickerId[],
+    platform: 'linkedin' as PlatformId,
+    layout: 'photo-right' as LayoutId,
   },
   {
     niche: 'travel' as NicheId,
     tag: 'TRIP',
     title: '48 hours in Chennai on a student budget',
     stickers: ['fire', 'click'] as StickerId[],
-  },
-  {
-    niche: 'fitness' as NicheId,
-    tag: 'TRAIN',
-    title: 'Home workout that actually keeps you consistent',
-    stickers: ['wow', 'arrow'] as StickerId[],
+    platform: 'shorts' as PlatformId,
+    layout: 'photo-top' as LayoutId,
   },
 ]
 
 const POPULAR: NicheId[] = ['tech', 'finance', 'gaming', 'cooking', 'travel', 'fitness', 'education', 'vlog']
 
 export default function App() {
+  const [platformId, setPlatformId] = useState<PlatformId>('youtube')
   const [nicheId, setNicheId] = useState<NicheId>('tech')
+  const [layout, setLayout] = useState<LayoutId>('photo-left')
+  const [photoShape, setPhotoShape] = useState<PhotoShapeId>('rounded')
+  const [accentOverride, setAccentOverride] = useState('')
   const [title, setTitle] = useState(SAMPLES[0].title)
   const [tag, setTag] = useState(SAMPLES[0].tag)
   const [query, setQuery] = useState('')
@@ -49,16 +55,33 @@ export default function App() {
   const [photo, setPhoto] = useState<HTMLImageElement | null>(null)
   const [photoName, setPhotoName] = useState('')
   const [photoUrl, setPhotoUrl] = useState('')
-  const [status, setStatus] = useState('Follow the 3 steps, then tap Save image.')
+  const [status, setStatus] = useState('Pick where you will post, then follow the steps.')
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
-  const niche = useMemo(() => getNiche(nicheId), [nicheId])
 
+  const niche = useMemo(() => getNiche(nicheId), [nicheId])
+  const platform = useMemo(() => getPlatform(platformId), [platformId])
   const lookList = useMemo(() => {
     if (query.trim()) return filterNiches(query)
     if (showAllLooks) return NICHES
     return POPULAR.map((id) => getNiche(id))
   }, [query, showAllLooks])
+
+  const input = useMemo(
+    () => ({
+      title,
+      tag,
+      niche,
+      platform,
+      layout,
+      photoShape,
+      accentOverride,
+      watermark: true,
+      photo,
+      stickers,
+    }),
+    [title, tag, niche, platform, layout, photoShape, accentOverride, photo, stickers],
+  )
 
   useEffect(() => {
     return () => {
@@ -69,17 +92,18 @@ export default function App() {
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
+    canvas.width = platform.width
+    canvas.height = platform.height
     const ctx = canvas.getContext('2d')
     if (!ctx) return
-    renderThumbnail(ctx, {
-      title,
-      tag,
-      niche,
-      watermark: true,
-      photo,
-      stickers,
-    })
-  }, [title, tag, niche, photo, stickers])
+    renderThumbnail(ctx, input)
+  }, [input, platform.width, platform.height])
+
+  useEffect(() => {
+    if (platform.orientation === 'vertical' && layout === 'photo-left') {
+      setLayout('photo-top')
+    }
+  }, [platform.orientation, layout])
 
   function applySample(index: number) {
     const sample = SAMPLES[index]
@@ -87,8 +111,10 @@ export default function App() {
     setTitle(sample.title)
     setTag(sample.tag)
     setStickers(sample.stickers)
+    setPlatformId(sample.platform)
+    setLayout(sample.layout)
     setQuery('')
-    setStatus('Sample loaded. Change the title or add your photo, then Save image.')
+    setStatus('Example loaded. Change anything you want, then Save image.')
   }
 
   function toggleSticker(id: StickerId) {
@@ -112,7 +138,7 @@ export default function App() {
       setPhoto(image)
       setPhotoUrl(url)
       setPhotoName(file.name)
-      setStatus('Photo added. Edit your title if you want, then Save image.')
+      setStatus('Photo added. You can change its shape below.')
     }
     image.onerror = () => {
       URL.revokeObjectURL(url)
@@ -127,13 +153,13 @@ export default function App() {
     setPhotoUrl('')
     setPhotoName('')
     if (fileRef.current) fileRef.current.value = ''
-    setStatus('Photo removed. You can still save the colorful style thumbnail.')
+    setStatus('Photo removed.')
   }
 
   function onDownload() {
     try {
-      downloadThumbnail({ title, tag, niche, watermark: true, photo, stickers })
-      setStatus('Saved! Check your Downloads folder for thumbforge-youtube.png')
+      downloadThumbnail(input)
+      setStatus(`Saved! Look in Downloads for thumbforge-${platform.id}.png`)
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Could not save the image.')
     }
@@ -145,25 +171,25 @@ export default function App() {
         <a className="brand" href="#top">
           ThumbForge
         </a>
-        <p className="tagline">Make a YouTube thumbnail in 3 easy steps</p>
+        <p className="tagline">Thumbnails for YouTube, Shorts, Instagram, LinkedIn & Facebook</p>
       </header>
 
       <main id="top">
         <section className="hero">
           <div>
-            <p className="kicker">Free · No signup · Works on phone too</p>
+            <p className="kicker">Free · No signup · Photo stays on your device</p>
             <h1>Make a clickable thumbnail</h1>
             <p className="lede">
-              Pick a look, write your title, optionally add your photo, then tap Save image. Your
-              picture never leaves this device.
+              Choose the app you post on, move the photo, change colors and shape, then save. Made
+              simple for everyone — not only tech people.
             </p>
           </div>
           <ol className="steps-hero">
             <li>
-              <strong>1</strong> Pick a look
+              <strong>1</strong> Choose platform & look
             </li>
             <li>
-              <strong>2</strong> Add title + photo
+              <strong>2</strong> Arrange photo & text
             </li>
             <li>
               <strong>3</strong> Save the image
@@ -197,11 +223,33 @@ export default function App() {
               <header>
                 <span className="step-num">1</span>
                 <div>
-                  <h2>Pick a look</h2>
-                  <p>Choose the style that matches your channel.</p>
+                  <h2>Where will you post?</h2>
+                  <p>This sets the size: horizontal, square, or vertical.</p>
                 </div>
               </header>
+              <div className="choice-row">
+                {PLATFORMS.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className={item.id === platformId ? 'choice active' : 'choice'}
+                    aria-pressed={item.id === platformId}
+                    onClick={() => setPlatformId(item.id)}
+                  >
+                    <span>{item.label}</span>
+                    <small>
+                      {item.orientation} · {item.width}×{item.height}
+                    </small>
+                  </button>
+                ))}
+              </div>
 
+              <header className="subhead">
+                <div>
+                  <h2>Pick a look</h2>
+                  <p>Colors and mood for your channel type.</p>
+                </div>
+              </header>
               <label className="search">
                 Search looks
                 <input
@@ -210,7 +258,6 @@ export default function App() {
                   placeholder="Type travel, cooking, gaming…"
                 />
               </label>
-
               <div className="niche-board">
                 {lookList.length === 0 ? (
                   <p className="empty">No match. Try “travel” or “finance”.</p>
@@ -255,7 +302,6 @@ export default function App() {
                   </div>
                 )}
               </div>
-
               {!query && (
                 <button
                   type="button"
@@ -271,10 +317,83 @@ export default function App() {
               <header>
                 <span className="step-num">2</span>
                 <div>
-                  <h2>Add your words and photo</h2>
-                  <p>Short titles work best. Photo is optional but looks stronger.</p>
+                  <h2>Arrange and customize</h2>
+                  <p>Move the photo, change its shape, and pick your favorite color.</p>
                 </div>
               </header>
+
+              <fieldset>
+                <legend>Move photo</legend>
+                <div className="choice-row">
+                  {LAYOUTS.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={item.id === layout ? 'choice active' : 'choice'}
+                      aria-pressed={item.id === layout}
+                      onClick={() => setLayout(item.id)}
+                    >
+                      <span>{item.label}</span>
+                      <small>{item.hint}</small>
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+
+              <fieldset>
+                <legend>Photo shape</legend>
+                <div className="choice-row">
+                  {PHOTO_SHAPES.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={item.id === photoShape ? 'choice active' : 'choice'}
+                      aria-pressed={item.id === photoShape}
+                      onClick={() => setPhotoShape(item.id)}
+                    >
+                      <span>{item.label}</span>
+                      <small>{item.hint}</small>
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+
+              <fieldset>
+                <legend>Accent color</legend>
+                <div className="choice-row colors">
+                  {COLOR_PRESETS.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={
+                        (item.value === '' ? accentOverride === '' : accentOverride === item.value)
+                          ? 'swatch active'
+                          : 'swatch'
+                      }
+                      aria-pressed={
+                        item.value === '' ? accentOverride === '' : accentOverride === item.value
+                      }
+                      onClick={() => setAccentOverride(item.value)}
+                      title={item.label}
+                      style={
+                        item.value
+                          ? { background: item.value, color: '#101820' }
+                          : { background: niche.accent, color: '#101820' }
+                      }
+                    >
+                      {item.id === 'look' ? 'Look' : item.label}
+                    </button>
+                  ))}
+                </div>
+                <label className="tiny-color">
+                  Or pick any color
+                  <input
+                    type="color"
+                    value={accentOverride || niche.accent}
+                    onChange={(event) => setAccentOverride(event.target.value)}
+                  />
+                </label>
+              </fieldset>
 
               <label>
                 Short tag (top line)
@@ -287,7 +406,7 @@ export default function App() {
               </label>
 
               <label>
-                Video title
+                Title text
                 <textarea
                   value={title}
                   maxLength={70}
@@ -301,12 +420,16 @@ export default function App() {
                 <div>
                   <p className="photo-title">Your photo (optional)</p>
                   <p className="photo-help">
-                    Use a clear face or object photo. JPG or PNG. Stays on your device.
+                    Clear face or object photos work best. JPG or PNG. Stays on your device.
                   </p>
                   {photoName ? <p className="photo-name">Selected: {photoName}</p> : null}
                 </div>
                 <div className="photo-actions">
-                  <button type="button" className="chip solid" onClick={() => fileRef.current?.click()}>
+                  <button
+                    type="button"
+                    className="chip solid"
+                    onClick={() => fileRef.current?.click()}
+                  >
                     {photo ? 'Change photo' : 'Add photo'}
                   </button>
                   {photo ? (
@@ -348,7 +471,9 @@ export default function App() {
                 <span className="step-num">3</span>
                 <div>
                   <h2>Save your thumbnail</h2>
-                  <p>This downloads a YouTube-size PNG to your computer or phone.</p>
+                  <p>
+                    Downloads a ready PNG for {platform.label} ({platform.width}×{platform.height}).
+                  </p>
                 </div>
               </header>
               <div className="actions">
@@ -363,13 +488,18 @@ export default function App() {
           </form>
 
           <div className="preview-panel">
-            <p className="preview-label">Live preview</p>
-            <div className="preview-wrap">
+            <p className="preview-label">
+              Live preview · {platform.label} · {platform.orientation}
+            </p>
+            <div
+              className={`preview-wrap ${platform.orientation}`}
+              style={{ aspectRatio: `${platform.width} / ${platform.height}` }}
+            >
               <canvas
                 ref={canvasRef}
                 className="preview"
-                width={1280}
-                height={720}
+                width={platform.width}
+                height={platform.height}
                 aria-label="Thumbnail preview"
               />
             </div>
@@ -380,7 +510,8 @@ export default function App() {
 
       <footer>
         <p>
-          Tip: big face + short title + one sticker usually gets more clicks than long sentences.
+          Tip: big face + short title + one sticker usually gets more clicks. We do not ask for your
+          name or email to download.
         </p>
       </footer>
     </div>

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
+import { LAYOUTS, PHOTO_SHAPES } from './layout'
 import { NICHES, NICHE_GROUPS, filterNiches, getNiche, HEIGHT, WIDTH } from './niches'
+import { PLATFORMS, getPlatform } from './platforms'
 import { STICKERS } from './stickers'
 
 describe('ThumbForge niches', () => {
@@ -24,6 +26,20 @@ describe('ThumbForge niches', () => {
     expect(filterNiches('money').every((niche) => niche.group === 'Money')).toBe(true)
     expect(filterNiches('zzzz').length).toBe(0)
     expect(NICHE_GROUPS).toContain('Lifestyle')
+  })
+})
+
+describe('platforms and layout', () => {
+  it('supports major social sizes and orientations', () => {
+    expect(PLATFORMS.length).toBeGreaterThanOrEqual(6)
+    expect(getPlatform('shorts').orientation).toBe('vertical')
+    expect(getPlatform('instagram-post').orientation).toBe('square')
+    expect(getPlatform('youtube').width).toBe(1280)
+  })
+
+  it('offers move and photo shape options', () => {
+    expect(LAYOUTS.map((item) => item.id)).toContain('photo-top')
+    expect(PHOTO_SHAPES.map((item) => item.id)).toContain('circle')
   })
 })
 

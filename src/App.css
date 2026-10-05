@@ -179,6 +179,12 @@ h1 {
   flex: 0 0 auto;
 }
 
+.choice-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 .samples,
 .niches,
 .actions,
@@ -187,6 +193,86 @@ h1 {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+.choice,
+.swatch {
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #0b111a;
+  color: var(--ink);
+  border-radius: 16px;
+  padding: 0.7rem 0.8rem;
+  font: 600 0.9rem/1.15 'DM Sans', sans-serif;
+  cursor: pointer;
+  display: grid;
+  gap: 0.2rem;
+  text-align: left;
+  min-width: calc(50% - 0.3rem);
+}
+
+.choice small {
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 0.72rem;
+}
+
+.choice.active {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+
+.choice.active small {
+  color: rgba(16, 24, 32, 0.7);
+}
+
+.swatch {
+  min-width: auto;
+  border-radius: 999px;
+  padding: 0.55rem 0.8rem;
+}
+
+.swatch.active {
+  outline: 2px solid white;
+  outline-offset: 2px;
+}
+
+.colors {
+  gap: 0.45rem;
+}
+
+.tiny-color {
+  margin-top: 0.35rem;
+}
+
+.tiny-color input[type='color'] {
+  width: 3rem;
+  height: 2.2rem;
+  padding: 0.15rem;
+  border-radius: 8px;
+}
+
+.subhead h2 {
+  margin: 0.4rem 0 0;
+  font-size: 1rem;
+}
+
+.subhead p {
+  margin: 0.2rem 0 0.4rem;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.preview-wrap.vertical {
+  max-height: min(72vh, 760px);
+  width: min(100%, 360px);
+  justify-self: center;
+}
+
+.preview-wrap.square {
+  max-width: min(100%, 520px);
+  justify-self: center;
 }
 
 .soft-label {

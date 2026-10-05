@@ -1,14 +1,22 @@
-import { HEIGHT, WIDTH, type Niche } from './niches'
+import type { LayoutId, PhotoShapeId } from './layout'
+import type { Niche } from './niches'
+import type { Platform } from './platforms'
 import type { StickerId } from './stickers'
 
 export type ThumbInput = {
   title: string
   tag: string
   niche: Niche
+  platform: Platform
+  layout: LayoutId
+  photoShape: PhotoShapeId
+  accentOverride: string
   watermark: boolean
   photo: HTMLImageElement | null
   stickers: StickerId[]
 }
+
+type Box = { x: number; y: number; w: number; h: number }
 
 function wrapLines(
   ctx: CanvasRenderingContext2D,
@@ -29,7 +37,7 @@ function wrapLines(
       current = words[i]
       if (lines.length === maxLines - 1) {
         const rest = [current, ...words.slice(i + 1)].join(' ')
-        lines.push(trimToWidth(ctx, `${rest}`, maxWidth))
+        lines.push(trimToWidth(ctx, rest, maxWidth))
         return lines
       }
     }
@@ -65,101 +73,165 @@ function roundRect(
   ctx.closePath()
 }
 
-function drawBackground(ctx: CanvasRenderingContext2D, niche: Niche) {
-  const gradient = ctx.createLinearGradient(0, 0, WIDTH, HEIGHT)
+function accentOf(input: ThumbInput) {
+  return input.accentOverride || input.niche.accent
+}
+
+function layoutBoxes(platform: Platform, layout: LayoutId): { photo: Box; text: Box } {
+  const { width: W, height: H, orientation } = platform
+  const pad = Math.round(Math.min(W, H) * 0.05)
+
+  if (layout === 'photo-full') {
+    return {
+      photo: { x: 0, y: 0, w: W, h: H },
+      text: {
+        x: pad,
+        y: orientation === 'vertical' ? Math.round(H * 0.58) : Math.round(H * 0.55),
+        w: W - pad * 2,
+        h: Math.round(H * 0.35),
+      },
+    }
+  }
+
+  if (layout === 'photo-top' || orientation === 'vertical') {
+    const photoH = layout === 'photo-top' || orientation === 'vertical' ? Math.round(H * 0.48) : Math.round(H * 0.5)
+    return {
+      photo: { x: pad, y: pad, w: W - pad * 2, h: photoH - pad },
+      text: { x: pad, y: photoH + pad, w: W - pad * 2, h: H - photoH - pad * 2 },
+    }
+  }
+
+  if (orientation === 'square') {
+    const photoW = Math.round(W * 0.46)
+    if (layout === 'photo-right') {
+      return {
+        photo: { x: W - pad - photoW, y: pad, w: photoW, h: H - pad * 2 },
+        text: { x: pad, y: pad, w: W - photoW - pad * 3, h: H - pad * 2 },
+      }
+    }
+    return {
+      photo: { x: pad, y: pad, w: photoW, h: H - pad * 2 },
+      text: { x: pad * 2 + photoW, y: pad, w: W - photoW - pad * 3, h: H - pad * 2 },
+    }
+  }
+
+  const photoW = Math.round(W * 0.38)
+  if (layout === 'photo-right') {
+    return {
+      photo: { x: W - pad - photoW, y: pad, w: photoW, h: H - pad * 2 },
+      text: { x: pad, y: pad, w: W - photoW - pad * 3, h: H - pad * 2 },
+    }
+  }
+
+  return {
+    photo: { x: pad, y: pad, w: photoW, h: H - pad * 2 },
+    text: { x: pad * 2 + photoW, y: pad, w: W - photoW - pad * 3, h: H - pad * 2 },
+  }
+}
+
+function photoRadius(shape: PhotoShapeId, box: Box) {
+  if (shape === 'circle') return Math.min(box.w, box.h) / 2
+  if (shape === 'soft') return Math.min(box.w, box.h) * 0.28
+  if (shape === 'square') return Math.min(24, Math.min(box.w, box.h) * 0.04)
+  return Math.min(box.w, box.h) * 0.08
+}
+
+function drawBackground(ctx: CanvasRenderingContext2D, input: ThumbInput) {
+  const { platform, niche } = input
+  const accent = accentOf(input)
+  const W = platform.width
+  const H = platform.height
+
+  const gradient = ctx.createLinearGradient(0, 0, W, H)
   gradient.addColorStop(0, niche.background[0])
   gradient.addColorStop(0.45, niche.background[1])
   gradient.addColorStop(1, niche.background[2])
   ctx.fillStyle = gradient
-  ctx.fillRect(0, 0, WIDTH, HEIGHT)
+  ctx.fillRect(0, 0, W, H)
 
   ctx.save()
-  ctx.globalAlpha = 0.22
-  ctx.fillStyle = niche.accent
+  ctx.globalAlpha = 0.24
+  ctx.fillStyle = accent
   ctx.beginPath()
-  ctx.ellipse(1080, 80, 280, 180, -0.4, 0, Math.PI * 2)
+  ctx.ellipse(W * 0.85, H * 0.12, W * 0.28, H * 0.18, -0.4, 0, Math.PI * 2)
   ctx.fill()
   ctx.beginPath()
-  ctx.ellipse(180, 640, 260, 160, 0.3, 0, Math.PI * 2)
+  ctx.ellipse(W * 0.12, H * 0.88, W * 0.24, H * 0.16, 0.3, 0, Math.PI * 2)
   ctx.fill()
   ctx.restore()
 
   ctx.save()
-  ctx.strokeStyle = `${niche.accent}33`
-  ctx.lineWidth = 10
+  ctx.strokeStyle = `${accent}40`
+  ctx.lineWidth = Math.max(8, Math.round(Math.min(W, H) * 0.01))
   ctx.beginPath()
-  ctx.moveTo(0, 560)
-  ctx.bezierCurveTo(320, 480, 640, 700, WIDTH, 420)
+  ctx.moveTo(0, H * 0.78)
+  ctx.bezierCurveTo(W * 0.25, H * 0.68, W * 0.55, H * 0.92, W, H * 0.55)
   ctx.stroke()
   ctx.restore()
 
-  const vignette = ctx.createRadialGradient(640, 360, 180, 640, 360, 760)
+  const vignette = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.2, W / 2, H / 2, Math.max(W, H) * 0.75)
   vignette.addColorStop(0, 'rgba(0,0,0,0)')
-  vignette.addColorStop(1, 'rgba(0,0,0,0.45)')
+  vignette.addColorStop(1, 'rgba(0,0,0,0.42)')
   ctx.fillStyle = vignette
-  ctx.fillRect(0, 0, WIDTH, HEIGHT)
+  ctx.fillRect(0, 0, W, H)
 }
 
-function drawPhotoOrShape(
+function drawPhoto(
   ctx: CanvasRenderingContext2D,
-  niche: Niche,
-  photo: HTMLImageElement | null,
+  input: ThumbInput,
+  box: Box,
 ) {
-  const x = 56
-  const y = 90
-  const w = 470
-  const h = 540
+  const accent = accentOf(input)
+  const radius = photoRadius(input.photoShape, box)
 
   ctx.save()
-  roundRect(ctx, x, y, w, h, 42)
-  ctx.clip()
-
-  if (photo) {
-    const scale = Math.max(w / photo.width, h / photo.height)
-    const dw = photo.width * scale
-    const dh = photo.height * scale
-    const dx = x + (w - dw) / 2
-    const dy = y + (h - dh) / 2
-    ctx.drawImage(photo, dx, dy, dw, dh)
-    const shade = ctx.createLinearGradient(x, y, x + w, y)
-    shade.addColorStop(0, 'rgba(0,0,0,0.15)')
-    shade.addColorStop(1, 'rgba(0,0,0,0.35)')
-    ctx.fillStyle = shade
-    ctx.fillRect(x, y, w, h)
+  if (input.photoShape === 'circle') {
+    ctx.beginPath()
+    ctx.arc(box.x + box.w / 2, box.y + box.h / 2, Math.min(box.w, box.h) / 2, 0, Math.PI * 2)
+    ctx.clip()
   } else {
-    ctx.fillStyle = niche.panel
-    ctx.fillRect(x, y, w, h)
-    drawFallbackIcon(ctx, niche, x + w / 2, y + h / 2)
+    roundRect(ctx, box.x, box.y, box.w, box.h, radius)
+    ctx.clip()
+  }
+
+  if (input.photo) {
+    const scale = Math.max(box.w / input.photo.width, box.h / input.photo.height)
+    const dw = input.photo.width * scale
+    const dh = input.photo.height * scale
+    const dx = box.x + (box.w - dw) / 2
+    const dy = box.y + (box.h - dh) / 2
+    ctx.drawImage(input.photo, dx, dy, dw, dh)
+    if (input.layout === 'photo-full') {
+      const shade = ctx.createLinearGradient(0, box.y + box.h * 0.35, 0, box.y + box.h)
+      shade.addColorStop(0, 'rgba(0,0,0,0)')
+      shade.addColorStop(1, 'rgba(0,0,0,0.72)')
+      ctx.fillStyle = shade
+      ctx.fillRect(box.x, box.y, box.w, box.h)
+    }
+  } else {
+    ctx.fillStyle = input.niche.panel
+    ctx.fillRect(box.x, box.y, box.w, box.h)
+    ctx.fillStyle = accent
+    ctx.beginPath()
+    ctx.moveTo(box.x + box.w * 0.42, box.y + box.h * 0.38)
+    ctx.lineTo(box.x + box.w * 0.62, box.y + box.h * 0.5)
+    ctx.lineTo(box.x + box.w * 0.42, box.y + box.h * 0.62)
+    ctx.closePath()
+    ctx.fill()
   }
   ctx.restore()
 
   ctx.save()
-  ctx.strokeStyle = niche.accent
-  ctx.lineWidth = 8
-  roundRect(ctx, x, y, w, h, 42)
-  ctx.stroke()
-  ctx.restore()
-}
-
-function drawFallbackIcon(ctx: CanvasRenderingContext2D, niche: Niche, cx: number, cy: number) {
-  ctx.save()
-  ctx.translate(cx, cy)
-  ctx.fillStyle = niche.accent
-  ctx.strokeStyle = niche.accent
-  ctx.lineWidth = 18
-  ctx.lineCap = 'round'
-  ctx.lineJoin = 'round'
-
-  // Keep a bold default mark when there is no photo.
-  ctx.beginPath()
-  ctx.moveTo(-40, -20)
-  ctx.lineTo(50, 0)
-  ctx.lineTo(-40, 20)
-  ctx.closePath()
-  ctx.fill()
-  ctx.beginPath()
-  ctx.arc(0, 0, 120, 0, Math.PI * 2)
-  ctx.stroke()
+  ctx.strokeStyle = accent
+  ctx.lineWidth = Math.max(6, Math.round(Math.min(box.w, box.h) * 0.02))
+  if (input.photoShape === 'circle') {
+    ctx.beginPath()
+    ctx.arc(box.x + box.w / 2, box.y + box.h / 2, Math.min(box.w, box.h) / 2, 0, Math.PI * 2)
+    ctx.stroke()
+  } else {
+    roundRect(ctx, box.x, box.y, box.w, box.h, radius)
+    ctx.stroke()
+  }
   ctx.restore()
 }
 
@@ -169,53 +241,93 @@ function drawPunchText(
   x: number,
   y: number,
   fill: string,
-  stroke = '#000000',
 ) {
   ctx.lineJoin = 'round'
   ctx.miterLimit = 2
-  ctx.strokeStyle = stroke
-  ctx.lineWidth = 18
+  ctx.strokeStyle = '#000000'
+  ctx.lineWidth = Math.max(12, Math.round(ctx.canvas.height * 0.012))
   ctx.strokeText(text, x, y)
   ctx.fillStyle = fill
   ctx.fillText(text, x, y)
 }
 
-function drawStickers(ctx: CanvasRenderingContext2D, niche: Niche, stickers: StickerId[]) {
+function drawTextBlock(ctx: CanvasRenderingContext2D, input: ThumbInput, box: Box) {
+  const accent = accentOf(input)
+  const tag = (input.tag.trim() || input.niche.badge).toUpperCase()
+  const title = input.title.trim() || 'YOUR TITLE HERE'
+  const vertical = input.platform.orientation === 'vertical'
+  const titleSize = vertical ? Math.round(box.w * 0.11) : Math.round(Math.min(box.h * 0.18, box.w * 0.12))
+  const tagSize = Math.round(titleSize * 0.34)
+  const maxLines = vertical ? 4 : 3
+
+  ctx.textAlign = 'left'
+  ctx.textBaseline = 'alphabetic'
+  ctx.font = `800 ${tagSize}px "DM Sans", sans-serif`
+  drawPunchText(ctx, tag, box.x, box.y + tagSize + 8, accent)
+
+  ctx.font = `400 ${titleSize}px "Bebas Neue", Impact, sans-serif`
+  const lines = wrapLines(ctx, title.toUpperCase(), box.w, maxLines)
+  let y = box.y + tagSize + titleSize + 28
+  for (const line of lines) {
+    drawPunchText(ctx, line, box.x, y, '#FFFFFF')
+    y += titleSize + 8
+  }
+
+  const pillH = Math.round(Math.min(44, box.h * 0.1))
+  const pillW = Math.min(box.w, Math.round(box.w * 0.7))
+  const pillY = Math.min(box.y + box.h - pillH - 8, y + 18)
+  ctx.fillStyle = accent
+  roundRect(ctx, box.x, pillY, pillW, pillH, pillH / 2)
+  ctx.fill()
+  ctx.fillStyle = '#101820'
+  ctx.font = `700 ${Math.round(pillH * 0.42)}px "DM Sans", sans-serif`
+  ctx.fillText(
+    `${input.platform.label} · ${input.platform.width}×${input.platform.height}`,
+    box.x + 16,
+    pillY + pillH * 0.68,
+  )
+}
+
+function drawStickers(ctx: CanvasRenderingContext2D, input: ThumbInput, photo: Box, text: Box) {
+  const accent = accentOf(input)
+  const scale = Math.min(input.platform.width, input.platform.height)
   const slots = [
-    { x: 470, y: 120 },
-    { x: 980, y: 150 },
-    { x: 1040, y: 470 },
-    { x: 430, y: 520 },
+    { x: photo.x + photo.w * 0.82, y: photo.y + photo.h * 0.18 },
+    { x: text.x + text.w * 0.78, y: text.y + text.h * 0.2 },
+    { x: text.x + text.w * 0.72, y: text.y + text.h * 0.72 },
+    { x: photo.x + photo.w * 0.2, y: photo.y + photo.h * 0.82 },
   ]
 
-  stickers.slice(0, 4).forEach((id, index) => {
+  input.stickers.slice(0, 4).forEach((id, index) => {
     const slot = slots[index]
-    drawSticker(ctx, niche, id, slot.x, slot.y, index % 2 === 0 ? -12 : 10)
+    drawSticker(ctx, accent, id, slot.x, slot.y, index % 2 === 0 ? -10 : 12, scale)
   })
 }
 
 function drawSticker(
   ctx: CanvasRenderingContext2D,
-  niche: Niche,
+  accent: string,
   id: StickerId,
   x: number,
   y: number,
   angle: number,
+  scale: number,
 ) {
+  const unit = Math.max(56, Math.round(scale * 0.08))
   ctx.save()
   ctx.translate(x, y)
   ctx.rotate((angle * Math.PI) / 180)
 
   if (id === 'arrow') {
-    ctx.fillStyle = niche.accent
+    ctx.fillStyle = accent
     ctx.beginPath()
-    ctx.moveTo(-20, -70)
-    ctx.lineTo(20, -70)
-    ctx.lineTo(20, 10)
-    ctx.lineTo(55, 10)
-    ctx.lineTo(0, 80)
-    ctx.lineTo(-55, 10)
-    ctx.lineTo(-20, 10)
+    ctx.moveTo(-unit * 0.2, -unit * 0.7)
+    ctx.lineTo(unit * 0.2, -unit * 0.7)
+    ctx.lineTo(unit * 0.2, unit * 0.1)
+    ctx.lineTo(unit * 0.55, unit * 0.1)
+    ctx.lineTo(0, unit * 0.8)
+    ctx.lineTo(-unit * 0.55, unit * 0.1)
+    ctx.lineTo(-unit * 0.2, unit * 0.1)
     ctx.closePath()
     ctx.fill()
   } else {
@@ -231,97 +343,58 @@ function drawSticker(
               : id === 'vs'
                 ? 'VS'
                 : 'CLICK'
-    const width = id === 'fire' || id === 'rupee' ? 120 : 160
-    ctx.fillStyle = id === 'fire' ? '#FF4D2E' : niche.accent
-    roundRect(ctx, -width / 2, -42, width, 84, 22)
+    const width = id === 'fire' || id === 'rupee' ? unit * 1.3 : unit * 1.7
+    ctx.fillStyle = id === 'fire' ? '#FF4D2E' : accent
+    roundRect(ctx, -width / 2, -unit * 0.45, width, unit * 0.9, unit * 0.22)
     ctx.fill()
     ctx.fillStyle = '#101820'
-    ctx.font =
-      id === 'fire' || id === 'rupee'
-        ? '700 48px "DM Sans", sans-serif'
-        : '700 42px "Bebas Neue", Impact, sans-serif'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.fillText(label, 0, 4)
+    ctx.font =
+      id === 'fire' || id === 'rupee'
+        ? `700 ${Math.round(unit * 0.5)}px "DM Sans", sans-serif`
+        : `700 ${Math.round(unit * 0.42)}px "Bebas Neue", Impact, sans-serif`
+    ctx.fillText(label, 0, 2)
   }
-
   ctx.restore()
 }
 
 export function renderThumbnail(ctx: CanvasRenderingContext2D, input: ThumbInput) {
-  const { niche, watermark, photo, stickers } = input
-  const title = input.title.trim() || 'YOUR TITLE HERE'
-  const tag = (input.tag.trim() || niche.badge).toUpperCase()
-
-  drawBackground(ctx, niche)
-  drawPhotoOrShape(ctx, niche, photo)
-
-  // Accent bar and copy block
-  ctx.fillStyle = niche.accent
-  roundRect(ctx, 560, 150, 18, 420, 9)
-  ctx.fill()
-
-  ctx.font = '800 30px "DM Sans", sans-serif'
-  drawPunchText(ctx, tag, 610, 205, niche.accent, '#000')
-
-  ctx.font = '400 96px "Bebas Neue", Impact, sans-serif'
-  const lines = wrapLines(ctx, title.toUpperCase(), 560, 3)
-  let y = 310
-  for (const line of lines) {
-    drawPunchText(ctx, line, 610, y, '#FFFFFF', '#000000')
-    y += 98
+  const { platform } = input
+  ctx.clearRect(0, 0, platform.width, platform.height)
+  drawBackground(ctx, input)
+  const boxes = layoutBoxes(platform, input.layout)
+  if (input.layout === 'photo-full') {
+    drawPhoto(ctx, input, boxes.photo)
+    drawTextBlock(ctx, input, boxes.text)
+  } else {
+    drawPhoto(ctx, input, boxes.photo)
+    drawTextBlock(ctx, input, boxes.text)
   }
+  drawStickers(ctx, input, boxes.photo, boxes.text)
 
-  ctx.fillStyle = niche.accent
-  roundRect(ctx, 610, 620, 280, 40, 20)
-  ctx.fill()
-  ctx.fillStyle = '#101820'
-  ctx.font = '700 20px "DM Sans", sans-serif'
-  ctx.fillText('YouTube ready · 1280×720', 628, 647)
-
-  drawStickers(ctx, niche, stickers)
-
-  if (watermark) {
-    ctx.fillStyle = 'rgba(255,255,255,0.6)'
-    ctx.font = '500 20px "JetBrains Mono", monospace'
-    ctx.fillText('ThumbForge free', 40, HEIGHT - 28)
+  if (input.watermark) {
+    ctx.fillStyle = 'rgba(255,255,255,0.62)'
+    ctx.font = `500 ${Math.max(16, Math.round(Math.min(platform.width, platform.height) * 0.025))}px "JetBrains Mono", monospace`
+    ctx.textAlign = 'left'
+    ctx.fillText('ThumbForge free', 24, platform.height - 24)
   }
 }
 
 export function createThumbnailDataUrl(input: ThumbInput): string {
   const canvas = document.createElement('canvas')
-  canvas.width = WIDTH
-  canvas.height = HEIGHT
+  canvas.width = input.platform.width
+  canvas.height = input.platform.height
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('This browser cannot create the image.')
   renderThumbnail(ctx, input)
   return canvas.toDataURL('image/png')
 }
 
-export function downloadThumbnail(input: ThumbInput, filename = 'thumbforge-youtube.png') {
+export function downloadThumbnail(input: ThumbInput) {
   const url = createThumbnailDataUrl(input)
   const link = document.createElement('a')
   link.href = url
-  link.download = filename
+  link.download = `thumbforge-${input.platform.id}.png`
   link.click()
-}
-
-export async function loadImageFromFile(file: File): Promise<HTMLImageElement> {
-  const url = URL.createObjectURL(file)
-  try {
-    const image = await loadImage(url)
-    return image
-  } finally {
-    // Keep object URL until image decode finishes; revoke after a tick.
-    setTimeout(() => URL.revokeObjectURL(url), 0)
-  }
-}
-
-function loadImage(url: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const image = new Image()
-    image.onload = () => resolve(image)
-    image.onerror = () => reject(new Error('That photo could not be opened. Try a JPG or PNG.'))
-    image.src = url
-  })
 }

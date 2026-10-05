@@ -1,16 +1,16 @@
 # ThumbForge
 
-Free YouTube thumbnail maker. Pick a look, write a title, add an optional photo, tap **Save image**.
+Free thumbnail maker for YouTube, Shorts/Reels, Instagram, LinkedIn, and Facebook.
 
 ## For anyone (no tech skill needed)
 
 1. Open the site.
-2. Pick a look (or tap an example).
-3. Type your video title.
-4. Optional: add your photo and stickers.
+2. Choose where you will post (YouTube, Shorts, Instagram…).
+3. Pick a look, move the photo, change shape/color if you want.
+4. Type your title. Optional: add your photo and stickers.
 5. Tap **Save image** — the PNG goes to your Downloads folder.
 
-Your photo stays on your device. Nothing is uploaded.
+Your photo stays on your device. We do not ask for name or email to download.
 
 ## Live site
 
@@ -25,7 +25,3 @@ npm run dev
 ```
 
 Open http://127.0.0.1:43201
-
-## What makes the image
-
-The page draws a 1280×720 picture in your browser (colors, photo, bold text, stickers), then downloads it as a PNG. Free saves keep a small ThumbForge mark.
