@@ -31,7 +31,7 @@ export const THUMB_TEMPLATES: ThumbTemplate[] = [
     fontId: 'bebas',
     titleFontSizePx: 110,
     textStyleId: 'classic',
-    stickers: ['new'],
+    stickers: [],
   },
   {
     id: 'shorts-bold',
@@ -41,7 +41,7 @@ export const THUMB_TEMPLATES: ThumbTemplate[] = [
     fontId: 'anton',
     titleFontSizePx: 128,
     textStyleId: 'thick',
-    stickers: ['fire', 'click'],
+    stickers: [],
   },
   {
     id: 'minimal-clean',
@@ -61,7 +61,7 @@ export const THUMB_TEMPLATES: ThumbTemplate[] = [
     fontId: 'oswald',
     titleFontSizePx: 88,
     textStyleId: 'classic',
-    stickers: ['tip'],
+    stickers: [],
   },
 ]
 

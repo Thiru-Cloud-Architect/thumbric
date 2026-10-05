@@ -110,7 +110,8 @@ function layoutBoxes(platform: Platform, layout: LayoutId): { photo: Box; text: 
   }
 
   if (layout === 'photo-top' || orientation === 'vertical') {
-    const photoH = layout === 'photo-top' || orientation === 'vertical' ? Math.round(H * 0.48) : Math.round(H * 0.5)
+    const photoH =
+      orientation === 'vertical' ? Math.round(H * 0.44) : Math.round(H * 0.48)
     return {
       photo: { x: pad, y: pad, w: W - pad * 2, h: photoH - pad },
       text: { x: pad, y: photoH + pad, w: W - pad * 2, h: H - photoH - pad * 2 },
@@ -414,9 +415,8 @@ function measureTextBlockBounds(input: ThumbInput, box: Box): Box {
 
   ctx.font = `${font.weight} ${titleSize}px ${font.css}`
   const lines = wrapLines(ctx, title.toUpperCase(), box.w, maxLines)
-  const contentH = tagSize + titleSize + 28 + lines.length * (titleSize + 8) + 18
-  const pillH = Math.round(Math.min(44, box.h * 0.1))
-  const totalH = Math.min(box.h, contentH + pillH + 12)
+  const contentH = tagSize + titleSize + 28 + lines.length * (titleSize + 8) + 12
+  const totalH = Math.min(box.h, contentH)
 
   return { x: box.x, y: box.y, w: box.w, h: totalH }
 }
@@ -432,7 +432,7 @@ export function hitTestTextBlock(input: ThumbInput, canvasX: number, canvasY: nu
   )
 }
 
-function drawTextBlock(ctx: CanvasRenderingContext2D, input: ThumbInput, layoutText: Box) {
+function drawTextBlock(ctx: CanvasRenderingContext2D, input: ThumbInput) {
   const box = textBoxFromInput(input)
   const accent = accentOf(input)
   const tag = (input.tag.trim() || input.niche.badge).toUpperCase()
@@ -445,30 +445,23 @@ function drawTextBlock(ctx: CanvasRenderingContext2D, input: ThumbInput, layoutT
 
   ctx.textAlign = 'left'
   ctx.textBaseline = 'alphabetic'
+  ctx.save()
+  ctx.beginPath()
+  ctx.rect(box.x, box.y, box.w, box.h)
+  ctx.clip()
+
   ctx.font = `800 ${tagSize}px "DM Sans", sans-serif`
   drawPunchText(ctx, tag, box.x, box.y + tagSize + 8, accent, styleId, accent)
 
   ctx.font = `${font.weight} ${titleSize}px ${font.css}`
   const lines = wrapLines(ctx, title.toUpperCase(), box.w, maxLines)
   let y = box.y + tagSize + titleSize + 28
+
   for (const line of lines) {
     drawPunchText(ctx, line, box.x, y, '#FFFFFF', styleId, accent)
     y += titleSize + 8
   }
-
-  const pillH = Math.round(Math.min(44, layoutText.h * 0.1))
-  const pillW = Math.min(box.w, Math.round(box.w * 0.7))
-  const pillY = Math.min(box.y + box.h - pillH - 8, y + 18)
-  ctx.fillStyle = accent
-  roundRect(ctx, box.x, pillY, pillW, pillH, pillH / 2)
-  ctx.fill()
-  ctx.fillStyle = '#101820'
-  ctx.font = `700 ${Math.round(pillH * 0.42)}px "DM Sans", sans-serif`
-  ctx.fillText(
-    `${input.platform.label} · ${input.platform.width}×${input.platform.height}`,
-    box.x + 16,
-    pillY + pillH * 0.68,
-  )
+  ctx.restore()
 
   if (input.highlightText) {
     const bounds = measureTextBlockBounds(input, box)
@@ -636,10 +629,10 @@ export function renderThumbnail(ctx: CanvasRenderingContext2D, input: ThumbInput
   const boxes = layoutBoxes(platform, input.layout)
   if (input.layout === 'photo-full') {
     drawPhoto(ctx, input, boxes.photo)
-    drawTextBlock(ctx, input, boxes.text)
+    drawTextBlock(ctx, input)
   } else {
     drawPhoto(ctx, input, boxes.photo)
-    drawTextBlock(ctx, input, boxes.text)
+    drawTextBlock(ctx, input)
   }
   drawStickers(ctx, input)
 

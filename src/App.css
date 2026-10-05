@@ -495,10 +495,11 @@ select.soft-select {
 }
 
 .font-menu {
-  max-height: 220px;
+  max-height: 240px;
   overflow: auto;
   display: grid;
-  gap: 0.55rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.4rem;
   padding: 0.35rem;
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -521,15 +522,18 @@ select.soft-select {
 .font-pick {
   appearance: none;
   width: 100%;
-  text-align: left;
-  padding: 0.45rem 0.6rem;
+  text-align: center;
+  padding: 0.5rem 0.35rem;
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: #101820;
   color: var(--ink);
-  font-size: 1.15rem;
-  line-height: 1.1;
+  font-size: 1.05rem;
+  line-height: 1.15;
   cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .font-pick.is-selected {

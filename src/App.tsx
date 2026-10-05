@@ -12,12 +12,7 @@ import {
   registerEmail,
   type Entitlement,
 } from './entitlement'
-import {
-  DEFAULT_TITLE_FONT_SIZE,
-  FONT_CATEGORIES,
-  FONTS,
-  type FontId,
-} from './fonts'
+import { DEFAULT_TITLE_FONT_SIZE, FONTS, type FontId } from './fonts'
 import { COLOR_PRESETS, LAYOUTS, PHOTO_SHAPES, type LayoutId, type PhotoShapeId } from './layout'
 import {
   NICHE_GROUPS,
@@ -34,7 +29,6 @@ import {
   hitTestTextBlock,
   renderThumbnail,
 } from './render'
-import { TEXT_STYLES, type TextStyleId } from './textStyle'
 import { THUMB_TEMPLATES, type TemplateId } from './templates'
 import {
   DEFAULT_STICKER_SLOTS,
@@ -45,51 +39,8 @@ import {
 } from './stickers'
 import './App.css'
 
-const SAMPLES = [
-  {
-    niche: 'tech' as NicheId,
-    tag: 'AI TOOLS',
-    title: 'I built an agent that reviews production PRs',
-    stickers: [
-      { id: 'new' as StickerId, x: 0.78, y: 0.2 },
-      { id: 'arrow' as StickerId, x: 0.7, y: 0.48 },
-    ],
-    platform: 'youtube' as PlatformId,
-    layout: 'photo-left' as LayoutId,
-    fontId: 'bebas' as FontId,
-    titleFontSizePx: 110,
-  },
-  {
-    niche: 'finance' as NicheId,
-    tag: 'SALARY',
-    title: 'How I saved 3 lakhs without cutting fun',
-    stickers: [
-      { id: 'rupee' as StickerId, x: 0.76, y: 0.22 },
-      { id: 'wow' as StickerId, x: 0.68, y: 0.7 },
-    ],
-    platform: 'linkedin' as PlatformId,
-    layout: 'photo-right' as LayoutId,
-    fontId: 'oswald' as FontId,
-    titleFontSizePx: 92,
-  },
-  {
-    niche: 'travel' as NicheId,
-    tag: 'TRIP',
-    title: '48 hours in Chennai on a student budget',
-    stickers: [
-      { id: 'fire' as StickerId, x: 0.74, y: 0.18 },
-      { id: 'click' as StickerId, x: 0.66, y: 0.72 },
-    ],
-    platform: 'shorts' as PlatformId,
-    layout: 'photo-top' as LayoutId,
-    fontId: 'anton' as FontId,
-    titleFontSizePx: 120,
-  },
-]
-
 const POPULAR: NicheId[] = ['tech', 'finance', 'gaming', 'cooking', 'travel', 'fitness', 'education', 'vlog']
 
-type PreviewAs = 'normal' | 'phone' | 'dark'
 type DragTarget = 'sticker' | 'text' | null
 
 export default function App() {
@@ -100,14 +51,11 @@ export default function App() {
   const [accentOverride, setAccentOverride] = useState('')
   const [fontId, setFontId] = useState<FontId>('bebas')
   const [titleFontSizePx, setTitleFontSizePx] = useState(DEFAULT_TITLE_FONT_SIZE)
-  const [textStyleId, setTextStyleId] = useState<TextStyleId>('classic')
   const [textPos, setTextPos] = useState(() =>
     defaultTextPosition(getPlatform('youtube'), 'photo-left'),
   )
-  const [showGuides, setShowGuides] = useState(false)
-  const [previewAs, setPreviewAs] = useState<PreviewAs>('normal')
-  const [title, setTitle] = useState(SAMPLES[0].title)
-  const [tag, setTag] = useState(SAMPLES[0].tag)
+  const [title, setTitle] = useState('')
+  const [tag, setTag] = useState('')
   const [query, setQuery] = useState('')
   const [showAllLooks, setShowAllLooks] = useState(false)
   const [stickers, setStickers] = useState<PlacedSticker[]>([])
@@ -150,9 +98,9 @@ export default function App() {
       stickers,
       fontId,
       titleFontSizePx,
-      textStyleId,
+      textStyleId: 'classic' as const,
       textPos,
-      showSafeZones: showGuides,
+      showSafeZones: false,
       activeStickerIndex: activeStickerIndex ?? undefined,
       highlightText: textSelected,
     }),
@@ -168,9 +116,7 @@ export default function App() {
       stickers,
       fontId,
       titleFontSizePx,
-      textStyleId,
       textPos,
-      showGuides,
       activeStickerIndex,
       textSelected,
       dragging,
@@ -204,6 +150,14 @@ export default function App() {
     setTextSelected(false)
   }, [platformId, layout])
 
+  useEffect(() => {
+    void Promise.all(
+      FONTS.map((item) =>
+        document.fonts.load(`${item.weight} 18px ${item.css}`).catch(() => undefined),
+      ),
+    )
+  }, [])
+
   function applyTemplate(id: TemplateId) {
     const template = THUMB_TEMPLATES.find((item) => item.id === id)
     if (!template) return
@@ -211,36 +165,11 @@ export default function App() {
     setLayout(template.layout)
     setFontId(template.fontId)
     setTitleFontSizePx(template.titleFontSizePx)
-    setTextStyleId(template.textStyleId)
-    setStickers(
-      template.stickers.map((stickerId, index) => ({
-        id: stickerId,
-        x: DEFAULT_STICKER_SLOTS[index]?.x ?? 0.75,
-        y: DEFAULT_STICKER_SLOTS[index]?.y ?? 0.25,
-      })),
-    )
+    setStickers([])
     setTextPos(defaultTextPosition(getPlatform(template.platform), template.layout))
     setActiveStickerIndex(null)
     setTextSelected(false)
     setStatus(`Template “${template.label}” applied. Drag text or stickers on the preview.`)
-  }
-
-  function applySample(index: number) {
-    const sample = SAMPLES[index]
-    setNicheId(sample.niche)
-    setTitle(sample.title)
-    setTag(sample.tag)
-    setStickers(sample.stickers)
-    setPlatformId(sample.platform)
-    setLayout(sample.layout)
-    setFontId(sample.fontId)
-    setTitleFontSizePx(sample.titleFontSizePx)
-    setTextStyleId('classic')
-    setTextPos(defaultTextPosition(getPlatform(sample.platform), sample.layout))
-    setActiveStickerIndex(null)
-    setTextSelected(false)
-    setQuery('')
-    setStatus('Example loaded. Drag stickers on the preview to move them.')
   }
 
   function toggleSticker(id: StickerId) {
@@ -485,20 +414,6 @@ export default function App() {
               saveMarked()
             }}
           >
-            <div className="samples" role="group" aria-label="Try a ready example">
-              <span className="soft-label">Try an example</span>
-              {SAMPLES.map((sample, index) => (
-                <button
-                  key={sample.title}
-                  type="button"
-                  className="chip"
-                  onClick={() => applySample(index)}
-                >
-                  Example {index + 1}
-                </button>
-              ))}
-            </div>
-
             <section className="step">
               <header>
                 <span className="step-num">1</span>
@@ -708,63 +623,22 @@ export default function App() {
 
               <fieldset>
                 <legend>Title font</legend>
+                <p className="field-help">Each button shows the real typeface. The live preview on the right updates instantly.</p>
                 <div className="font-menu" role="listbox" aria-label="Title font">
-                  {FONT_CATEGORIES.map((group) => {
-                    const items = FONTS.filter((item) => item.category === group.id)
-                    if (!items.length) return null
-                    return (
-                      <div key={group.id} className="font-menu-group">
-                        <p className="font-menu-label">{group.label}</p>
-                        {items.map((item) => (
-                          <button
-                            key={item.id}
-                            type="button"
-                            role="option"
-                            aria-selected={fontId === item.id}
-                            className={fontId === item.id ? 'font-pick is-selected' : 'font-pick'}
-                            style={{ fontFamily: item.css, fontWeight: item.weight }}
-                            onClick={() => setFontId(item.id)}
-                          >
-                            {item.label}
-                          </button>
-                        ))}
-                      </div>
-                    )
-                  })}
+                  {FONTS.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      role="option"
+                      aria-selected={fontId === item.id}
+                      className={fontId === item.id ? 'font-pick is-selected' : 'font-pick'}
+                      style={{ fontFamily: item.css, fontWeight: item.weight }}
+                      onClick={() => setFontId(item.id)}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
                 </div>
-              </fieldset>
-
-              <fieldset>
-                <legend>Title color style</legend>
-                <label className="soft-field">
-                  Style
-                  <select
-                    className="soft-select"
-                    value={textStyleId}
-                    onChange={(event) => setTextStyleId(event.target.value as TextStyleId)}
-                  >
-                    {TEXT_STYLES.map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {item.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <p className="photo-help">
-                  {TEXT_STYLES.find((item) => item.id === textStyleId)?.hint ??
-                    'Pick how the title reads on busy backgrounds.'}
-                </p>
-                <button
-                  type="button"
-                  className="linkish"
-                  onClick={() => {
-                    setTextPos(defaultTextPosition(platform, layout))
-                    setTextSelected(false)
-                    setStatus('Title position reset to the default for this layout.')
-                  }}
-                >
-                  Reset title position on preview
-                </button>
               </fieldset>
 
               <label>
@@ -787,6 +661,17 @@ export default function App() {
                   placeholder="Write the title people should notice"
                 />
               </label>
+              <button
+                type="button"
+                className="linkish"
+                onClick={() => {
+                  setTextPos(defaultTextPosition(platform, layout))
+                  setTextSelected(false)
+                  setStatus('Title position reset to the default for this layout.')
+                }}
+              >
+                Reset title position on preview
+              </button>
 
               <div className="photo-box">
                 <div>
@@ -887,48 +772,22 @@ export default function App() {
             <p className="preview-label">
               Preview · {platform.label} · drag title &amp; stickers to move
             </p>
-            <label className="soft-field">
-              View as
-              <select
-                className="soft-select"
-                value={previewAs}
-                onChange={(event) => setPreviewAs(event.target.value as PreviewAs)}
-              >
-                <option value="normal">Normal (editing size)</option>
-                <option value="phone">Small — like on a phone feed</option>
-                <option value="dark">YouTube app (dark background)</option>
-              </select>
-            </label>
-            <label className="check-inline">
-              <input
-                type="checkbox"
-                checked={showGuides}
-                onChange={(event) => setShowGuides(event.target.checked)}
+            <div
+              className={`preview-wrap ${platform.orientation}`}
+              style={{ aspectRatio: `${platform.width} / ${platform.height}` }}
+            >
+              <canvas
+                ref={canvasRef}
+                className="preview interactive"
+                width={platform.width}
+                height={platform.height}
+                aria-label="Thumbnail preview. Drag title and stickers to move them."
+                onPointerDown={onCanvasPointerDown}
+                onPointerMove={onCanvasPointerMove}
+                onPointerUp={onCanvasPointerUp}
+                onPointerCancel={onCanvasPointerUp}
               />
-              Show corner guides on preview (not included in download)
-            </label>
-            <div className={`preview-shell preview-as-${previewAs}`}>
-              <div
-                className={`preview-wrap ${platform.orientation}${previewAs === 'phone' ? ' squint' : ''}`}
-                style={{ aspectRatio: `${platform.width} / ${platform.height}` }}
-              >
-                <canvas
-                  ref={canvasRef}
-                  className="preview interactive"
-                  width={platform.width}
-                  height={platform.height}
-                  aria-label="Thumbnail preview. Drag title and stickers to move them."
-                  onPointerDown={onCanvasPointerDown}
-                  onPointerMove={onCanvasPointerMove}
-                  onPointerUp={onCanvasPointerUp}
-                  onPointerCancel={onCanvasPointerUp}
-                />
-              </div>
             </div>
-            <p className="preview-note">
-              Use “Small — like on a phone feed” before you export. If the title is hard to read,
-              increase the title size number or pick Bold outline.
-            </p>
           </div>
         </section>
 
