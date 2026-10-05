@@ -65,7 +65,7 @@ export default function App() {
   const [photo, setPhoto] = useState<HTMLImageElement | null>(null)
   const [photoName, setPhotoName] = useState('')
   const [photoUrl, setPhotoUrl] = useState('')
-  const [status, setStatus] = useState('Pick where you will post, then follow the steps.')
+  const [status, setStatus] = useState('Start with platform and look — preview starts clean with no stickers.')
   const [entitlement, setEntitlement] = useState<Entitlement>(() => loadEntitlement())
   const [modal, setModal] = useState<'none' | 'register' | 'pay'>('none')
   const [emailDraft, setEmailDraft] = useState('')
