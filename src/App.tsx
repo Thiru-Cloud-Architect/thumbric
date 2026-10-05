@@ -582,6 +582,7 @@ export default function App() {
           Tip: big face + short title + one sticker usually gets more clicks. Clean downloads need
           email registration first.
         </p>
+        <p className="build-tag">ThumbForge UI build 2026.10.05-c</p>
       </footer>
 
       {modal !== 'none' ? (
