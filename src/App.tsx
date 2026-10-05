@@ -12,7 +12,23 @@ import {
   registerEmail,
   type Entitlement,
 } from './entitlement'
-import { DEFAULT_TITLE_FONT_SIZE, FONTS, type FontId } from './fonts'
+import {
+  DEFAULT_TITLE_FONT_SIZE,
+  FONTS,
+  TITLE_FONT_SIZE_MAX,
+  TITLE_FONT_SIZE_MIN,
+  clampTitleFontSize,
+  type FontId,
+} from './fonts'
+import {
+  FaqAccordion,
+  HeroFlashy,
+  HowItWorks,
+  ProblemSection,
+  SiteFooter,
+  StatsStrip,
+  Testimonials,
+} from './LandingSections'
 import { COLOR_PRESETS, LAYOUTS, PHOTO_SHAPES, type LayoutId, type PhotoShapeId } from './layout'
 import {
   NICHE_GROUPS,
@@ -39,7 +55,7 @@ import {
   type PlacedSticker,
   type StickerId,
 } from './stickers'
-import { DOWNLOAD_PREFIX, PRODUCT_NAME, PRODUCT_TAGLINE, UI_BUILD } from './brand'
+import { DOWNLOAD_PREFIX, PRODUCT_NAME, UI_BUILD } from './brand'
 import './App.css'
 
 const POPULAR: NicheId[] = ['tech', 'finance', 'gaming', 'cooking', 'travel', 'fitness', 'education', 'vlog']
@@ -407,39 +423,25 @@ export default function App() {
           {PRODUCT_NAME}
         </a>
         <nav className="top-nav" aria-label="Sections">
+          <a href="#how">How it works</a>
           <a href="#editor">Editor</a>
           <a href="#faq">FAQ</a>
         </nav>
-        <a className="top-cta" href="#editor">
-          Open editor
+        <a className="top-cta top-cta-light" href="#editor">
+          Start free
         </a>
       </header>
 
       <main id="top">
-        <section className="hero-saas" aria-labelledby="hero-title">
-          <div className="hero-glow" aria-hidden />
-          <div className="hero-inner">
-            <p className="hero-badge">Free · In your browser · No AI required</p>
-            <h1 id="hero-title">Thumbnails that look pro before you publish</h1>
-            <p className="hero-sub">
-              {PRODUCT_TAGLINE}. Pick a platform, choose a mood, type your title, and watch the live
-              preview update — then export a PNG sized for YouTube, Shorts, or social.
-            </p>
-            <div className="hero-cta-row">
-              <a className="primary hero-cta" href="#editor">
-                Start creating
-              </a>
-              <button type="button" className="chip ghost" onClick={applyQuickIdea}>
-                Try Quick idea
-              </button>
-            </div>
-            <ul className="hero-trust">
-              <li>No signup for preview saves</li>
-              <li>Photo stays on your device</li>
-              <li>Drag title &amp; stickers on canvas</li>
-            </ul>
-          </div>
-        </section>
+        <HeroFlashy
+          onQuickIdea={() => {
+            applyQuickIdea()
+            document.getElementById('editor')?.scrollIntoView({ behavior: 'smooth' })
+          }}
+        />
+        <StatsStrip />
+        <ProblemSection />
+        <HowItWorks />
 
         <section id="editor" className="editor-section" aria-label="Thumbnail editor">
           <p className="section-kicker">Editor</p>
@@ -641,6 +643,57 @@ export default function App() {
                 </div>
               </fieldset>
 
+              <fieldset>
+                <legend>Title font</legend>
+                <div className="font-menu" role="listbox" aria-label="Title font">
+                  {FONTS.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      role="option"
+                      aria-selected={fontId === item.id}
+                      className={fontId === item.id ? 'font-pick is-selected' : 'font-pick'}
+                      style={{ fontFamily: item.css, fontWeight: item.weight }}
+                      onClick={() => setFontId(item.id)}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+
+              <div className="size-row">
+                <label className="size-field">
+                  Title size (px at 1280w)
+                  <input
+                    type="number"
+                    min={TITLE_FONT_SIZE_MIN}
+                    max={TITLE_FONT_SIZE_MAX}
+                    step={1}
+                    value={titleFontSizePx}
+                    onChange={(event) =>
+                      setTitleFontSizePx(clampTitleFontSize(Number(event.target.value)))
+                    }
+                  />
+                </label>
+                <label className="size-slider">
+                  <span className="sr-only">Title size slider</span>
+                  <input
+                    type="range"
+                    min={TITLE_FONT_SIZE_MIN}
+                    max={TITLE_FONT_SIZE_MAX}
+                    value={titleFontSizePx}
+                    onChange={(event) =>
+                      setTitleFontSizePx(clampTitleFontSize(Number(event.target.value)))
+                    }
+                  />
+                </label>
+              </div>
+              <p className="field-help">
+                Range {TITLE_FONT_SIZE_MIN}–{TITLE_FONT_SIZE_MAX}. Try 96–120 for YouTube titles; go
+                bigger for Shorts.
+              </p>
+
               <div className="photo-box">
                 <div>
                   <p className="photo-title">Your photo (optional)</p>
@@ -747,25 +800,6 @@ export default function App() {
                         onChange={(event) => setAccentOverride(event.target.value)}
                       />
                     </label>
-                  </fieldset>
-
-                  <fieldset>
-                    <legend>Title font</legend>
-                    <div className="font-menu" role="listbox" aria-label="Title font">
-                      {FONTS.map((item) => (
-                        <button
-                          key={item.id}
-                          type="button"
-                          role="option"
-                          aria-selected={fontId === item.id}
-                          className={fontId === item.id ? 'font-pick is-selected' : 'font-pick'}
-                          style={{ fontFamily: item.css, fontWeight: item.weight }}
-                          onClick={() => setFontId(item.id)}
-                        >
-                          {item.label}
-                        </button>
-                      ))}
-                    </div>
                   </fieldset>
 
                   <button
@@ -877,58 +911,14 @@ export default function App() {
           </button>
         </div>
 
-        <section id="faq" className="faq" aria-labelledby="faq-title">
-          <h2 id="faq-title">{PRODUCT_NAME} FAQ</h2>
-          <dl>
-            <div>
-              <dt>What is {PRODUCT_NAME}?</dt>
-              <dd>
-                A free browser thumbnail maker for YouTube (1280×720), Shorts/Reels, Instagram,
-                LinkedIn, and Facebook. Your photo stays on your device until you download the PNG.
-              </dd>
-            </div>
-            <div>
-              <dt>Do I need an account?</dt>
-              <dd>
-                No account for unlimited free preview downloads. Register with email for two clean
-                downloads without the preview mark, then an optional paid plan.
-              </dd>
-            </div>
-            <div>
-              <dt>How is this different from Canva?</dt>
-              <dd>
-                {PRODUCT_NAME} is built for speed: platform size, mood, templates, title styles, photo,
-                drag text and stickers, export — a focused editor instead of a general design
-                subscription.
-              </dd>
-            </div>
-            <div>
-              <dt>What file do I get?</dt>
-              <dd>
-                A PNG sized for the platform you chose. Upload it as your custom thumbnail in
-                YouTube Studio or your social app.
-              </dd>
-            </div>
-          </dl>
-          <p className="faq-link">
-            Share feedback: open the{' '}
-            <a href="https://github.com/Thiru-Cloud-Architect/thumbforge" rel="noopener noreferrer">
-              GitHub repo
-            </a>
-            .
-          </p>
-        </section>
+        <Testimonials />
+        <FaqAccordion />
       </main>
 
-      <footer>
-        <p>
-          Tip: use Mobile squint before you publish — if you cannot read the title, shorten it or
-          bump the font size.
-        </p>
-        <p className="build-tag">
-          {PRODUCT_NAME} · UI {UI_BUILD} · hosted at /thumbforge/ on GitHub Pages
-        </p>
-      </footer>
+      <SiteFooter />
+      <p className="build-tag build-tag-fixed">
+        {PRODUCT_NAME} · UI {UI_BUILD}
+      </p>
 
       {modal !== 'none' ? (
         <div className="modal-backdrop" role="presentation" onClick={() => setModal('none')}>
