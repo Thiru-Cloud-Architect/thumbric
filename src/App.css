@@ -494,14 +494,52 @@ select.soft-select {
   cursor: pointer;
 }
 
-.quick-fonts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
+.font-menu {
+  max-height: 220px;
+  overflow: auto;
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.35rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #0a1018;
 }
 
-.quick-fonts .chip {
-  font-size: 0.95rem;
+.font-menu-group {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.font-menu-label {
+  margin: 0.15rem 0 0;
+  font: 500 0.72rem/1.2 'DM Sans', sans-serif;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.font-pick {
+  appearance: none;
+  width: 100%;
+  text-align: left;
+  padding: 0.45rem 0.6rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #101820;
+  color: var(--ink);
+  font-size: 1.15rem;
+  line-height: 1.1;
+  cursor: pointer;
+}
+
+.font-pick.is-selected {
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
+  background: #1a2433;
+}
+
+.font-pick:hover {
+  border-color: rgba(214, 255, 60, 0.35);
 }
 
 textarea {

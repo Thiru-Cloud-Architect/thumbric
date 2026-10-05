@@ -13,13 +13,9 @@ import {
   type Entitlement,
 } from './entitlement'
 import {
-  clampTitleFontSize,
   DEFAULT_TITLE_FONT_SIZE,
   FONT_CATEGORIES,
   FONTS,
-  getFont,
-  TITLE_FONT_SIZE_MAX,
-  TITLE_FONT_SIZE_MIN,
   type FontId,
 } from './fonts'
 import { COLOR_PRESETS, LAYOUTS, PHOTO_SHAPES, type LayoutId, type PhotoShapeId } from './layout'
@@ -93,8 +89,6 @@ const SAMPLES = [
 
 const POPULAR: NicheId[] = ['tech', 'finance', 'gaming', 'cooking', 'travel', 'fitness', 'education', 'vlog']
 
-const POPULAR_FONTS: FontId[] = ['bebas', 'anton', 'bangers', 'oswald', 'montserrat', 'poppins']
-
 type PreviewAs = 'normal' | 'phone' | 'dark'
 type DragTarget = 'sticker' | 'text' | null
 
@@ -134,7 +128,6 @@ export default function App() {
 
   const niche = useMemo(() => getNiche(nicheId), [nicheId])
   const platform = useMemo(() => getPlatform(platformId), [platformId])
-  const selectedFont = useMemo(() => getFont(fontId), [fontId])
   const cleanLeft = cleanDownloadsLeft(entitlement)
   const paid = isPaid(entitlement)
   const lookList = useMemo(() => {
@@ -714,67 +707,31 @@ export default function App() {
               </fieldset>
 
               <fieldset>
-                <legend>Title font &amp; size</legend>
-                <p
-                  className="font-preview"
-                  style={{ fontFamily: selectedFont.css, fontWeight: selectedFont.weight }}
-                >
-                  {title.trim().slice(0, 40) || 'YOUR TITLE HERE'}
-                </p>
-                <label className="soft-field">
-                  Font
-                  <select
-                    className="soft-select"
-                    value={fontId}
-                    onChange={(event) => setFontId(event.target.value as FontId)}
-                  >
-                    {FONT_CATEGORIES.map((group) => (
-                      <optgroup key={group.id} label={group.label}>
-                        {FONTS.filter((item) => item.category === group.id).map((item) => (
-                          <option key={item.id} value={item.id}>
-                            {item.label}
-                          </option>
-                        ))}
-                      </optgroup>
-                    ))}
-                  </select>
-                </label>
-                <p className="photo-help">
-                  The menu uses one system font — check the preview line above to see the real look.
-                </p>
-                <div className="quick-fonts" role="group" aria-label="Popular fonts">
-                  {POPULAR_FONTS.map((id) => {
-                    const item = getFont(id)
+                <legend>Title font</legend>
+                <div className="font-menu" role="listbox" aria-label="Title font">
+                  {FONT_CATEGORIES.map((group) => {
+                    const items = FONTS.filter((item) => item.category === group.id)
+                    if (!items.length) return null
                     return (
-                      <button
-                        key={id}
-                        type="button"
-                        className={fontId === id ? 'chip solid' : 'chip'}
-                        style={{ fontFamily: item.css, fontWeight: item.weight }}
-                        onClick={() => setFontId(id)}
-                      >
-                        {item.label}
-                      </button>
+                      <div key={group.id} className="font-menu-group">
+                        <p className="font-menu-label">{group.label}</p>
+                        {items.map((item) => (
+                          <button
+                            key={item.id}
+                            type="button"
+                            role="option"
+                            aria-selected={fontId === item.id}
+                            className={fontId === item.id ? 'font-pick is-selected' : 'font-pick'}
+                            style={{ fontFamily: item.css, fontWeight: item.weight }}
+                            onClick={() => setFontId(item.id)}
+                          >
+                            {item.label}
+                          </button>
+                        ))}
+                      </div>
                     )
                   })}
                 </div>
-                <label className="soft-field">
-                  Title size (pixels at YouTube width)
-                  <input
-                    type="number"
-                    min={TITLE_FONT_SIZE_MIN}
-                    max={TITLE_FONT_SIZE_MAX}
-                    step={1}
-                    value={titleFontSizePx}
-                    onChange={(event) =>
-                      setTitleFontSizePx(clampTitleFontSize(Number(event.target.value)))
-                    }
-                  />
-                </label>
-                <p className="photo-help">
-                  Typical range {TITLE_FONT_SIZE_MIN}–{TITLE_FONT_SIZE_MAX}. Try 96–120 for YouTube
-                  titles.
-                </p>
               </fieldset>
 
               <fieldset>
@@ -1023,7 +980,7 @@ export default function App() {
           Tip: use Mobile squint before you publish — if you cannot read the title, shorten it or
           bump the font size.
         </p>
-        <p className="build-tag">ThumbForge UI build 2026.10.05-k</p>
+        <p className="build-tag">ThumbForge UI build 2026.10.05-l</p>
       </footer>
 
       {modal !== 'none' ? (
