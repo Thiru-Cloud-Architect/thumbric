@@ -21,7 +21,9 @@ import {
   filterNiches,
   getNiche,
 } from './niches'
+import { pickQuickIdea } from './quickIdeas'
 import { PLATFORMS, type PlatformId, getPlatform } from './platforms'
+import { TEXT_STYLES, type TextStyleId } from './textStyle'
 import {
   defaultTextPosition,
   downloadThumbnail,
@@ -50,6 +52,7 @@ export default function App() {
   const [photoShape, setPhotoShape] = useState<PhotoShapeId>('rounded')
   const [accentOverride, setAccentOverride] = useState('')
   const [fontId, setFontId] = useState<FontId>('bebas')
+  const [textStyleId, setTextStyleId] = useState<TextStyleId>('classic')
   const [titleFontSizePx, setTitleFontSizePx] = useState(DEFAULT_TITLE_FONT_SIZE)
   const [textPos, setTextPos] = useState(() =>
     defaultTextPosition(getPlatform('youtube'), 'photo-left'),
@@ -98,7 +101,7 @@ export default function App() {
       stickers,
       fontId,
       titleFontSizePx,
-      textStyleId: 'classic' as const,
+      textStyleId,
       textPos,
       showSafeZones: false,
       activeStickerIndex: activeStickerIndex ?? undefined,
@@ -116,6 +119,7 @@ export default function App() {
       stickers,
       fontId,
       titleFontSizePx,
+      textStyleId,
       textPos,
       activeStickerIndex,
       textSelected,
@@ -164,12 +168,31 @@ export default function App() {
     setPlatformId(template.platform)
     setLayout(template.layout)
     setFontId(template.fontId)
+    setTextStyleId(template.textStyleId)
     setTitleFontSizePx(template.titleFontSizePx)
     setStickers([])
     setTextPos(defaultTextPosition(getPlatform(template.platform), template.layout))
     setActiveStickerIndex(null)
     setTextSelected(false)
     setStatus(`Template “${template.label}” applied. Drag text or stickers on the preview.`)
+  }
+
+  function applyQuickIdea() {
+    const idea = pickQuickIdea(platform)
+    setNicheId(idea.nicheId)
+    setLayout(idea.layout)
+    setFontId(idea.fontId)
+    setTextStyleId(idea.textStyleId)
+    setPhotoShape(idea.photoShape)
+    setAccentOverride('')
+    setStickers([])
+    setActiveStickerIndex(null)
+    setTextSelected(false)
+    setTextPos(defaultTextPosition(platform, idea.layout))
+    const look = getNiche(idea.nicheId)
+    setStatus(
+      `Quick idea: ${look.label} · ${LAYOUTS.find((item) => item.id === idea.layout)?.label ?? idea.layout}. Edit title on the preview.`,
+    )
   }
 
   function toggleSticker(id: StickerId) {
@@ -204,6 +227,7 @@ export default function App() {
     if (!point) return
     const stickerIndex = hitTestSticker(stickers, platform, point.x, point.y)
     if (stickerIndex >= 0) {
+      event.currentTarget.classList.add('is-dragging')
       event.currentTarget.setPointerCapture(event.pointerId)
       dragIndexRef.current = stickerIndex
       dragTargetRef.current = 'sticker'
@@ -214,6 +238,7 @@ export default function App() {
       return
     }
     if (hitTestTextBlock(previewInput, point.x, point.y)) {
+      event.currentTarget.classList.add('is-dragging')
       event.currentTarget.setPointerCapture(event.pointerId)
       dragTargetRef.current = 'text'
       dragIndexRef.current = null
@@ -263,6 +288,7 @@ export default function App() {
   }
 
   function onCanvasPointerUp(event: ReactPointerEvent<HTMLCanvasElement>) {
+    event.currentTarget.classList.remove('is-dragging')
     if (dragTargetRef.current === null) return
     dragTargetRef.current = null
     dragIndexRef.current = null
@@ -447,6 +473,16 @@ export default function App() {
                   <p>Only one card has a checkmark — that is your color mood.</p>
                 </div>
               </header>
+              <div className="quick-row">
+                <button type="button" className="chip solid" onClick={applyQuickIdea}>
+                  Quick idea
+                </button>
+                <p className="field-help quick-hint">
+                  Like a mini variant generator — random mood, layout, font, and title style. No
+                  stickers.
+                </p>
+              </div>
+
               <label className="search">
                 Search looks
                 <input
@@ -525,26 +561,35 @@ export default function App() {
                 </div>
               </header>
 
-              <label className="soft-field">
-                Optional starter layout
-                <select
-                  className="soft-select"
-                  defaultValue=""
-                  onChange={(event) => {
-                    const value = event.target.value as TemplateId | ''
-                    if (!value) return
-                    applyTemplate(value)
-                    event.target.value = ''
-                  }}
-                >
-                  <option value="">Choose one if you want a head start…</option>
-                  {THUMB_TEMPLATES.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <fieldset>
+                <legend>Starter templates</legend>
+                <p className="field-help">Tap a card for size, layout, and font — then add your title.</p>
+                <div className="template-gallery" role="list">
+                  {THUMB_TEMPLATES.map((item) => {
+                    const tplPlatform = getPlatform(item.platform)
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        className="template-card"
+                        role="listitem"
+                        onClick={() => applyTemplate(item.id)}
+                      >
+                        <span
+                          className={`template-thumb layout-${item.layout}`}
+                          aria-hidden
+                        />
+                        <span className="template-copy">
+                          <strong>{item.label}</strong>
+                          <small>
+                            {tplPlatform.label} · {item.layout.replace('photo-', '')}
+                          </small>
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </fieldset>
 
               <fieldset>
                 <legend>Move photo</legend>
@@ -661,6 +706,33 @@ export default function App() {
                   placeholder="Write the title people should notice"
                 />
               </label>
+
+              <fieldset>
+                <legend>Title style</legend>
+                <p className="field-help">Compact chips — the live preview on the right is the real check.</p>
+                <div className="title-style-row" role="listbox" aria-label="Title style">
+                  {TEXT_STYLES.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      role="option"
+                      aria-selected={textStyleId === item.id}
+                      className={
+                        textStyleId === item.id ? 'title-style-chip is-selected' : 'title-style-chip'
+                      }
+                      data-style={item.id}
+                      title={item.hint}
+                      onClick={() => setTextStyleId(item.id)}
+                    >
+                      <span className="title-style-sample" aria-hidden>
+                        Aa
+                      </span>
+                      <span className="title-style-label">{item.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+
               <button
                 type="button"
                 className="linkish"
@@ -791,6 +863,15 @@ export default function App() {
           </div>
         </section>
 
+        <div className="mobile-save-dock" aria-label="Quick save">
+          <button type="button" className="primary" onClick={saveMarked}>
+            Save preview
+          </button>
+          <button type="button" className="chip solid" onClick={requestCleanSave}>
+            Clean save
+          </button>
+        </div>
+
         <section className="faq" aria-labelledby="faq-title">
           <h2 id="faq-title">Free YouTube & Shorts thumbnail maker (FAQ)</h2>
           <dl>
@@ -811,9 +892,9 @@ export default function App() {
             <div>
               <dt>How is this different from Canva?</dt>
               <dd>
-                ThumbForge is focused on speed: pick platform size, niche look, title, photo, drag
-                stickers and text, export. No template library yet — built for creators who want a
-                thumbnail in under a minute.
+                ThumbForge is focused on speed: platform size, mood, templates, title styles, photo,
+                drag text and stickers, export — built for creators who want a thumbnail in under a
+                minute without a design tool subscription.
               </dd>
             </div>
             <div>
@@ -839,7 +920,7 @@ export default function App() {
           Tip: use Mobile squint before you publish — if you cannot read the title, shorten it or
           bump the font size.
         </p>
-        <p className="build-tag">ThumbForge UI build 2026.10.05-l</p>
+        <p className="build-tag">ThumbForge UI build 2026.10.05-m</p>
       </footer>
 
       {modal !== 'none' ? (
