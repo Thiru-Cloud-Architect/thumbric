@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { NICHES, NICHE_GROUPS, filterNiches, getNiche, HEIGHT, WIDTH } from './niches'
+import { STICKERS } from './stickers'
 
 describe('ThumbForge niches', () => {
   it('covers many creator channel types at YouTube size', () => {
@@ -23,5 +24,13 @@ describe('ThumbForge niches', () => {
     expect(filterNiches('money').every((niche) => niche.group === 'Money')).toBe(true)
     expect(filterNiches('zzzz').length).toBe(0)
     expect(NICHE_GROUPS).toContain('Lifestyle')
+  })
+})
+
+describe('stickers', () => {
+  it('offers simple click-boost stickers', () => {
+    expect(STICKERS.length).toBeGreaterThanOrEqual(6)
+    expect(STICKERS.some((sticker) => sticker.id === 'arrow')).toBe(true)
+    expect(STICKERS.some((sticker) => sticker.id === 'rupee')).toBe(true)
   })
 })

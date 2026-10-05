@@ -1,21 +1,22 @@
 # ThumbForge
 
-Free YouTube thumbnail generator. Type a title, pick a niche, download a 1280×720 PNG. No account. No paid API. Everything runs in the browser.
+Free YouTube thumbnail maker. Pick a look, write a title, add an optional photo, tap **Save image**.
 
-## Who it is for
+## For anyone (no tech skill needed)
 
-Creators who need a clean thumbnail fast for tech, finance, education, gaming, or cooking videos.
+1. Open the site.
+2. Pick a look (or tap an example).
+3. Type your video title.
+4. Optional: add your photo and stickers.
+5. Tap **Save image** — the PNG goes to your Downloads folder.
 
-## What it does
+Your photo stays on your device. Nothing is uploaded.
 
-- Live preview as you type
-- Five niche styles with fixed YouTube size
-- Download PNG with a small free watermark
-- Zero cloud cost on the free path (canvas only)
+## Live site
+
+https://thiru-cloud-architect.github.io/thumbforge/
 
 ## Run locally
-
-Requires Node.js 20+.
 
 ```bash
 npm install
@@ -25,26 +26,6 @@ npm run dev
 
 Open http://127.0.0.1:43201
 
-## Live site
+## What makes the image
 
-Public repo and GitHub Pages:
-
-https://thiru-cloud-architect.github.io/thumbforge/
-
-## Deploy free
-
-```bash
-npm run build
-```
-
-GitHub Pages is already wired via `.github/workflows/pages.yml`. Push to `main` redeploys. You can also upload `dist/` to Cloudflare Pages or Netlify. No server required.
-
-## Money later
-
-1. Keep free exports watermarked.
-2. Charge for clean HD packs when people ask.
-3. Add optional AI fill / face photo only after traffic shows up.
-
-## Not included
-
-Trademark search, logo brand kits, or paid model calls. Those are separate products.
+The page draws a 1280×720 picture in your browser (colors, photo, bold text, stickers), then downloads it as a PNG. Free saves keep a small ThumbForge mark.
