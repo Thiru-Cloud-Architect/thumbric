@@ -1,4 +1,5 @@
-const STORAGE_KEY = 'thumbforge-entitlement-v1'
+const STORAGE_KEY = 'thumbnailpulse-entitlement-v1'
+const LEGACY_STORAGE_KEY = 'thumbforge-entitlement-v1'
 export const FREE_CLEAN_DOWNLOADS = 2
 export const PAID_PRICE_LABEL = '₹99 / month'
 
@@ -14,7 +15,11 @@ function emptyEntitlement(): Entitlement {
 
 export function loadEntitlement(): Entitlement {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    let raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) {
+      raw = localStorage.getItem(LEGACY_STORAGE_KEY)
+      if (raw) localStorage.setItem(STORAGE_KEY, raw)
+    }
     if (!raw) return emptyEntitlement()
     const parsed = JSON.parse(raw) as Partial<Entitlement>
     return {

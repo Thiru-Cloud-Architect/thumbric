@@ -39,6 +39,7 @@ import {
   type PlacedSticker,
   type StickerId,
 } from './stickers'
+import { DOWNLOAD_PREFIX, PRODUCT_NAME, PRODUCT_TAGLINE, UI_BUILD } from './brand'
 import './App.css'
 
 const POPULAR: NicheId[] = ['tech', 'finance', 'gaming', 'cooking', 'travel', 'fitness', 'education', 'vlog']
@@ -331,7 +332,7 @@ export default function App() {
   function saveMarked() {
     try {
       downloadThumbnail({ ...previewInput, watermark: true })
-      setStatus(`Saved free preview. Look in Downloads for thumbforge-${platform.id}.png`)
+      setStatus(`Saved free preview. Look in Downloads for ${DOWNLOAD_PREFIX}-${platform.id}.png`)
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Could not save the image.')
     }
@@ -400,34 +401,48 @@ export default function App() {
     <div className="page">
       <header className="top">
         <a className="brand" href="#top">
-          ThumbForge
+          <span className="brand-mark" aria-hidden>
+            ▶
+          </span>
+          {PRODUCT_NAME}
         </a>
-        <p className="tagline">Free YouTube / Shorts / Instagram / LinkedIn thumbnails</p>
+        <nav className="top-nav" aria-label="Sections">
+          <a href="#editor">Editor</a>
+          <a href="#faq">FAQ</a>
+        </nav>
+        <a className="top-cta" href="#editor">
+          Open editor
+        </a>
       </header>
 
       <main id="top">
-        <section className="hero">
-          <div>
-            <p className="kicker">Free · No account needed for preview</p>
-            <h1>Title in. Thumbnail out.</h1>
-            <p className="lede">
-              Choose where you will post, pick a look, add your title and photo, then save. Clean
-              downloads need a quick email register.
+        <section className="hero-saas" aria-labelledby="hero-title">
+          <div className="hero-glow" aria-hidden />
+          <div className="hero-inner">
+            <p className="hero-badge">Free · In your browser · No AI required</p>
+            <h1 id="hero-title">Thumbnails that look pro before you publish</h1>
+            <p className="hero-sub">
+              {PRODUCT_TAGLINE}. Pick a platform, choose a mood, type your title, and watch the live
+              preview update — then export a PNG sized for YouTube, Shorts, or social.
             </p>
+            <div className="hero-cta-row">
+              <a className="primary hero-cta" href="#editor">
+                Start creating
+              </a>
+              <button type="button" className="chip ghost" onClick={applyQuickIdea}>
+                Try Quick idea
+              </button>
+            </div>
+            <ul className="hero-trust">
+              <li>No signup for preview saves</li>
+              <li>Photo stays on your device</li>
+              <li>Drag title &amp; stickers on canvas</li>
+            </ul>
           </div>
-          <ol className="steps-hero">
-            <li>
-              <strong>1</strong> Choose platform & look
-            </li>
-            <li>
-              <strong>2</strong> Arrange photo & text
-            </li>
-            <li>
-              <strong>3</strong> Save the image
-            </li>
-          </ol>
         </section>
 
+        <section id="editor" className="editor-section" aria-label="Thumbnail editor">
+          <p className="section-kicker">Editor</p>
         <section className="workbench" aria-label="Thumbnail maker">
           <p className="picks-bar" aria-live="polite">
             Your picks: <strong>{platform.label}</strong> · Look: <strong>{niche.label}</strong>
@@ -444,11 +459,10 @@ export default function App() {
               <header>
                 <span className="step-num">1</span>
                 <div>
-                  <h2>Where will you post?</h2>
-                  <p>This sets the size: horizontal, square, or vertical.</p>
+                  <h2>Platform &amp; mood</h2>
+                  <p>Size and color vibe — one tap each.</p>
                 </div>
               </header>
-              <p className="field-help">Choose one platform (only the white ring = selected).</p>
               <div className="choice-row" role="radiogroup" aria-label="Platform">
                 {PLATFORMS.map((item) => (
                   <button
@@ -467,20 +481,11 @@ export default function App() {
                 ))}
               </div>
 
-              <header className="subhead">
-                <div>
-                  <h2>Pick a look</h2>
-                  <p>Only one card has a checkmark — that is your color mood.</p>
-                </div>
-              </header>
               <div className="quick-row">
                 <button type="button" className="chip solid" onClick={applyQuickIdea}>
                   Quick idea
                 </button>
-                <p className="field-help quick-hint">
-                  Like a mini variant generator — random mood, layout, font, and title style. No
-                  stickers.
-                </p>
+                <p className="field-help quick-hint">Shuffle mood, layout, font &amp; title style.</p>
               </div>
 
               <label className="search">
@@ -556,14 +561,13 @@ export default function App() {
               <header>
                 <span className="step-num">2</span>
                 <div>
-                  <h2>Arrange and customize</h2>
-                  <p>Move the photo, change its shape, and pick your favorite color.</p>
+                  <h2>Title &amp; layout</h2>
+                  <p>Templates and text first — fine-tune under Advanced.</p>
                 </div>
               </header>
 
               <fieldset>
                 <legend>Starter templates</legend>
-                <p className="field-help">Tap a card for size, layout, and font — then add your title.</p>
                 <div className="template-gallery" role="list">
                   {THUMB_TEMPLATES.map((item) => {
                     const tplPlatform = getPlatform(item.platform)
@@ -591,101 +595,6 @@ export default function App() {
                 </div>
               </fieldset>
 
-              <fieldset>
-                <legend>Move photo</legend>
-                <div className="choice-row">
-                  {LAYOUTS.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      className={item.id === layout ? 'choice is-selected' : 'choice'}
-                      role="radio"
-                      aria-checked={item.id === layout}
-                      onClick={() => setLayout(item.id)}
-                    >
-                      <span>{item.label}</span>
-                      <small>{item.hint}</small>
-                    </button>
-                  ))}
-                </div>
-              </fieldset>
-
-              <fieldset>
-                <legend>Photo shape</legend>
-                <div className="choice-row">
-                  {PHOTO_SHAPES.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      className={item.id === photoShape ? 'choice is-selected' : 'choice'}
-                      role="radio"
-                      aria-checked={item.id === photoShape}
-                      onClick={() => setPhotoShape(item.id)}
-                    >
-                      <span>{item.label}</span>
-                      <small>{item.hint}</small>
-                    </button>
-                  ))}
-                </div>
-              </fieldset>
-
-              <fieldset>
-                <legend>Accent color</legend>
-                <p className="field-help">Pick one swatch. “From mood” matches your look card above.</p>
-                <div className="choice-row colors" role="radiogroup" aria-label="Accent color">
-                  {COLOR_PRESETS.map((item) => {
-                    const selected =
-                      item.value === '' ? accentOverride === '' : accentOverride === item.value
-                    return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      className={selected ? 'swatch is-selected' : 'swatch'}
-                      role="radio"
-                      aria-checked={selected}
-                      onClick={() => setAccentOverride(item.value)}
-                      title={item.label}
-                      style={
-                        item.value
-                          ? { background: item.value, color: '#101820' }
-                          : { background: niche.accent, color: '#101820' }
-                      }
-                    >
-                      {item.id === 'look' ? 'From mood' : item.label}
-                    </button>
-                    )
-                  })}
-                </div>
-                <label className="tiny-color">
-                  Or pick any color
-                  <input
-                    type="color"
-                    value={accentOverride || niche.accent}
-                    onChange={(event) => setAccentOverride(event.target.value)}
-                  />
-                </label>
-              </fieldset>
-
-              <fieldset>
-                <legend>Title font</legend>
-                <p className="field-help">Each button shows the real typeface. The live preview on the right updates instantly.</p>
-                <div className="font-menu" role="listbox" aria-label="Title font">
-                  {FONTS.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      role="option"
-                      aria-selected={fontId === item.id}
-                      className={fontId === item.id ? 'font-pick is-selected' : 'font-pick'}
-                      style={{ fontFamily: item.css, fontWeight: item.weight }}
-                      onClick={() => setFontId(item.id)}
-                    >
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
-              </fieldset>
-
               <label>
                 Short tag (top line)
                 <input
@@ -709,7 +618,6 @@ export default function App() {
 
               <fieldset>
                 <legend>Title style</legend>
-                <p className="field-help">Compact chips — the live preview on the right is the real check.</p>
                 <div className="title-style-row" role="listbox" aria-label="Title style">
                   {TEXT_STYLES.map((item) => (
                     <button
@@ -732,18 +640,6 @@ export default function App() {
                   ))}
                 </div>
               </fieldset>
-
-              <button
-                type="button"
-                className="linkish"
-                onClick={() => {
-                  setTextPos(defaultTextPosition(platform, layout))
-                  setTextSelected(false)
-                  setStatus('Title position reset to the default for this layout.')
-                }}
-              >
-                Reset title position on preview
-              </button>
 
               <div className="photo-box">
                 <div>
@@ -776,28 +672,137 @@ export default function App() {
                 />
               </div>
 
-              <fieldset>
-                <legend>Stickers (tap up to 3, then drag on preview)</legend>
-                <div className="sticker-row">
-                  {STICKERS.map((sticker) => (
-                    <button
-                      key={sticker.id}
-                      type="button"
-                      className={
-                        stickers.some((item) => item.id === sticker.id) ? 'sticker active' : 'sticker'
-                      }
-                      aria-pressed={stickers.some((item) => item.id === sticker.id)}
-                      onClick={() => toggleSticker(sticker.id)}
-                      title={sticker.hint}
-                    >
-                      {sticker.label}
-                    </button>
-                  ))}
+              <details className="fold-panel">
+                <summary>Advanced layout &amp; extras</summary>
+                <div className="fold-body">
+                  <fieldset>
+                    <legend>Photo placement</legend>
+                    <div className="choice-row">
+                      {LAYOUTS.map((item) => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          className={item.id === layout ? 'choice is-selected' : 'choice'}
+                          role="radio"
+                          aria-checked={item.id === layout}
+                          onClick={() => setLayout(item.id)}
+                        >
+                          <span>{item.label}</span>
+                          <small>{item.hint}</small>
+                        </button>
+                      ))}
+                    </div>
+                  </fieldset>
+
+                  <fieldset>
+                    <legend>Photo shape</legend>
+                    <div className="choice-row">
+                      {PHOTO_SHAPES.map((item) => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          className={item.id === photoShape ? 'choice is-selected' : 'choice'}
+                          role="radio"
+                          aria-checked={item.id === photoShape}
+                          onClick={() => setPhotoShape(item.id)}
+                        >
+                          <span>{item.label}</span>
+                          <small>{item.hint}</small>
+                        </button>
+                      ))}
+                    </div>
+                  </fieldset>
+
+                  <fieldset>
+                    <legend>Accent color</legend>
+                    <div className="choice-row colors" role="radiogroup" aria-label="Accent color">
+                      {COLOR_PRESETS.map((item) => {
+                        const selected =
+                          item.value === '' ? accentOverride === '' : accentOverride === item.value
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            className={selected ? 'swatch is-selected' : 'swatch'}
+                            role="radio"
+                            aria-checked={selected}
+                            onClick={() => setAccentOverride(item.value)}
+                            title={item.label}
+                            style={
+                              item.value
+                                ? { background: item.value, color: '#101820' }
+                                : { background: niche.accent, color: '#101820' }
+                            }
+                          >
+                            {item.id === 'look' ? 'From mood' : item.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                    <label className="tiny-color">
+                      Custom color
+                      <input
+                        type="color"
+                        value={accentOverride || niche.accent}
+                        onChange={(event) => setAccentOverride(event.target.value)}
+                      />
+                    </label>
+                  </fieldset>
+
+                  <fieldset>
+                    <legend>Title font</legend>
+                    <div className="font-menu" role="listbox" aria-label="Title font">
+                      {FONTS.map((item) => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          role="option"
+                          aria-selected={fontId === item.id}
+                          className={fontId === item.id ? 'font-pick is-selected' : 'font-pick'}
+                          style={{ fontFamily: item.css, fontWeight: item.weight }}
+                          onClick={() => setFontId(item.id)}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                  </fieldset>
+
+                  <button
+                    type="button"
+                    className="linkish"
+                    onClick={() => {
+                      setTextPos(defaultTextPosition(platform, layout))
+                      setTextSelected(false)
+                      setStatus('Title position reset for this layout.')
+                    }}
+                  >
+                    Reset title position
+                  </button>
+
+                  <fieldset>
+                    <legend>Stickers (up to 3)</legend>
+                    <div className="sticker-row">
+                      {STICKERS.map((sticker) => (
+                        <button
+                          key={sticker.id}
+                          type="button"
+                          className={
+                            stickers.some((item) => item.id === sticker.id)
+                              ? 'sticker active'
+                              : 'sticker'
+                          }
+                          aria-pressed={stickers.some((item) => item.id === sticker.id)}
+                          onClick={() => toggleSticker(sticker.id)}
+                          title={sticker.hint}
+                        >
+                          {sticker.label}
+                        </button>
+                      ))}
+                    </div>
+                  </fieldset>
                 </div>
-                <p className="photo-help">
-                  Drag the title block or stickers directly on the live preview.
-                </p>
-              </fieldset>
+              </details>
             </section>
 
             <section className="step save-step">
@@ -841,9 +846,7 @@ export default function App() {
           </form>
 
           <div className="preview-panel">
-            <p className="preview-label">
-              Preview · {platform.label} · drag title &amp; stickers to move
-            </p>
+            <p className="preview-label">Live preview · {platform.label}</p>
             <div
               className={`preview-wrap ${platform.orientation}`}
               style={{ aspectRatio: `${platform.width} / ${platform.height}` }}
@@ -860,7 +863,9 @@ export default function App() {
                 onPointerCancel={onCanvasPointerUp}
               />
             </div>
+            <p className="preview-hint">Drag the title block or stickers directly on the canvas.</p>
           </div>
+        </section>
         </section>
 
         <div className="mobile-save-dock" aria-label="Quick save">
@@ -872,11 +877,11 @@ export default function App() {
           </button>
         </div>
 
-        <section className="faq" aria-labelledby="faq-title">
-          <h2 id="faq-title">Free YouTube & Shorts thumbnail maker (FAQ)</h2>
+        <section id="faq" className="faq" aria-labelledby="faq-title">
+          <h2 id="faq-title">{PRODUCT_NAME} FAQ</h2>
           <dl>
             <div>
-              <dt>What is ThumbForge?</dt>
+              <dt>What is {PRODUCT_NAME}?</dt>
               <dd>
                 A free browser thumbnail maker for YouTube (1280×720), Shorts/Reels, Instagram,
                 LinkedIn, and Facebook. Your photo stays on your device until you download the PNG.
@@ -892,9 +897,9 @@ export default function App() {
             <div>
               <dt>How is this different from Canva?</dt>
               <dd>
-                ThumbForge is focused on speed: platform size, mood, templates, title styles, photo,
-                drag text and stickers, export — built for creators who want a thumbnail in under a
-                minute without a design tool subscription.
+                {PRODUCT_NAME} is built for speed: platform size, mood, templates, title styles, photo,
+                drag text and stickers, export — a focused editor instead of a general design
+                subscription.
               </dd>
             </div>
             <div>
@@ -920,7 +925,9 @@ export default function App() {
           Tip: use Mobile squint before you publish — if you cannot read the title, shorten it or
           bump the font size.
         </p>
-        <p className="build-tag">ThumbForge UI build 2026.10.05-n</p>
+        <p className="build-tag">
+          {PRODUCT_NAME} · UI {UI_BUILD} · hosted at /thumbforge/ on GitHub Pages
+        </p>
       </footer>
 
       {modal !== 'none' ? (

@@ -4,7 +4,7 @@ import { NICHES, NICHE_GROUPS, filterNiches, getNiche, HEIGHT, WIDTH } from './n
 import { PLATFORMS, getPlatform } from './platforms'
 import { STICKERS } from './stickers'
 
-describe('ThumbForge niches', () => {
+describe('ThumbnailPulse niches', () => {
   it('covers many creator channel types at YouTube size', () => {
     expect(NICHES.length).toBeGreaterThanOrEqual(16)
     expect(WIDTH).toBe(1280)

@@ -4,6 +4,7 @@ import type { LayoutId, PhotoShapeId } from './layout'
 import type { Niche } from './niches'
 import type { Platform } from './platforms'
 import type { PlacedSticker, StickerId } from './stickers'
+import { DOWNLOAD_PREFIX, WATERMARK_LABEL } from './brand'
 import type { TextStyleId } from './textStyle'
 import { getTextStyle } from './textStyle'
 
@@ -650,7 +651,7 @@ function drawCenteredWatermark(
   photo: { x: number; y: number; w: number; h: number },
 ) {
   const size = Math.max(16, Math.round(Math.min(photo.w, photo.h) * 0.045))
-  const label = 'ThumbForge · free preview'
+  const label = WATERMARK_LABEL
   const pad = Math.max(12, Math.round(Math.min(photo.w, photo.h) * 0.04))
 
   ctx.save()
@@ -695,6 +696,6 @@ export function downloadThumbnail(input: ThumbInput) {
   const url = createThumbnailDataUrl(input)
   const link = document.createElement('a')
   link.href = url
-  link.download = `thumbforge-${input.platform.id}.png`
+  link.download = `${DOWNLOAD_PREFIX}-${input.platform.id}.png`
   link.click()
 }
