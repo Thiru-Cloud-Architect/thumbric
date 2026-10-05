@@ -14,6 +14,7 @@ import {
 } from './entitlement'
 import { COLOR_PRESETS, LAYOUTS, PHOTO_SHAPES, type LayoutId, type PhotoShapeId } from './layout'
 import {
+  NICHE_GROUPS,
   NICHES,
   type NicheId,
   filterNiches,
@@ -71,7 +72,6 @@ export default function App() {
   const [entitlement, setEntitlement] = useState<Entitlement>(() => loadEntitlement())
   const [modal, setModal] = useState<'none' | 'register' | 'pay'>('none')
   const [emailDraft, setEmailDraft] = useState('')
-  const [showMore, setShowMore] = useState(false)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -248,28 +248,28 @@ export default function App() {
         <a className="brand" href="#top">
           ThumbForge
         </a>
-        <p className="tagline">Thumbnails for YouTube, Shorts, Instagram, LinkedIn & Facebook</p>
+        <p className="tagline">Free YouTube / Shorts / Instagram / LinkedIn thumbnails</p>
       </header>
 
       <main id="top">
         <section className="hero">
           <div>
-            <p className="kicker">Free · Simple · Works on phone</p>
-            <h1>Make a clickable thumbnail</h1>
+            <p className="kicker">Free · No account needed for preview</p>
+            <h1>Title in. Thumbnail out.</h1>
             <p className="lede">
-              Pick where you post, type a title, add a photo if you want, then save. Extra style
-              options stay tucked away until you need them.
+              Choose where you will post, pick a look, add your title and photo, then save. Clean
+              downloads need a quick email register.
             </p>
           </div>
           <ol className="steps-hero">
             <li>
-              <strong>1</strong> Platform + look
+              <strong>1</strong> Choose platform & look
             </li>
             <li>
-              <strong>2</strong> Title + photo
+              <strong>2</strong> Arrange photo & text
             </li>
             <li>
-              <strong>3</strong> Save
+              <strong>3</strong> Save the image
             </li>
           </ol>
         </section>
@@ -283,7 +283,7 @@ export default function App() {
             }}
           >
             <div className="samples" role="group" aria-label="Try a ready example">
-              <span className="soft-label">Quick start</span>
+              <span className="soft-label">Try an example</span>
               {SAMPLES.map((sample, index) => (
                 <button
                   key={sample.title}
@@ -300,11 +300,11 @@ export default function App() {
               <header>
                 <span className="step-num">1</span>
                 <div>
-                  <h2>Platform & look</h2>
-                  <p>Choose the app size, then a color mood.</p>
+                  <h2>Where will you post?</h2>
+                  <p>This sets the size: horizontal, square, or vertical.</p>
                 </div>
               </header>
-              <div className="choice-row compact">
+              <div className="choice-row">
                 {PLATFORMS.map((item) => (
                   <button
                     key={item.id}
@@ -314,54 +314,166 @@ export default function App() {
                     onClick={() => setPlatformId(item.id)}
                   >
                     <span>{item.label}</span>
-                    <small>{item.orientation}</small>
+                    <small>
+                      {item.orientation} · {item.width}×{item.height}
+                    </small>
                   </button>
                 ))}
               </div>
-              <div className="niches">
-                {(showAllLooks || query ? lookList : POPULAR.map((id) => getNiche(id))).map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    className={item.id === nicheId ? 'niche active' : 'niche'}
-                    aria-pressed={item.id === nicheId}
-                    onClick={() => setNicheId(item.id)}
-                  >
-                    <span>{item.label}</span>
-                  </button>
-                ))}
+
+              <header className="subhead">
+                <div>
+                  <h2>Pick a look</h2>
+                  <p>Colors and mood for your channel type.</p>
+                </div>
+              </header>
+              <label className="search">
+                Search looks
+                <input
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Type travel, cooking, gaming…"
+                />
+              </label>
+              <div className="niche-board">
+                {lookList.length === 0 ? (
+                  <p className="empty">No match. Try “travel” or “finance”.</p>
+                ) : showAllLooks || query ? (
+                  NICHE_GROUPS.map((group) => {
+                    const items = lookList.filter((item) => item.group === group)
+                    if (!items.length) return null
+                    return (
+                      <div key={group} className="niche-group">
+                        <p className="group-label">{group}</p>
+                        <div className="niches">
+                          {items.map((item) => (
+                            <button
+                              key={item.id}
+                              type="button"
+                              className={item.id === nicheId ? 'niche active' : 'niche'}
+                              aria-pressed={item.id === nicheId}
+                              onClick={() => setNicheId(item.id)}
+                            >
+                              <span>{item.label}</span>
+                              <small>{item.hint}</small>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })
+                ) : (
+                  <div className="niches">
+                    {lookList.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        className={item.id === nicheId ? 'niche active' : 'niche'}
+                        aria-pressed={item.id === nicheId}
+                        onClick={() => setNicheId(item.id)}
+                      >
+                        <span>{item.label}</span>
+                        <small>{item.hint}</small>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
-              <button
-                type="button"
-                className="linkish"
-                onClick={() => setShowAllLooks((value) => !value)}
-              >
-                {showAllLooks ? 'Fewer looks' : 'More looks'}
-              </button>
+              {!query && (
+                <button
+                  type="button"
+                  className="linkish"
+                  onClick={() => setShowAllLooks((value) => !value)}
+                >
+                  {showAllLooks ? 'Show popular looks only' : `Show all ${NICHES.length} looks`}
+                </button>
+              )}
             </section>
 
             <section className="step">
               <header>
                 <span className="step-num">2</span>
                 <div>
-                  <h2>Your words & photo</h2>
-                  <p>Keep the title short. Photo is optional.</p>
+                  <h2>Arrange and customize</h2>
+                  <p>Move the photo, change its shape, and pick your favorite color.</p>
                 </div>
               </header>
 
-              <label>
-                Title
-                <textarea
-                  value={title}
-                  maxLength={70}
-                  rows={2}
-                  onChange={(event) => setTitle(event.target.value)}
-                  placeholder="What should people notice?"
-                />
-              </label>
+              <fieldset>
+                <legend>Move photo</legend>
+                <div className="choice-row">
+                  {LAYOUTS.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={item.id === layout ? 'choice active' : 'choice'}
+                      aria-pressed={item.id === layout}
+                      onClick={() => setLayout(item.id)}
+                    >
+                      <span>{item.label}</span>
+                      <small>{item.hint}</small>
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+
+              <fieldset>
+                <legend>Photo shape</legend>
+                <div className="choice-row">
+                  {PHOTO_SHAPES.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={item.id === photoShape ? 'choice active' : 'choice'}
+                      aria-pressed={item.id === photoShape}
+                      onClick={() => setPhotoShape(item.id)}
+                    >
+                      <span>{item.label}</span>
+                      <small>{item.hint}</small>
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+
+              <fieldset>
+                <legend>Accent color</legend>
+                <div className="choice-row colors">
+                  {COLOR_PRESETS.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={
+                        (item.value === '' ? accentOverride === '' : accentOverride === item.value)
+                          ? 'swatch active'
+                          : 'swatch'
+                      }
+                      aria-pressed={
+                        item.value === '' ? accentOverride === '' : accentOverride === item.value
+                      }
+                      onClick={() => setAccentOverride(item.value)}
+                      title={item.label}
+                      style={
+                        item.value
+                          ? { background: item.value, color: '#101820' }
+                          : { background: niche.accent, color: '#101820' }
+                      }
+                    >
+                      {item.id === 'look' ? 'Look' : item.label}
+                    </button>
+                  ))}
+                </div>
+                <label className="tiny-color">
+                  Or pick any color
+                  <input
+                    type="color"
+                    value={accentOverride || niche.accent}
+                    onChange={(event) => setAccentOverride(event.target.value)}
+                  />
+                </label>
+              </fieldset>
 
               <label>
-                Small tag
+                Short tag (top line)
                 <input
                   value={tag}
                   maxLength={18}
@@ -370,11 +482,24 @@ export default function App() {
                 />
               </label>
 
+              <label>
+                Video title
+                <textarea
+                  value={title}
+                  maxLength={70}
+                  rows={3}
+                  onChange={(event) => setTitle(event.target.value)}
+                  placeholder="Write the title people should notice"
+                />
+              </label>
+
               <div className="photo-box">
                 <div>
-                  <p className="photo-title">Photo (optional)</p>
-                  <p className="photo-help">JPG or PNG. Stays on your device.</p>
-                  {photoName ? <p className="photo-name">{photoName}</p> : null}
+                  <p className="photo-title">Your photo (optional)</p>
+                  <p className="photo-help">
+                    Clear face or object photos work best. JPG or PNG. Stays on your device.
+                  </p>
+                  {photoName ? <p className="photo-name">Selected: {photoName}</p> : null}
                 </div>
                 <div className="photo-actions">
                   <button
@@ -400,7 +525,7 @@ export default function App() {
               </div>
 
               <fieldset>
-                <legend>Stickers (up to 3)</legend>
+                <legend>Stickers (tap up to 3)</legend>
                 <div className="sticker-row">
                   {STICKERS.map((sticker) => (
                     <button
@@ -416,102 +541,6 @@ export default function App() {
                   ))}
                 </div>
               </fieldset>
-
-              <button
-                type="button"
-                className="linkish"
-                onClick={() => setShowMore((value) => !value)}
-              >
-                {showMore ? 'Hide extra options' : 'More options: move photo, shape, color'}
-              </button>
-
-              {showMore ? (
-                <div className="more-box">
-                  <fieldset>
-                    <legend>Move photo</legend>
-                    <div className="choice-row">
-                      {LAYOUTS.map((item) => (
-                        <button
-                          key={item.id}
-                          type="button"
-                          className={item.id === layout ? 'choice active' : 'choice'}
-                          aria-pressed={item.id === layout}
-                          onClick={() => setLayout(item.id)}
-                        >
-                          <span>{item.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </fieldset>
-
-                  <fieldset>
-                    <legend>Photo shape</legend>
-                    <div className="choice-row">
-                      {PHOTO_SHAPES.map((item) => (
-                        <button
-                          key={item.id}
-                          type="button"
-                          className={item.id === photoShape ? 'choice active' : 'choice'}
-                          aria-pressed={item.id === photoShape}
-                          onClick={() => setPhotoShape(item.id)}
-                        >
-                          <span>{item.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </fieldset>
-
-                  <fieldset>
-                    <legend>Accent color</legend>
-                    <div className="choice-row colors">
-                      {COLOR_PRESETS.map((item) => (
-                        <button
-                          key={item.id}
-                          type="button"
-                          className={
-                            (item.value === ''
-                              ? accentOverride === ''
-                              : accentOverride === item.value)
-                              ? 'swatch active'
-                              : 'swatch'
-                          }
-                          aria-pressed={
-                            item.value === ''
-                              ? accentOverride === ''
-                              : accentOverride === item.value
-                          }
-                          onClick={() => setAccentOverride(item.value)}
-                          title={item.label}
-                          style={
-                            item.value
-                              ? { background: item.value, color: '#101820' }
-                              : { background: niche.accent, color: '#101820' }
-                          }
-                        >
-                          {item.id === 'look' ? 'Look' : item.label}
-                        </button>
-                      ))}
-                    </div>
-                    <label className="tiny-color">
-                      Custom color
-                      <input
-                        type="color"
-                        value={accentOverride || niche.accent}
-                        onChange={(event) => setAccentOverride(event.target.value)}
-                      />
-                    </label>
-                  </fieldset>
-
-                  <label className="search">
-                    Search more looks
-                    <input
-                      value={query}
-                      onChange={(event) => setQuery(event.target.value)}
-                      placeholder="travel, cooking, news…"
-                    />
-                  </label>
-                </div>
-              ) : null}
             </section>
 
             <section className="step save-step">
@@ -582,7 +611,7 @@ export default function App() {
           Tip: big face + short title + one sticker usually gets more clicks. Clean downloads need
           email registration first.
         </p>
-        <p className="build-tag">ThumbForge UI build 2026.10.05-c</p>
+        <p className="build-tag">ThumbForge UI build 2026.10.05-d</p>
       </footer>
 
       {modal !== 'none' ? (
