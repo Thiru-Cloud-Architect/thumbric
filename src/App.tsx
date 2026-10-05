@@ -116,7 +116,7 @@ export default function App() {
   const [tag, setTag] = useState(SAMPLES[0].tag)
   const [query, setQuery] = useState('')
   const [showAllLooks, setShowAllLooks] = useState(false)
-  const [stickers, setStickers] = useState<PlacedSticker[]>(SAMPLES[0].stickers)
+  const [stickers, setStickers] = useState<PlacedSticker[]>([])
   const [activeStickerIndex, setActiveStickerIndex] = useState<number | null>(null)
   const [textSelected, setTextSelected] = useState(false)
   const [dragging, setDragging] = useState(false)
@@ -1023,7 +1023,7 @@ export default function App() {
           Tip: use Mobile squint before you publish — if you cannot read the title, shorten it or
           bump the font size.
         </p>
-        <p className="build-tag">ThumbForge UI build 2026.10.05-j</p>
+        <p className="build-tag">ThumbForge UI build 2026.10.05-k</p>
       </footer>
 
       {modal !== 'none' ? (
