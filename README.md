@@ -4,13 +4,15 @@ Free thumbnail maker for YouTube, Shorts/Reels, Instagram, LinkedIn, and Faceboo
 
 ## For anyone (no tech skill needed)
 
-1. Open the site.
-2. Choose where you will post (YouTube, Shorts, Instagram…).
-3. Pick a look, move the photo, change shape/color if you want.
-4. Type your title. Optional: add your photo and stickers.
-5. Tap **Save image** — the PNG goes to your Downloads folder.
+1. Open the site and choose where you will post.
+2. Pick a look, move the photo, change shape/color if you want.
+3. Type your title. Optional: add your photo and stickers.
+4. Tap **Save free preview** (keeps a mark on the photo), or **Save clean** after email registration.
 
-Your photo stays on your device. We do not ask for name or email to download.
+## Free vs clean
+
+- Free preview: unlimited. Watermark sits across the photo so cropping a thin edge does not remove it.
+- Clean download (no mark): register with email for **2 free** clean downloads, then a small paid plan (₹99/month). Stripe can be connected next; demo unlock works in-browser for now.
 
 ## Live site
 

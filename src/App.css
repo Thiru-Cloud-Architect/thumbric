@@ -442,6 +442,51 @@ legend {
   border-color: rgba(214, 255, 60, 0.28);
 }
 
+.plan-box {
+  padding: 0.75rem 0.85rem;
+  border-radius: 14px;
+  background: #0b111a;
+  border: 1px solid rgba(214, 255, 60, 0.2);
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.plan-box p {
+  margin: 0;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 8, 14, 0.72);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  z-index: 20;
+}
+
+.modal {
+  width: min(100%, 420px);
+  background: var(--raise);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 1.1rem;
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 0.8rem;
+}
+
+.modal h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.modal p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
 .preview-panel {
   display: grid;
   gap: 0.55rem;

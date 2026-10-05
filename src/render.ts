@@ -374,11 +374,36 @@ export function renderThumbnail(ctx: CanvasRenderingContext2D, input: ThumbInput
   drawStickers(ctx, input, boxes.photo, boxes.text)
 
   if (input.watermark) {
-    ctx.fillStyle = 'rgba(255,255,255,0.62)'
-    ctx.font = `500 ${Math.max(16, Math.round(Math.min(platform.width, platform.height) * 0.025))}px "JetBrains Mono", monospace`
-    ctx.textAlign = 'left'
-    ctx.fillText('ThumbForge free', 24, platform.height - 24)
+    drawCenteredWatermark(ctx, input, boxes.photo)
   }
+}
+
+function drawCenteredWatermark(
+  ctx: CanvasRenderingContext2D,
+  input: ThumbInput,
+  photo: { x: number; y: number; w: number; h: number },
+) {
+  const { platform } = input
+  const size = Math.max(28, Math.round(Math.min(platform.width, platform.height) * 0.045))
+  const label = 'ThumbForge · free preview'
+
+  // Diagonal band across the photo so cropping a few millimeters does not remove it.
+  ctx.save()
+  ctx.translate(photo.x + photo.w / 2, photo.y + photo.h / 2)
+  ctx.rotate(-Math.PI / 7)
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.font = `700 ${size}px "JetBrains Mono", monospace`
+  ctx.fillStyle = 'rgba(0,0,0,0.28)'
+  ctx.fillText(label, 3, 3)
+  ctx.fillStyle = 'rgba(255,255,255,0.55)'
+  ctx.fillText(label, 0, 0)
+
+  // Second lighter pass lower on the photo for harder crop removal.
+  ctx.font = `700 ${Math.round(size * 0.72)}px "JetBrains Mono", monospace`
+  ctx.fillStyle = 'rgba(255,255,255,0.28)'
+  ctx.fillText(label, 0, Math.round(photo.h * 0.28))
+  ctx.restore()
 }
 
 export function createThumbnailDataUrl(input: ThumbInput): string {

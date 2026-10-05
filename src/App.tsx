@@ -1,4 +1,17 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import {
+  FREE_CLEAN_DOWNLOADS,
+  PAID_PRICE_LABEL,
+  activateDemoPayment,
+  canDownloadClean,
+  cleanDownloadsLeft,
+  consumeCleanDownload,
+  isPaid,
+  isValidEmail,
+  loadEntitlement,
+  registerEmail,
+  type Entitlement,
+} from './entitlement'
 import { COLOR_PRESETS, LAYOUTS, PHOTO_SHAPES, type LayoutId, type PhotoShapeId } from './layout'
 import {
   NICHE_GROUPS,
@@ -56,18 +69,23 @@ export default function App() {
   const [photoName, setPhotoName] = useState('')
   const [photoUrl, setPhotoUrl] = useState('')
   const [status, setStatus] = useState('Pick where you will post, then follow the steps.')
+  const [entitlement, setEntitlement] = useState<Entitlement>(() => loadEntitlement())
+  const [modal, setModal] = useState<'none' | 'register' | 'pay'>('none')
+  const [emailDraft, setEmailDraft] = useState('')
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const niche = useMemo(() => getNiche(nicheId), [nicheId])
   const platform = useMemo(() => getPlatform(platformId), [platformId])
+  const cleanLeft = cleanDownloadsLeft(entitlement)
+  const paid = isPaid(entitlement)
   const lookList = useMemo(() => {
     if (query.trim()) return filterNiches(query)
     if (showAllLooks) return NICHES
     return POPULAR.map((id) => getNiche(id))
   }, [query, showAllLooks])
 
-  const input = useMemo(
+  const previewInput = useMemo(
     () => ({
       title,
       tag,
@@ -96,8 +114,8 @@ export default function App() {
     canvas.height = platform.height
     const ctx = canvas.getContext('2d')
     if (!ctx) return
-    renderThumbnail(ctx, input)
-  }, [input, platform.width, platform.height])
+    renderThumbnail(ctx, previewInput)
+  }, [previewInput, platform.width, platform.height])
 
   useEffect(() => {
     if (platform.orientation === 'vertical' && layout === 'photo-left') {
@@ -114,7 +132,7 @@ export default function App() {
     setPlatformId(sample.platform)
     setLayout(sample.layout)
     setQuery('')
-    setStatus('Example loaded. Change anything you want, then Save image.')
+    setStatus('Example loaded. Change anything you want, then save.')
   }
 
   function toggleSticker(id: StickerId) {
@@ -156,13 +174,72 @@ export default function App() {
     setStatus('Photo removed.')
   }
 
-  function onDownload() {
+  function saveMarked() {
     try {
-      downloadThumbnail(input)
-      setStatus(`Saved! Look in Downloads for thumbforge-${platform.id}.png`)
+      downloadThumbnail({ ...previewInput, watermark: true })
+      setStatus(`Saved free preview. Look in Downloads for thumbforge-${platform.id}.png`)
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Could not save the image.')
     }
+  }
+
+  function requestCleanSave() {
+    if (canDownloadClean(entitlement)) {
+      saveClean(entitlement)
+      return
+    }
+    if (!entitlement.email) {
+      setEmailDraft(entitlement.email)
+      setModal('register')
+      return
+    }
+    setModal('pay')
+  }
+
+  function saveClean(current: Entitlement = entitlement) {
+    try {
+      downloadThumbnail({ ...previewInput, watermark: false })
+      const next = consumeCleanDownload(current)
+      setEntitlement(next)
+      const left = cleanDownloadsLeft(next)
+      setStatus(
+        isPaid(next) || left === Number.POSITIVE_INFINITY
+          ? 'Saved clean image (no watermark).'
+          : `Saved clean image. ${left} free clean download${left === 1 ? '' : 's'} left.`,
+      )
+      setModal('none')
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Could not save the image.')
+    }
+  }
+
+  function onRegister(event: FormEvent) {
+    event.preventDefault()
+    if (!isValidEmail(emailDraft)) {
+      setStatus('Enter a valid email to register.')
+      return
+    }
+    const next = registerEmail(emailDraft)
+    setEntitlement(next)
+    setStatus(
+      `Registered as ${next.email}. You get ${FREE_CLEAN_DOWNLOADS} free clean downloads.`,
+    )
+    if (canDownloadClean(next)) {
+      saveClean(next)
+      return
+    }
+    setModal('none')
+  }
+
+  function onDemoPay() {
+    if (!entitlement.email) {
+      setModal('register')
+      return
+    }
+    const next = activateDemoPayment(entitlement)
+    setEntitlement(next)
+    setModal('none')
+    setStatus(`Payment unlocked for 30 days at ${PAID_PRICE_LABEL}. Clean downloads are unlimited.`)
   }
 
   return (
@@ -202,7 +279,7 @@ export default function App() {
             className="controls"
             onSubmit={(event) => {
               event.preventDefault()
-              onDownload()
+              saveMarked()
             }}
           >
             <div className="samples" role="group" aria-label="Try a ready example">
@@ -472,13 +549,32 @@ export default function App() {
                 <div>
                   <h2>Save your thumbnail</h2>
                   <p>
-                    Downloads a ready PNG for {platform.label} ({platform.width}×{platform.height}).
+                    Free saves keep a mark on the photo (hard to crop away). Register for{' '}
+                    {FREE_CLEAN_DOWNLOADS} clean downloads, then {PAID_PRICE_LABEL}.
                   </p>
                 </div>
               </header>
+
+              <div className="plan-box">
+                <p>
+                  {paid
+                    ? `Paid plan active for ${entitlement.email}`
+                    : entitlement.email
+                      ? `Signed in as ${entitlement.email} · ${
+                          cleanLeft === Number.POSITIVE_INFINITY
+                            ? 'unlimited clean downloads'
+                            : `${cleanLeft} clean download${cleanLeft === 1 ? '' : 's'} left`
+                        }`
+                      : 'Not registered yet · free preview downloads unlimited'}
+                </p>
+              </div>
+
               <div className="actions">
                 <button type="submit" className="primary">
-                  Save image
+                  Save free preview
+                </button>
+                <button type="button" className="chip solid" onClick={requestCleanSave}>
+                  Save clean (no mark)
                 </button>
                 <p className="hint" role="status">
                   {status}
@@ -503,17 +599,82 @@ export default function App() {
                 aria-label="Thumbnail preview"
               />
             </div>
-            <p className="preview-note">What you see here is what gets saved.</p>
+            <p className="preview-note">
+              Preview always shows the free mark on the photo. Clean files remove it after register /
+              pay.
+            </p>
           </div>
         </section>
       </main>
 
       <footer>
         <p>
-          Tip: big face + short title + one sticker usually gets more clicks. We do not ask for your
-          name or email to download.
+          Tip: big face + short title + one sticker usually gets more clicks. Clean downloads need
+          email registration first.
         </p>
       </footer>
+
+      {modal !== 'none' ? (
+        <div className="modal-backdrop" role="presentation" onClick={() => setModal('none')}>
+          <div
+            className="modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            {modal === 'register' ? (
+              <form onSubmit={onRegister}>
+                <h2 id="modal-title">Register to remove the mark</h2>
+                <p>
+                  Free users can always save a preview. After you register with email, you get{' '}
+                  {FREE_CLEAN_DOWNLOADS} clean downloads with no watermark.
+                </p>
+                <label>
+                  Email
+                  <input
+                    type="email"
+                    value={emailDraft}
+                    onChange={(event) => setEmailDraft(event.target.value)}
+                    placeholder="you@email.com"
+                    required
+                    autoFocus
+                  />
+                </label>
+                <div className="actions">
+                  <button type="submit" className="primary">
+                    Register & save clean
+                  </button>
+                  <button type="button" className="chip" onClick={() => setModal('none')}>
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div>
+                <h2 id="modal-title">Continue with a small payment</h2>
+                <p>
+                  You used your {FREE_CLEAN_DOWNLOADS} free clean downloads
+                  {entitlement.email ? ` on ${entitlement.email}` : ''}. Unlock unlimited clean
+                  downloads for {PAID_PRICE_LABEL}.
+                </p>
+                <p className="hint">
+                  Stripe checkout can be connected next. For now this unlocks a 30-day demo on this
+                  browser.
+                </p>
+                <div className="actions">
+                  <button type="button" className="primary" onClick={onDemoPay}>
+                    Unlock {PAID_PRICE_LABEL}
+                  </button>
+                  <button type="button" className="chip" onClick={() => setModal('none')}>
+                    Not now
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }
