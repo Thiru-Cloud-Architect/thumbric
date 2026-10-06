@@ -4,9 +4,12 @@ import HomePage from './HomePage'
 import PricingPage from './PricingPage'
 import { ScrollToHash } from './nav'
 
+/** Vite `base` → router basename (no trailing slash; root domain → undefined). */
+const basename = import.meta.env.BASE_URL.replace(/\/$/, '') || undefined
+
 export default function App() {
   return (
-    <BrowserRouter basename="/thumbric">
+    <BrowserRouter basename={basename}>
       <ScrollToHash />
       <Routes>
         <Route path="/" element={<HomePage />} />

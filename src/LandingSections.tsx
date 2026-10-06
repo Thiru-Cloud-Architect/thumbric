@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { NavHashLink } from './nav'
-import { PRODUCT_NAME, PRODUCT_NAME_FULL, PRODUCT_TAGLINE, UI_BUILD } from './brand'
+import { PRODUCT_NAME, PRODUCT_NAME_FULL, PRODUCT_TAGLINE, SITE_URL, UI_BUILD } from './brand'
 import { CREATOR_CLEAN_DOWNLOADS_PER_MONTH } from './entitlement'
 import { FEATURES, AI_FEATURE } from './features'
 import { HERO_THUMBS, type HeroThumb } from './heroThumbs'
-import { RevealItem } from './LazyReveal'
+import { CountUpValue, RevealItem } from './LazyReveal'
 
 const FAQ_ITEMS = [
   {
@@ -99,17 +99,22 @@ export function HeroFlashy({ onQuickIdea }: LandingProps) {
         <ThumbStrip offset={5} stripIndex={2} />
       </div>
       <div className="hero-scrim" aria-hidden />
+      <div className="hero-aura hero-aura-a" aria-hidden />
+      <div className="hero-aura hero-aura-b" aria-hidden />
       <div className="hero-inner">
-        <p className="hero-badge">Free in browser · Photo stays on your device</p>
+        <p className="hero-badge">
+          <span className="hero-badge-pulse" aria-hidden />
+          Free in browser · Photo stays on your device
+        </p>
         <h1 id="hero-title">
-          YouTube thumbnails that <span className="gradient-text">get the click.</span>
+          YouTube thumbnails that <span className="gradient-text gradient-text-motion">get the click.</span>
         </h1>
         <p className="hero-sub">
           {PRODUCT_TAGLINE}. Type your title, pick a mood, watch the live preview update, and download
           a PNG sized for YouTube, Shorts, Reels, or LinkedIn — in minutes, not hours.
         </p>
         <div className="hero-cta-row">
-          <a className="btn-gradient hero-cta" href="#editor">
+          <a className="btn-gradient hero-cta btn-pulse" href="#editor">
             Start creating free
             <span aria-hidden> →</span>
           </a>
@@ -125,10 +130,10 @@ export function HeroFlashy({ onQuickIdea }: LandingProps) {
 
 export function StatsStrip() {
   const stats = [
-    { value: '$0', label: 'Preview saves', sub: 'No signup required' },
-    { value: '6', label: 'Platforms', sub: 'YouTube to LinkedIn' },
-    { value: '40+', label: 'Fonts', sub: 'Real previews in picker' },
-    { value: '<3 min', label: 'Typical flow', sub: 'Title to download' },
+    { value: '$0', label: 'Preview saves', sub: 'No signup required', count: false },
+    { value: '6', label: 'Platforms', sub: 'YouTube to LinkedIn', count: true },
+    { value: '40+', label: 'Fonts', sub: 'Real previews in picker', count: true },
+    { value: '<3 min', label: 'Typical flow', sub: 'Title to download', count: false },
   ]
   return (
     <section className="stats-strip" aria-label="Highlights">
@@ -136,7 +141,11 @@ export function StatsStrip() {
         {stats.map((item, index) => (
           <RevealItem key={item.label} index={index} className="stat-cell-wrap">
             <div className="stat-cell">
-              <p className="stat-value">{item.value}</p>
+              {item.count ? (
+                <CountUpValue className="stat-value" value={item.value} />
+              ) : (
+                <p className="stat-value">{item.value}</p>
+              )}
               <p className="stat-label">{item.label}</p>
               <p className="stat-sub">{item.sub}</p>
             </div>
@@ -179,6 +188,7 @@ export function ProblemSection() {
             <article className={`problem-card tone-${card.tone}`}>
               <h3>{card.title}</h3>
               <p>{card.body}</p>
+              <span className="card-shine" aria-hidden />
             </article>
           </RevealItem>
         ))}
@@ -223,12 +233,14 @@ export function HowItWorks() {
         </h2>
       </RevealItem>
       <div className="how-steps">
+        <div className="how-rail" aria-hidden />
         {steps.map((step, index) => (
           <RevealItem key={step.n} index={index + 1}>
             <article className={`how-card tone-${step.tone}`}>
               <span className="how-num">{step.n}</span>
               <h3>{step.title}</h3>
               <p>{step.body}</p>
+              <span className="card-shine" aria-hidden />
             </article>
           </RevealItem>
         ))}
@@ -254,7 +266,24 @@ export function Testimonials() {
       name: 'Dev team lead',
       role: 'Engineering channel',
     },
+    {
+      text: 'Stickers + drag text feel like a mini studio. I ship Shorts covers while the video renders.',
+      name: 'Sam R.',
+      role: 'Lifestyle Shorts',
+    },
+    {
+      text: 'The live canvas saved me from exporting ten times. Title size just feels right on phone.',
+      name: 'Neha P.',
+      role: 'Education channel',
+    },
+    {
+      text: 'Honest free previews. I only pay when a draft is ready for the upload.',
+      name: 'Chris L.',
+      role: 'Gaming creator',
+    },
   ]
+  const columnA = quotes.slice(0, 3)
+  const columnB = quotes.slice(3)
   return (
     <section className="testimonials" aria-labelledby="social-title">
       <RevealItem index={0}>
@@ -265,18 +294,33 @@ export function Testimonials() {
           Fast browser workflow — free preview saves, optional clean exports, and free AI scene images from a short description.
         </p>
       </RevealItem>
-      <div className="testimonial-grid">
-        {quotes.map((item, index) => (
-          <RevealItem key={item.name} index={index + 1}>
-            <blockquote className="testimonial-card">
-              <p>{item.text}</p>
-              <footer>
-                <strong>{item.name}</strong>
-                <span>{item.role}</span>
-              </footer>
-            </blockquote>
-          </RevealItem>
-        ))}
+      <div className="testimonial-marquee" aria-label="Creator quotes">
+        <div className="testimonial-col">
+          <div className="testimonial-track">
+            {[...columnA, ...columnA].map((item, index) => (
+              <blockquote key={`a-${item.name}-${index}`} className="testimonial-card">
+                <p>{item.text}</p>
+                <footer>
+                  <strong>{item.name}</strong>
+                  <span>{item.role}</span>
+                </footer>
+              </blockquote>
+            ))}
+          </div>
+        </div>
+        <div className="testimonial-col reverse">
+          <div className="testimonial-track">
+            {[...columnB, ...columnB].map((item, index) => (
+              <blockquote key={`b-${item.name}-${index}`} className="testimonial-card">
+                <p>{item.text}</p>
+                <footer>
+                  <strong>{item.name}</strong>
+                  <span>{item.role}</span>
+                </footer>
+              </blockquote>
+            ))}
+          </div>
+        </div>
       </div>
     </section>
   )
@@ -311,7 +355,9 @@ export function FaqAccordion() {
                   {item.q}
                   <span className="faq-chevron" aria-hidden />
                 </button>
-                {expanded ? <div className="faq-answer">{item.a}</div> : null}
+                <div className="faq-answer-wrap" data-state={expanded ? 'open' : 'closed'}>
+                  <div className="faq-answer">{item.a}</div>
+                </div>
               </div>
             )
           })}
@@ -330,60 +376,69 @@ export function FeaturesSection() {
       aria-labelledby="features-title"
       data-ui-build={UI_BUILD}
     >
-      <div className="features-head">
-        <p className="section-eyebrow">Features</p>
-        <h2 id="features-title" className="section-title center">
-          AI scene first. <span className="gradient-text">Editor tools next.</span>
-        </h2>
-        <p className="section-lede center">
-          Describe a thumbnail idea → get a free AI backdrop → finish the title on the live canvas.
-          No YouTube-URL paste and no full video analysis yet.
-        </p>
-      </div>
+      <RevealItem index={0}>
+        <div className="features-head">
+          <p className="section-eyebrow">Features</p>
+          <h2 id="features-title" className="section-title center">
+            AI scene first. <span className="gradient-text gradient-text-motion">Editor tools next.</span>
+          </h2>
+          <p className="section-lede center">
+            Describe a thumbnail idea → get a free AI backdrop → finish the title on the live canvas.
+            No YouTube-URL paste and no full video analysis yet.
+          </p>
+        </div>
+      </RevealItem>
 
-      <div className="feature-ai-panel">
-        <div className="feature-ai-panel-copy">
-          <p className="feature-ai-kicker">{AI_FEATURE.kicker}</p>
-          <p className="feature-where">{AI_FEATURE.where}</p>
-          <h3>{AI_FEATURE.title}</h3>
-          <p className="feature-ai-lead">{AI_FEATURE.description}</p>
-          <div className="feature-ai-split">
-            <div className="feature-ai-split-col is-now">
-              <p className="feature-ai-split-label">{AI_FEATURE.nowLabel}</p>
-              <ul>
-                {AI_FEATURE.nowItems.map((line) => (
-                  <li key={line}>{line}</li>
-                ))}
-              </ul>
-            </div>
-            <div className="feature-ai-split-col is-later">
-              <p className="feature-ai-split-label">{AI_FEATURE.notYetLabel}</p>
-              <ul>
-                {AI_FEATURE.notYetItems.map((line) => (
-                  <li key={line}>{line}</li>
-                ))}
-              </ul>
+      <RevealItem index={1}>
+        <div className="feature-ai-panel">
+          <div className="feature-ai-panel-copy">
+            <p className="feature-ai-kicker">{AI_FEATURE.kicker}</p>
+            <p className="feature-where">{AI_FEATURE.where}</p>
+            <h3>{AI_FEATURE.title}</h3>
+            <p className="feature-ai-lead">{AI_FEATURE.description}</p>
+            <div className="feature-ai-split">
+              <div className="feature-ai-split-col is-now">
+                <p className="feature-ai-split-label">{AI_FEATURE.nowLabel}</p>
+                <ul>
+                  {AI_FEATURE.nowItems.map((line) => (
+                    <li key={line}>{line}</li>
+                  ))}
+                </ul>
+              </div>
+              <div className="feature-ai-split-col is-later">
+                <p className="feature-ai-split-label">{AI_FEATURE.notYetLabel}</p>
+                <ul>
+                  {AI_FEATURE.notYetItems.map((line) => (
+                    <li key={line}>{line}</li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </div>
+          <a href={AI_FEATURE.href} className="feature-ai-cta btn-pulse">
+            {AI_FEATURE.cta} →
+          </a>
         </div>
-        <a href={AI_FEATURE.href} className="feature-ai-cta">
-          {AI_FEATURE.cta} →
-        </a>
-      </div>
+      </RevealItem>
 
       <div className="features-core">
-        <h3 className="features-core-title">Core editor tools</h3>
-        <p className="features-core-lede">
-          Everything below is available in the editor today — each card jumps to the right step.
-        </p>
+        <RevealItem index={2}>
+          <h3 className="features-core-title">Core editor tools</h3>
+          <p className="features-core-lede">
+            Everything below is available in the editor today — each card jumps to the right step.
+          </p>
+        </RevealItem>
         <div className="features-grid">
-          {core.map((item) => (
-            <a key={item.id} href={item.href} className="feature-card">
-              {item.where ? <p className="feature-where">{item.where}</p> : null}
-              <h3>{item.title}</h3>
-              <p>{item.description}</p>
-              <span className="feature-card-link">{item.cta ?? 'Open editor'} →</span>
-            </a>
+          {core.map((item, index) => (
+            <RevealItem key={item.id} index={index + 3}>
+              <a href={item.href} className="feature-card">
+                {item.where ? <p className="feature-where">{item.where}</p> : null}
+                <h3>{item.title}</h3>
+                <p>{item.description}</p>
+                <span className="feature-card-link">{item.cta ?? 'Open editor'} →</span>
+                <span className="card-shine" aria-hidden />
+              </a>
+            </RevealItem>
           ))}
         </div>
       </div>
@@ -447,7 +502,7 @@ export function SiteFooter({ buildLabel }: { buildLabel?: string }) {
               >
                 Report an issue
               </a>
-              <a href="https://thiru-cloud-architect.github.io/thumbric/sitemap.xml">Sitemap</a>
+              <a href={`${SITE_URL}sitemap.xml`}>Sitemap</a>
             </div>
           </div>
         </div>

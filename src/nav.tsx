@@ -3,7 +3,8 @@ import { Link, useLocation } from 'react-router-dom'
 
 export function useOnHomePage() {
   const { pathname } = useLocation()
-  return pathname === '/' || pathname === '/thumbric' || pathname.endsWith('/thumbric/')
+  // With BrowserRouter basename, home is always `/` regardless of Vite base.
+  return pathname === '/'
 }
 
 export function NavHashLink({ hash, children }: { hash: string; children: ReactNode }) {

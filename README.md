@@ -13,13 +13,14 @@ Free browser thumbnail maker for **YouTube**, Shorts/Reels, Instagram, LinkedIn,
 
 ### Connect `thumbric.ai` on Cloudflare (recommended)
 
-1. Buy **thumbric.ai** (Cloudflare Registrar or any registrar).
-2. Add the domain to **Cloudflare DNS** (orange-cloud proxy optional).
-3. In GitHub → repo **Settings → Pages → Custom domain** → enter `thumbric.ai` (and `www` if you want).
-4. Add DNS records GitHub shows (usually `A` / `AAAA` or `CNAME` for `www`).
-5. Wait for HTTPS. Optionally set Vite `base: '/'` once the site is only served from the apex domain (not `/thumbric/`).
+**Blocker today:** `thumbric.ai` is not registered (NXDOMAIN). Buy it first, then:
 
-Worker API (optional user JSON sync) can live on `api.thumbric.ai` — see `worker/`.
+1. Buy **thumbric.ai** (Cloudflare Registrar or any registrar).
+2. Add DNS records GitHub shows for Pages (apex `A`/`AAAA`, optional `www` `CNAME`).
+3. GitHub → repo **Settings → Pages → Custom domain** → `thumbric.ai`.
+4. Uncomment `VITE_BASE_PATH: /` and `VITE_SITE_URL: https://thumbric.ai/` in `.github/workflows/pages.yml` and push `main`.
+
+See `DEPLOY.md` for the full checklist. Worker API (optional) can live on `api.thumbric.ai` — see `worker/`.
 
 ## Features today
 
