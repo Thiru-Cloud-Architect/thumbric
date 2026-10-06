@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { NavHashLink, goToHash } from './nav'
 import { PRODUCT_NAME, PRODUCT_NAME_FULL, PRODUCT_TAGLINE, SITE_URL, UI_BUILD } from './brand'
 import { CREATOR_CLEAN_DOWNLOADS_PER_MONTH, TRIAL_DAYS } from './entitlement'
+import { planPriceLabel } from './plans'
 import { FEATURES, AI_FEATURE } from './features'
 import { HERO_THUMBS, type HeroThumb } from './heroThumbs'
 import { CountUpValue, RevealItem } from './LazyReveal'
@@ -481,9 +482,10 @@ export function PricingTeaser() {
             exports.
           </h2>
           <p className="section-lede">
-            Start a {TRIAL_DAYS}-day Creator trial (demo, no card yet). Then Creator from $1/mo (
-            {CREATOR_CLEAN_DOWNLOADS_PER_MONTH} clean PNGs/month) or Pro unlimited from $9/mo — INR
-            rates on the pricing page.
+            Start a {TRIAL_DAYS}-day Creator trial (demo, no card yet). Then Creator at{' '}
+            {planPriceLabel('creator')} ({CREATOR_CLEAN_DOWNLOADS_PER_MONTH} clean PNGs/month) or Pro
+            unlimited at {planPriceLabel('pro')} — launch pricing, never again this low. INR rates
+            on the pricing page.
           </p>
         </div>
         <Link className="btn-gradient pricing-teaser-cta" to="/pricing">

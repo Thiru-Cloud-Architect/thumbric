@@ -67,6 +67,9 @@ export default function PricingPage() {
             Unlimited watermarked previews stay free. Start a {TRIAL_DAYS}-day Creator trial, then
             upgrade when you need ongoing clean PNGs without the on-photo mark.
           </p>
+          <p className="pricing-launch-offer">
+            Launch price — never again at these rates.
+          </p>
           <div className="currency-toggle" role="group" aria-label="Billing currency">
             <button
               type="button"
@@ -144,8 +147,9 @@ export default function PricingPage() {
           </div>
           <p className="pricing-footnote">
             Creator includes {CREATOR_CLEAN_DOWNLOADS_PER_MONTH} clean downloads per calendar month.
-            Pro is unlimited. The {TRIAL_DAYS}-day trial unlocks Creator quota in this browser —
-            Stripe checkout connects next; no card required for the demo trial.
+            Pro is unlimited. Struck-through amounts are regular rates; launch pricing ends when
+            checkout goes live. The {TRIAL_DAYS}-day trial unlocks Creator quota in this browser —
+            Stripe connects next; no card required for the demo trial.
           </p>
         </section>
       </main>
