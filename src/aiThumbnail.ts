@@ -5,16 +5,20 @@ export type AiThumbOptions = {
   title: string
   niche: Niche
   platform: Platform
-  /** Extra user hint, e.g. "woman with laptop, shocked expression" */
+  /** User scene description for the thumbnail backdrop (preferred). */
   hint?: string
 }
 
-/** YouTube-style prompt — faces + contrast for clickable thumbs (no API key). */
+/**
+ * Build a free Pollinations prompt from the user's scene description.
+ * Falls back to title + niche when the scene field is empty.
+ * This is scene-image generation — not video analysis.
+ */
 export function buildAiThumbnailPrompt(options: AiThumbOptions) {
   const title = options.title.trim() || 'YOUR TITLE HERE'
-  const hint = options.hint?.trim()
-  const face =
-    hint ||
+  const scene = options.hint?.trim()
+  const subject =
+    scene ||
     'expressive creator face looking at camera, dramatic lighting, high contrast, sharp focus'
   const sizeHint =
     options.platform.orientation === 'vertical'
@@ -26,10 +30,10 @@ export function buildAiThumbnailPrompt(options: AiThumbOptions) {
   return [
     'Professional YouTube thumbnail photograph',
     sizeHint,
-    face,
+    `scene: ${subject}`,
     `niche mood: ${options.niche.label}, ${options.niche.hint}`,
-    `topic: ${title}`,
-    'bold composition, left or right space for big title text',
+    `topic title: ${title}`,
+    'bold composition, leave clean space for big title text',
     'cinematic color grade, saturated but natural skin, no watermarks, no logos, no readable text overlays',
   ].join(', ')
 }
@@ -55,7 +59,7 @@ export async function generateAiThumbnailImage(
   }
   const blob = await response.blob()
   if (!blob.type.startsWith('image/')) {
-    throw new Error('AI service did not return an image. Try a shorter title or again later.')
+    throw new Error('AI service did not return an image. Try a shorter description or again later.')
   }
   const objectUrl = URL.createObjectURL(blob)
   const image = await loadImage(objectUrl, signal)

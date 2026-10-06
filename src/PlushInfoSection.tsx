@@ -45,10 +45,10 @@ const BOXES: InfoBox[] = [
     tone: 'violet',
   },
   {
-    id: 'roadmap',
-    kicker: 'Roadmap',
-    title: 'AI image when you want it',
-    body: 'Generate a face or backdrop from your title and mood, then fine-tune type and layout on the live canvas.',
+    id: 'ai-scene',
+    kicker: 'AI scene',
+    title: 'Describe → generate backdrop',
+    body: 'Type the thumbnail scene, get a free AI image, then place your title on the canvas. Not YouTube-URL analysis — that comes later.',
     tone: 'pink',
   },
 ]

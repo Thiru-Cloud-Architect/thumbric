@@ -10,7 +10,7 @@ export type FeatureItem = {
   highlight?: boolean
 }
 
-/** What Thumbric.ai actually does today — honest, user-facing. */
+/** Six balanced core tools — AI is called out separately above the grid. */
 export const FEATURES: FeatureItem[] = [
   {
     id: 'platform-export',
@@ -27,7 +27,7 @@ export const FEATURES: FeatureItem[] = [
     description: 'Title, photo, and stickers update instantly. Nothing uploads until you download.',
     href: '#editor',
     where: 'Editor · Preview',
-    cta: 'Open editor',
+    cta: 'Open canvas',
     available: true,
   },
   {
@@ -36,7 +36,7 @@ export const FEATURES: FeatureItem[] = [
     description: 'Stuck? Random mood, layout, font, and title style in one tap.',
     href: '#editor',
     where: 'Editor · Setup',
-    cta: 'Open Setup',
+    cta: 'Try Quick idea',
     available: true,
   },
   {
@@ -45,7 +45,7 @@ export const FEATURES: FeatureItem[] = [
     description: 'Move the headline and badges on the preview like a layout tool.',
     href: '#editor',
     where: 'Editor · canvas',
-    cta: 'Open editor',
+    cta: 'Open canvas',
     available: true,
   },
   {
@@ -54,7 +54,7 @@ export const FEATURES: FeatureItem[] = [
     description: '40+ display fonts, pixel title size, and outline / pop styles for mobile feeds.',
     href: '#editor-title',
     where: 'Editor · 2 Title',
-    cta: 'Open Title step',
+    cta: 'Open Title',
     available: true,
   },
   {
@@ -63,20 +63,33 @@ export const FEATURES: FeatureItem[] = [
     description: 'YouTube, Shorts, LinkedIn, and minimal layouts without starting from zero.',
     href: '#editor-title',
     where: 'Editor · 2 Title',
-    cta: 'Open Title step',
+    cta: 'Browse templates',
     available: true,
   },
 ]
 
-/** Called out separately so AI is obvious — not buried in an 8-card grid. */
-export const AI_FEATURE: FeatureItem = {
-  id: 'ai-image',
-  title: 'AI thumbnail image',
+/**
+ * AI is the product story people look for — keep it out of the 6-card grid
+ * and spell out what works today vs what is not funded yet.
+ */
+export const AI_FEATURE = {
+  id: 'ai-scene',
+  kicker: 'AI · free · works in your browser',
+  title: 'Describe the scene. AI draws the thumbnail backdrop.',
   description:
-    'In the editor, open step 2 · Title. Under “Photo or AI face”, tap Generate AI image. Optional hint shapes the face/backdrop; then drag your title on the live canvas.',
+    'You write what the thumbnail should look like — person, setting, mood. Free AI generates a scene image, then you place your title on the live canvas.',
+  nowLabel: 'Works now',
+  nowItems: [
+    'Type a short scene description (or use your video title + niche)',
+    'Tap Generate AI scene — free via Pollinations, no API key',
+    'Fine-tune title, fonts, and stickers on the live canvas',
+  ],
+  notYetLabel: 'Not yet',
+  notYetItems: [
+    'No paste-a-YouTube-URL / full video analysis (that needs a paid model)',
+    'AI draws a scene image — it does not watch your video file',
+  ],
   href: '#editor-ai',
-  where: 'Editor · 2 Title · Photo or AI face',
-  cta: 'Go to Generate AI image',
-  available: true,
-  highlight: true,
-}
+  where: 'Editor · 2 Title · AI scene',
+  cta: 'Try AI in the editor',
+} as const

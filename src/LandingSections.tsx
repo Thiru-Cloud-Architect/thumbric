@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { NavHashLink } from './nav'
-import { PRODUCT_NAME, PRODUCT_NAME_FULL, PRODUCT_TAGLINE } from './brand'
+import { PRODUCT_NAME, PRODUCT_NAME_FULL, PRODUCT_TAGLINE, UI_BUILD } from './brand'
 import { CREATOR_CLEAN_DOWNLOADS_PER_MONTH } from './entitlement'
 import { FEATURES, AI_FEATURE } from './features'
 import { HERO_THUMBS, type HeroThumb } from './heroThumbs'
@@ -17,6 +17,10 @@ const FAQ_ITEMS = [
     a: 'Pick a platform, tap Quick idea or a starter template, type your title, and export. No layers panel, no subscription required for preview saves.',
   },
   {
+    q: 'How does the AI thumbnail work?',
+    a: 'Open the editor → step 2 Title → “AI scene image”. Describe the scene (person, setting, mood), tap Generate AI scene, then place your title on the canvas. It uses a free image model — it does not paste a YouTube URL or analyze your video file.',
+  },
+  {
     q: 'How long does it take?',
     a: 'Most people get a usable thumbnail in a few minutes. The live preview updates as you type — no waiting on a server.',
   },
@@ -30,7 +34,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'Can I use my face in the thumbnail?',
-    a: 'Yes — upload your JPG or PNG. The image stays in your browser until you download the finished PNG.',
+    a: 'Yes — upload your JPG or PNG, or generate a free AI scene image. Your upload stays in the browser until you download the finished PNG.',
   },
 ]
 
@@ -258,7 +262,7 @@ export function Testimonials() {
           Built for creators who publish often
         </h2>
         <p className="section-lede center">
-          Fast browser workflow — free preview saves, optional clean exports, AI image assist when you want it.
+          Fast browser workflow — free preview saves, optional clean exports, and free AI scene images from a short description.
         </p>
       </RevealItem>
       <div className="testimonial-grid">
@@ -320,39 +324,68 @@ export function FaqAccordion() {
 export function FeaturesSection() {
   const core = FEATURES.filter((item) => item.available)
   return (
-    <section id="features" className="features-section" aria-labelledby="features-title">
-      <RevealItem index={0}>
+    <section
+      id="features"
+      className="features-section"
+      aria-labelledby="features-title"
+      data-ui-build={UI_BUILD}
+    >
+      <div className="features-head">
         <p className="section-eyebrow">Features</p>
         <h2 id="features-title" className="section-title center">
-          Built for creators, <span className="gradient-text">not designers</span>
+          AI scene first. <span className="gradient-text">Editor tools next.</span>
         </h2>
         <p className="section-lede center">
-          Six core tools in the editor — plus AI image generation on the Title step.
+          Describe a thumbnail idea → get a free AI backdrop → finish the title on the live canvas.
+          No YouTube-URL paste and no full video analysis yet.
         </p>
-      </RevealItem>
+      </div>
 
-      <RevealItem index={1}>
-        <a href={AI_FEATURE.href} className="feature-ai-banner">
-          <div className="feature-ai-copy">
-            <p className="feature-where">{AI_FEATURE.where}</p>
-            <h3>{AI_FEATURE.title}</h3>
-            <p>{AI_FEATURE.description}</p>
+      <div className="feature-ai-panel">
+        <div className="feature-ai-panel-copy">
+          <p className="feature-ai-kicker">{AI_FEATURE.kicker}</p>
+          <p className="feature-where">{AI_FEATURE.where}</p>
+          <h3>{AI_FEATURE.title}</h3>
+          <p className="feature-ai-lead">{AI_FEATURE.description}</p>
+          <div className="feature-ai-split">
+            <div className="feature-ai-split-col is-now">
+              <p className="feature-ai-split-label">{AI_FEATURE.nowLabel}</p>
+              <ul>
+                {AI_FEATURE.nowItems.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="feature-ai-split-col is-later">
+              <p className="feature-ai-split-label">{AI_FEATURE.notYetLabel}</p>
+              <ul>
+                {AI_FEATURE.notYetItems.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+            </div>
           </div>
-          <span className="feature-ai-cta">{AI_FEATURE.cta} →</span>
+        </div>
+        <a href={AI_FEATURE.href} className="feature-ai-cta">
+          {AI_FEATURE.cta} →
         </a>
-      </RevealItem>
+      </div>
 
-      <div className="features-grid">
-        {core.map((item, index) => (
-          <RevealItem key={item.id} index={index + 2}>
-            <a href={item.href} className="feature-card">
+      <div className="features-core">
+        <h3 className="features-core-title">Core editor tools</h3>
+        <p className="features-core-lede">
+          Everything below is available in the editor today — each card jumps to the right step.
+        </p>
+        <div className="features-grid">
+          {core.map((item) => (
+            <a key={item.id} href={item.href} className="feature-card">
               {item.where ? <p className="feature-where">{item.where}</p> : null}
               <h3>{item.title}</h3>
               <p>{item.description}</p>
               <span className="feature-card-link">{item.cta ?? 'Open editor'} →</span>
             </a>
-          </RevealItem>
-        ))}
+          ))}
+        </div>
       </div>
     </section>
   )

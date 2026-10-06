@@ -397,7 +397,7 @@ export default function HomePage() {
     const controller = new AbortController()
     aiAbortRef.current = controller
     setAiBusy(true)
-    setStatus('Generating AI thumbnail… this can take a few seconds.')
+    setStatus('Generating free AI scene… this can take a few seconds.')
     try {
       const result = await generateAiThumbnailImage(
         {
@@ -411,17 +411,17 @@ export default function HomePage() {
       if (photoUrl) URL.revokeObjectURL(photoUrl)
       setPhoto(result.image)
       setPhotoUrl(result.objectUrl)
-      setPhotoName('AI generated')
+      setPhotoName('AI scene')
       setLayout((current) =>
         platform.orientation === 'vertical' || platform.orientation === 'square'
           ? current
           : 'photo-left',
       )
-      setStatus('AI image applied — drag title to fit, then download.')
+      setStatus('AI scene applied — drag your title to fit, then download.')
       setEditorTab('title')
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return
-      setStatus(error instanceof Error ? error.message : 'AI generation failed.')
+      setStatus(error instanceof Error ? error.message : 'AI scene generation failed.')
     } finally {
       setAiBusy(false)
     }
@@ -533,9 +533,7 @@ export default function HomePage() {
         <LazyReveal staggerMs={85} variant="fade-scale">
           <HowItWorks />
         </LazyReveal>
-        <LazyReveal staggerMs={70} variant="rise">
-          <FeaturesSection />
-        </LazyReveal>
+        <FeaturesSection />
         <LazyReveal variant="slide-left">
           <PricingTeaser />
         </LazyReveal>
@@ -839,24 +837,29 @@ export default function HomePage() {
                 bigger for Shorts.
               </p>
 
-              <div id="editor-ai" className="photo-box">
+              <div id="editor-ai" className="photo-box ai-scene-box">
                 <div>
-                  <p className="photo-title">Photo or AI face</p>
+                  <p className="photo-title">AI scene image</p>
                   <p className="photo-help">
-                    Upload your own JPG/PNG, or generate an AI face/backdrop from your title &amp; mood
-                    (free via Pollinations — no API key).
+                    Describe the thumbnail idea / scene. Free AI draws a backdrop from your words,
+                    title, niche, and platform — then you finish the title on the live canvas.
                   </p>
                   {photoName ? <p className="photo-name">Selected: {photoName}</p> : null}
                 </div>
                 <label className="ai-hint-field">
-                  AI hint (optional)
+                  Describe the scene for your thumbnail
                   <input
                     type="text"
                     value={aiHint}
                     onChange={(event) => setAiHint(event.target.value)}
-                    placeholder="e.g. woman with laptop, shocked look"
+                    placeholder="e.g. shocked creator at a neon desk, city night behind them"
                   />
                 </label>
+                <p className="ai-honesty-note">
+                  Free AI scene image — not full video analysis. Paste-a-YouTube-URL thumbs come later
+                  when we can fund a paid model. Uses Pollinations (no API key). Empty scene field
+                  falls back to your title + niche.
+                </p>
                 <div className="photo-actions">
                   <button
                     type="button"
@@ -864,14 +867,14 @@ export default function HomePage() {
                     disabled={aiBusy}
                     onClick={() => void runAiThumbnail()}
                   >
-                    {aiBusy ? 'Generating…' : 'Generate AI image'}
+                    {aiBusy ? 'Generating…' : 'Generate AI scene'}
                   </button>
                   <button
                     type="button"
                     className="chip solid"
                     onClick={() => fileRef.current?.click()}
                   >
-                    {photo ? 'Change photo' : 'Add photo'}
+                    {photo ? 'Change photo' : 'Upload your photo'}
                   </button>
                   {photo ? (
                     <button type="button" className="chip" onClick={clearPhoto}>
