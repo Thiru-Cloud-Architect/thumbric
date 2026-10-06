@@ -16,13 +16,14 @@ When someone says `@team.md can you help here`, treat these as the open threads:
 
 | Thread | State |
 |--------|--------|
-| Features AI-first section | **Live** — stamp `UI_BUILD=2026.10.06-au`. Banner: “Describe the scene…”, Works now / Not yet, `#editor-ai` deep link. |
+| Features AI-first section | **Live** — stamp `UI_BUILD=2026.10.06-av`. Banner: “Describe the scene…”, Works now / Not yet, `#editor-ai` deep link. |
 | Editor AI | **Live** — Title step → “AI scene image” + “Generate AI scene” (Pollinations, no API key). Inline status + 45s timeout + flux/turbo fallbacks. Gemini later OK; no paid Gemini now. |
 | Title drag | **Fixed** — `clampTextPosition` no longer locks Y to the layout text column (~55% on photo-full); titles can sit in the upper third. |
+| Title font & size | **Restored on Title tab** — font picker + px size (was only on Export/polish after AI UX refactor). |
 | Accents | **Live** — coral→soft magenta (`#ff7f8a` / `#d4a6f0`); purple peeks in gradients, coral stays primary. |
 | Pricing | **Live** — Creator $19 (was $39), Pro $49 (was $99); INR ₹999 / ₹2499. Launch offer copy on Pricing. |
 | Custom domain `thumbric.ai` | **Blocked — one user step** — NXDOMAIN; not purchased; live stays github.io. Prefer buy `thumbric.ai` (~$80/yr) or cheaper `thumbric.app` (~$8–15); see `DEPLOY.md`. |
-| Old UI complaints | **Resolved on origin** — hard-refresh or open `/thumbric/` (not `/thumbforge/`). Footer stamp should show `2026.10.06-au`. |
+| Old UI complaints | **Resolved on origin** — hard-refresh or open `/thumbric/` (not `/thumbforge/`). Footer stamp should show `2026.10.06-av`. |
 
 ## AI product truth (cost-aware)
 
@@ -46,7 +47,7 @@ Details: `DEPLOY.md`.
 curl -sL https://thiru-cloud-architect.github.io/thumbric/ \
   | rg -o '/thumbric/assets/index-[^"]+\.js'
 # Expect UI_BUILD string inside that bundle:
-# 2026.10.06-au  and  "Describe the scene"
+# 2026.10.06-av  and  "Describe the scene"
 ```
 
 Wrong path: `…/thumbforge/` is a redirect stub — use `…/thumbric/`.

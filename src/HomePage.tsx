@@ -766,7 +766,9 @@ export default function HomePage() {
 
             {editorTab === 'title' ? (
             <section id="editor-title" className="step step-clean">
-              <p className="step-lede">Headline first — templates set platform and layout for you.</p>
+              <p className="step-lede">
+                Headline, font, and size — watch the live preview update as you type.
+              </p>
               <fieldset>
                 <legend>Starter templates</legend>
                 <div className="template-gallery" role="list">
@@ -829,78 +831,6 @@ export default function HomePage() {
                 Reset title position on preview
               </button>
 
-              <div id="editor-ai" className="photo-box ai-scene-box">
-                <div>
-                  <p className="photo-title">AI scene image</p>
-                  <p className="photo-help">
-                    Fill the YouTube title field above, then describe the visual scene here.
-                    Free AI paints a full-bleed backdrop from your scene (plus title + niche) —
-                    not a small bordered photo.
-                  </p>
-                  {photoName ? <p className="photo-name">Selected: {photoName}</p> : null}
-                </div>
-                <label className="ai-hint-field">
-                  Describe the scene for your thumbnail
-                  <input
-                    id="ai-scene-hint"
-                    type="text"
-                    value={aiHint}
-                    onChange={(event) => setAiHint(event.target.value)}
-                    placeholder="e.g. Tamil singer in warm stage light, soft bokeh, music cover mood"
-                  />
-                </label>
-                <p className="ai-honesty-note">
-                  Tip: write the clickable YouTube title up top, and a visual scene here (one coherent
-                  shot — person, setting, mood). Empty title uses a short title from your scene.
-                  Free Pollinations image (no API key) — not YouTube-URL / video analysis.
-                </p>
-                <div className="photo-actions">
-                  <button
-                    type="button"
-                    className="chip solid ai-generate"
-                    disabled={aiBusy}
-                    aria-busy={aiBusy}
-                    onClick={() => void runAiThumbnail()}
-                  >
-                    {aiBusy ? 'Generating…' : 'Generate AI scene'}
-                  </button>
-                  <button
-                    type="button"
-                    className="chip solid"
-                    onClick={() => fileRef.current?.click()}
-                  >
-                    {photo ? 'Change photo' : 'Upload your photo'}
-                  </button>
-                  {photo ? (
-                    <button type="button" className="chip" onClick={clearPhoto}>
-                      Remove
-                    </button>
-                  ) : null}
-                </div>
-                {aiStatus.text ? (
-                  <p
-                    className={`ai-inline-status is-${aiStatus.kind}`}
-                    role="status"
-                    aria-live="polite"
-                  >
-                    {aiStatus.kind === 'busy' ? <span className="ai-inline-spinner" aria-hidden /> : null}
-                    {aiStatus.text}
-                  </p>
-                ) : null}
-                <input
-                  ref={fileRef}
-                  className="file-input"
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  onChange={(event) => onPickPhoto(event.target.files?.[0])}
-                />
-              </div>
-            </section>
-            ) : null}
-
-            {editorTab === 'polish' ? (
-            <section className="step step-clean">
-              <p className="step-lede">Fonts, size, photo, and extras — watch the live preview.</p>
               <fieldset>
                 <legend>Title style</legend>
                 <div className="title-style-row" role="listbox" aria-label="Title style">
@@ -977,7 +907,83 @@ export default function HomePage() {
                 bigger for Shorts.
               </p>
 
-              <details className="fold-panel">
+              <div id="editor-ai" className="photo-box ai-scene-box">
+                <div>
+                  <p className="photo-title">AI scene image</p>
+                  <p className="photo-help">
+                    Fill the YouTube title field above, then describe the visual scene here.
+                    Free AI paints a full-bleed backdrop from your scene (plus title + niche) —
+                    not a small bordered photo.
+                  </p>
+                  {photoName ? <p className="photo-name">Selected: {photoName}</p> : null}
+                </div>
+                <label className="ai-hint-field">
+                  Describe the scene for your thumbnail
+                  <input
+                    id="ai-scene-hint"
+                    type="text"
+                    value={aiHint}
+                    onChange={(event) => setAiHint(event.target.value)}
+                    placeholder="e.g. Tamil singer in warm stage light, soft bokeh, music cover mood"
+                  />
+                </label>
+                <p className="ai-honesty-note">
+                  Tip: write the clickable YouTube title up top, and a visual scene here (one coherent
+                  shot — person, setting, mood). Empty title uses a short title from your scene.
+                  Free Pollinations image (no API key) — not YouTube-URL / video analysis.
+                </p>
+                <div className="photo-actions">
+                  <button
+                    type="button"
+                    className="chip solid ai-generate"
+                    disabled={aiBusy}
+                    aria-busy={aiBusy}
+                    onClick={() => void runAiThumbnail()}
+                  >
+                    {aiBusy ? 'Generating…' : 'Generate AI scene'}
+                  </button>
+                  <button
+                    type="button"
+                    className="chip solid"
+                    onClick={() => fileRef.current?.click()}
+                  >
+                    {photo ? 'Change photo' : 'Upload your photo'}
+                  </button>
+                  {photo ? (
+                    <button type="button" className="chip" onClick={clearPhoto}>
+                      Remove
+                    </button>
+                  ) : null}
+                </div>
+                {aiStatus.text ? (
+                  <p
+                    className={`ai-inline-status is-${aiStatus.kind}`}
+                    role="status"
+                    aria-live="polite"
+                  >
+                    {aiStatus.kind === 'busy' ? <span className="ai-inline-spinner" aria-hidden /> : null}
+                    {aiStatus.text}
+                  </p>
+                ) : null}
+                <input
+                  ref={fileRef}
+                  className="file-input"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={(event) => onPickPhoto(event.target.files?.[0])}
+                />
+              </div>
+            </section>
+            ) : null}
+
+            {editorTab === 'polish' ? (
+            <section className="step step-clean">
+              <p className="step-lede">
+                Layout, photo shape, accents, and stickers — title font &amp; size live on the Title
+                tab.
+              </p>
+
+              <details className="fold-panel" open>
                 <summary>Advanced layout &amp; extras</summary>
                 <div className="fold-body">
                   <fieldset>
