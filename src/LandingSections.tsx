@@ -1,22 +1,9 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { PRODUCT_NAME, PRODUCT_TAGLINE } from './brand'
+import { CREATOR_CLEAN_DOWNLOADS_PER_MONTH } from './entitlement'
 import { FEATURES } from './features'
-import { PLANS } from './plans'
-
-const MOSAIC = [
-  { hue: 330, label: 'WOW' },
-  { hue: 260, label: 'NEW' },
-  { hue: 195, label: 'TRIP' },
-  { hue: 45, label: 'FIX' },
-  { hue: 280, label: 'AI' },
-  { hue: 160, label: '₹' },
-  { hue: 15, label: 'HOT' },
-  { hue: 220, label: 'PR' },
-  { hue: 300, label: 'GO' },
-  { hue: 120, label: 'FIT' },
-  { hue: 350, label: 'TOP' },
-  { hue: 200, label: 'DEV' },
-]
+import { HERO_THUMBS, type HeroThumb } from './heroThumbs'
 
 const FAQ_ITEMS = [
   {
@@ -37,7 +24,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'Do I need an account?',
-    a: 'No signup for unlimited preview downloads. Register with email for two clean downloads without the on-photo mark, then an optional paid plan.',
+    a: 'No signup for unlimited preview downloads. Register with email, then pick Creator or Pro when you need clean PNGs without the on-photo mark.',
   },
   {
     q: 'Can I use my face in the thumbnail?',
@@ -49,18 +36,28 @@ type LandingProps = {
   onQuickIdea: () => void
 }
 
-function MosaicStrip({ reverse }: { reverse?: boolean }) {
-  const tiles = [...MOSAIC, ...MOSAIC]
+function HeroThumbTile({ thumb }: { thumb: HeroThumb }) {
+  return (
+    <div
+      className="hero-thumb-tile"
+      style={{
+        backgroundImage: `url(${thumb.image})`,
+        ['--tile-hue' as string]: thumb.hue,
+      }}
+    >
+      <span className="hero-thumb-tag">{thumb.tag}</span>
+      <span className="hero-thumb-title">{thumb.headline}</span>
+    </div>
+  )
+}
+
+function ThumbStrip({ reverse, offset = 0 }: { reverse?: boolean; offset?: number }) {
+  const ordered = [...HERO_THUMBS.slice(offset), ...HERO_THUMBS.slice(0, offset)]
+  const tiles = [...ordered, ...ordered]
   return (
     <div className={reverse ? 'mosaic-strip reverse' : 'mosaic-strip'}>
-      {tiles.map((tile, index) => (
-        <div
-          key={`${tile.label}-${index}`}
-          className="mosaic-tile"
-          style={{ ['--tile-hue' as string]: tile.hue }}
-        >
-          <span>{tile.label}</span>
-        </div>
+      {tiles.map((thumb, index) => (
+        <HeroThumbTile key={`${thumb.id}-${index}`} thumb={thumb} />
       ))}
     </div>
   )
@@ -105,9 +102,9 @@ export function HeroFlashy({ onQuickIdea }: LandingProps) {
   return (
     <section className="hero-flashy" aria-labelledby="hero-title">
       <div className="hero-mosaic-wrap" aria-hidden>
-        <MosaicStrip />
-        <MosaicStrip reverse />
-        <MosaicStrip />
+        <ThumbStrip offset={0} />
+        <ThumbStrip reverse offset={3} />
+        <ThumbStrip offset={5} />
       </div>
       <div className="hero-scrim" aria-hidden />
       <div className="hero-inner">
@@ -281,7 +278,7 @@ export function FaqAccordion() {
   const [open, setOpen] = useState<number | null>(0)
   return (
     <section id="faq" className="faq-flashy" aria-labelledby="faq-title">
-      <div className="faq-layout">
+      <div className="section-shell faq-layout">
         <div className="faq-intro">
           <h2 id="faq-title">Frequently asked questions</h2>
           <p>
@@ -342,44 +339,23 @@ export function FeaturesSection() {
   )
 }
 
-export function PricingSection() {
+export function PricingTeaser() {
   return (
-    <section id="pricing" className="pricing-section" aria-labelledby="pricing-title">
-      <p className="section-eyebrow">Pricing</p>
-      <h2 id="pricing-title" className="section-title center">
-        Simple plans — about <span className="gradient-text">⅕ the cost</span> of AI thumbnail SaaS
-      </h2>
-      <p className="section-lede center">
-        Typical tools charge $15–25/mo. We stay free for previews and price Pro for India-first
-        creators.
-      </p>
-      <div className="pricing-grid">
-        {PLANS.map((plan) => (
-          <article
-            key={plan.id}
-            className={plan.popular ? 'price-card is-popular' : 'price-card'}
-          >
-            {plan.popular ? <p className="price-popular-tag">Most popular</p> : null}
-            <h3>{plan.name}</h3>
-            <p className="price-tagline">{plan.tagline}</p>
-            <p className="price-amount">
-              {plan.compareAtLabel ? (
-                <span className="price-was">{plan.compareAtLabel}</span>
-              ) : null}
-              <span>{plan.priceLabel}</span>
-              {plan.priceInr > 0 ? <small>/mo</small> : null}
-            </p>
-            {plan.highlight ? <p className="price-highlight">{plan.highlight}</p> : null}
-            <ul>
-              {plan.features.map((line) => (
-                <li key={line}>{line}</li>
-              ))}
-            </ul>
-            <a className={plan.popular ? 'btn-gradient price-cta' : 'btn-outline price-cta'} href={plan.ctaHref}>
-              {plan.cta}
-            </a>
-          </article>
-        ))}
+    <section className="pricing-teaser" aria-labelledby="pricing-teaser-title">
+      <div className="pricing-teaser-inner">
+        <div>
+          <p className="section-eyebrow">Pricing</p>
+          <h2 id="pricing-teaser-title" className="section-title">
+            Free previews. <span className="gradient-text">Clean exports</span> when you&apos;re ready.
+          </h2>
+          <p className="section-lede">
+            Creator from $1/mo ({CREATOR_CLEAN_DOWNLOADS_PER_MONTH} clean PNGs/month). Pro unlimited from
+            $9/mo — switch to INR on the pricing page for local rates.
+          </p>
+        </div>
+        <Link className="btn-gradient pricing-teaser-cta" to="/pricing">
+          View plans &amp; subscribe
+        </Link>
       </div>
     </section>
   )
@@ -388,25 +364,27 @@ export function PricingSection() {
 export function SiteFooter() {
   return (
     <footer className="site-footer">
-      <div className="footer-grid">
-        <div>
-          <p className="footer-brand">{PRODUCT_NAME}</p>
-          <p className="footer-tag">Free browser thumbnail maker for YouTube &amp; social.</p>
-        </div>
-        <div>
-          <p className="footer-head">Product</p>
-          <a href="#editor">Editor</a>
-          <a href="#how">How it works</a>
-          <a href="#features">Features</a>
-          <a href="#pricing">Pricing</a>
-          <a href="#faq">FAQ</a>
-        </div>
-        <div>
-          <p className="footer-head">Resources</p>
-          <a href="https://github.com/Thiru-Cloud-Architect/thumbforge" rel="noopener noreferrer">
-            GitHub
-          </a>
-          <a href="https://thiru-cloud-architect.github.io/thumbforge/sitemap.xml">Sitemap</a>
+      <div className="footer-shell">
+        <div className="footer-grid">
+          <div>
+            <p className="footer-brand">{PRODUCT_NAME}</p>
+            <p className="footer-tag">Free browser thumbnail maker for YouTube &amp; social.</p>
+          </div>
+          <div>
+            <p className="footer-head">Product</p>
+            <Link to="/#editor">Editor</Link>
+            <Link to="/#how">How it works</Link>
+            <Link to="/#features">Features</Link>
+            <Link to="/pricing">Pricing</Link>
+            <Link to="/#faq">FAQ</Link>
+          </div>
+          <div>
+            <p className="footer-head">Resources</p>
+            <a href="https://github.com/Thiru-Cloud-Architect/thumbforge" rel="noopener noreferrer">
+              GitHub
+            </a>
+            <a href="https://thiru-cloud-architect.github.io/thumbforge/sitemap.xml">Sitemap</a>
+          </div>
         </div>
       </div>
     </footer>

@@ -63,6 +63,20 @@
     />
   </head>
   <body>
+    <script>
+      ;(function (location) {
+        if (location.search[1] === '/') {
+          var rest = location.search
+            .slice(1)
+            .split('&')
+            .map(function (part) {
+              return part.replace(/~and~/g, '&')
+            })
+            .join('?')
+          window.history.replaceState(null, '', location.pathname + rest + location.hash)
+        }
+      })(window.location)
+    </script>
     <div id="root"></div>
     <noscript>
       <main style="max-width: 40rem; margin: 2rem auto; padding: 0 1rem; font-family: system-ui, sans-serif">

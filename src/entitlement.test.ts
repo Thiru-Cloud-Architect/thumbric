@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
-  FREE_CLEAN_DOWNLOADS,
-  activateDemoPayment,
+  CREATOR_CLEAN_DOWNLOADS_PER_MONTH,
+  activateDemoPlan,
   canDownloadClean,
   cleanDownloadsLeft,
   consumeCleanDownload,
@@ -16,28 +16,31 @@ describe('entitlement', () => {
     localStorage.clear()
   })
 
-  it('requires registration before clean downloads', () => {
+  it('requires registration and a paid plan before clean downloads', () => {
     const fresh = loadEntitlement()
     expect(canDownloadClean(fresh)).toBe(false)
     expect(cleanDownloadsLeft(fresh)).toBe(0)
   })
 
-  it('gives two free clean downloads after email registration', () => {
+  it('gives creator quota after demo creator unlock', () => {
     expect(isValidEmail('bad')).toBe(false)
     expect(isValidEmail('you@email.com')).toBe(true)
     const registered = registerEmail('You@Email.com')
     expect(registered.email).toBe('you@email.com')
-    expect(cleanDownloadsLeft(registered)).toBe(FREE_CLEAN_DOWNLOADS)
-    const afterOne = consumeCleanDownload(registered)
-    expect(cleanDownloadsLeft(afterOne)).toBe(FREE_CLEAN_DOWNLOADS - 1)
-    const afterTwo = consumeCleanDownload(afterOne)
-    expect(canDownloadClean(afterTwo)).toBe(false)
+    expect(canDownloadClean(registered)).toBe(false)
+    const creator = activateDemoPlan(registered, 'creator')
+    expect(isPaid(creator)).toBe(true)
+    expect(cleanDownloadsLeft(creator)).toBe(CREATOR_CLEAN_DOWNLOADS_PER_MONTH)
+    const afterOne = consumeCleanDownload(creator)
+    expect(cleanDownloadsLeft(afterOne)).toBe(CREATOR_CLEAN_DOWNLOADS_PER_MONTH - 1)
   })
 
-  it('unlocks unlimited clean downloads after payment', () => {
+  it('unlocks unlimited clean downloads on pro', () => {
     const registered = registerEmail('pay@email.com')
-    const paid = activateDemoPayment(registered)
-    expect(isPaid(paid)).toBe(true)
-    expect(cleanDownloadsLeft(paid)).toBe(Number.POSITIVE_INFINITY)
+    const pro = activateDemoPlan(registered, 'pro')
+    expect(isPaid(pro)).toBe(true)
+    expect(cleanDownloadsLeft(pro)).toBe(Number.POSITIVE_INFINITY)
+    const afterMany = consumeCleanDownload(consumeCleanDownload(pro))
+    expect(cleanDownloadsLeft(afterMany)).toBe(Number.POSITIVE_INFINITY)
   })
 })

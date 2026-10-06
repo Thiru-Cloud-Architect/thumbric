@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>ThumbnailPulse</title>
+    <script>
+      ;(function () {
+        var base = '/thumbforge/'
+        var path = window.location.pathname.replace(base, '')
+        var redirect = base + '?/' + path.replace(/^\//, '')
+        if (window.location.search) redirect += '&' + window.location.search.slice(1)
+        redirect += window.location.hash
+        window.location.replace(redirect)
+      })()
+    </script>
+  </head>
+  <body></body>
+</html>
