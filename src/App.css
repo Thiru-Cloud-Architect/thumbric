@@ -891,7 +891,7 @@ main {
 .hero-aura-b {
   right: 6%;
   bottom: 12%;
-  background: rgba(192, 132, 252, 0.22);
+  background: rgba(192, 132, 252, 0.4);
   animation-duration: 15s;
   animation-direction: reverse;
 }
@@ -969,8 +969,8 @@ main {
   width: 0.5rem;
   height: 0.5rem;
   border-radius: 999px;
-  background: linear-gradient(135deg, #ff7f8a, #c084fc);
-  box-shadow: 0 0 0 0 rgba(255, 127, 138, 0.55);
+  background: linear-gradient(135deg, #ff7f8a, #e879f9, #c084fc);
+  box-shadow: 0 0 0 0 rgba(192, 132, 252, 0.55);
   animation: badge-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
 
@@ -1333,7 +1333,7 @@ main {
 
 .chip.solid,
 .sticker.active {
-  background: linear-gradient(120deg, var(--cta), #ff7f8a 55%, #c084fc);
+  background: linear-gradient(120deg, var(--cta), #ff7f8a 36%, #e879f9 68%, #c084fc);
   color: white;
   border-color: transparent;
 }
@@ -1472,7 +1472,7 @@ textarea {
 }
 
 .chip.solid.ai-generate {
-  background: linear-gradient(105deg, #e05a68, #ff7f8a 50%, #c084fc);
+  background: linear-gradient(105deg, #e05a68, #ff7f8a 34%, #e879f9 66%, #c084fc);
   color: #1a0c0e;
   border: 0;
 }
@@ -1519,12 +1519,12 @@ legend {
 }
 
 .primary {
-  background: linear-gradient(120deg, var(--cta), #ff7f8a 55%, #c084fc);
+  background: linear-gradient(120deg, var(--cta), #ff7f8a 36%, #e879f9 68%, #c084fc);
   color: white;
   border: 0;
   padding: 0.9rem 1.2rem;
   font-size: 0.98rem;
-  box-shadow: 0 10px 30px var(--glow-accent);
+  box-shadow: 0 10px 30px var(--glow-accent), 0 8px 22px var(--glow-purple);
 }
 
 .download-actions-row {
@@ -2273,7 +2273,7 @@ footer {
   font-size: clamp(1.75rem, 4vw, 2.35rem);
   font-weight: 800;
   letter-spacing: -0.03em;
-  background: linear-gradient(95deg, #ffe0e4, #ff7f8a 55%, #c084fc);
+  background: linear-gradient(95deg, #ffe0e4, #ff7f8a 32%, #e879f9 62%, #c084fc);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -2298,7 +2298,10 @@ footer {
   font-size: 0.72rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #ffc2c8;
+  background: linear-gradient(90deg, #ffc2c8, #e879f9 55%, #c084fc);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
   font-weight: 800;
 }
 
@@ -2458,7 +2461,7 @@ footer {
 }
 
 .how-card.tone-violet .how-num {
-  background: linear-gradient(135deg, #f05d6a, #c084fc);
+  background: linear-gradient(135deg, #f05d6a, #e879f9, #c084fc);
 }
 
 .how-card.tone-pink .how-num {
@@ -2934,8 +2937,8 @@ footer {
   gap: 1.25rem;
   padding: clamp(1.25rem, 3vw, 1.75rem);
   border-radius: 22px;
-  border: 1px solid var(--line);
-  background: linear-gradient(135deg, rgba(255, 127, 138, 0.08), rgba(192, 132, 252, 0.05));
+  border: 1px solid rgba(192, 132, 252, 0.28);
+  background: linear-gradient(135deg, rgba(255, 127, 138, 0.12), rgba(232, 121, 249, 0.1), rgba(192, 132, 252, 0.14));
 }
 
 .pricing-teaser-cta {
@@ -2991,7 +2994,7 @@ footer {
   font-size: 0.92rem;
   font-weight: 700;
   letter-spacing: 0.01em;
-  background: linear-gradient(95deg, #ffc2c8, #ff7f8a 45%, #c084fc);
+  background: linear-gradient(95deg, #ffc2c8, #ff7f8a 30%, #e879f9 60%, #c084fc);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
