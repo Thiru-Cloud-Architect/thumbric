@@ -34,6 +34,7 @@ export function SiteHeader({ userLabel, onLoginClick }: SiteHeaderProps) {
         <Link to="/pricing">Pricing</Link>
         <NavHashLink hash="how">How it works</NavHashLink>
         <NavHashLink hash="editor">Editor</NavHashLink>
+        <Link to="/career">Careers</Link>
       </nav>
       <div className="top-actions">
         {onLoginClick ? (

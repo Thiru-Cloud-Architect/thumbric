@@ -516,6 +516,7 @@ export function SiteFooter({ buildLabel }: { buildLabel?: string }) {
             </div>
             <div className="footer-col">
               <p className="footer-head">Resources</p>
+              <Link to="/career">Careers</Link>
               <a
                 href="https://github.com/Thiru-Cloud-Architect/thumbric"
                 rel="noopener noreferrer"
