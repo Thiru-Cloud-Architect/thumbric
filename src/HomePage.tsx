@@ -934,10 +934,7 @@ export default function HomePage() {
         <FaqAccordion />
       </main>
 
-      <SiteFooter />
-      <p className="build-tag build-tag-fixed">
-        {PRODUCT_NAME} · UI {UI_BUILD}
-      </p>
+      <SiteFooter buildLabel={`${PRODUCT_NAME} · UI ${UI_BUILD}`} />
 
       {modal !== 'none' ? (
         <div className="modal-backdrop" role="presentation" onClick={() => setModal('none')}>

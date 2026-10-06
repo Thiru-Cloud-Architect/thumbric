@@ -126,10 +126,7 @@ export default function PricingPage() {
           </p>
         </section>
       </main>
-      <SiteFooter />
-      <p className="build-tag build-tag-fixed">
-        {PRODUCT_NAME} · UI {UI_BUILD}
-      </p>
+      <SiteFooter buildLabel={`${PRODUCT_NAME} · UI ${UI_BUILD}`} />
     </div>
   )
 }

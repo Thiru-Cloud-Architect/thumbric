@@ -9,4 +9,4 @@ export const DOWNLOAD_PREFIX = 'thumbnailpulse'
 
 export const WATERMARK_LABEL = `${PRODUCT_NAME} · free preview`
 
-export const UI_BUILD = '2026.10.06-u'
+export const UI_BUILD = '2026.10.06-v'

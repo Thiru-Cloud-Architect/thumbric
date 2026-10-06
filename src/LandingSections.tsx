@@ -361,7 +361,7 @@ export function PricingTeaser() {
   )
 }
 
-export function SiteFooter() {
+export function SiteFooter({ buildLabel }: { buildLabel?: string }) {
   return (
     <footer className="site-footer">
       <div className="footer-shell">
@@ -386,6 +386,7 @@ export function SiteFooter() {
             <a href="https://thiru-cloud-architect.github.io/thumbforge/sitemap.xml">Sitemap</a>
           </div>
         </div>
+        {buildLabel ? <p className="footer-build">{buildLabel}</p> : null}
       </div>
     </footer>
   )

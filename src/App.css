@@ -1605,14 +1605,19 @@ footer {
 }
 
 .faq-flashy {
-  padding: clamp(2rem, 5vw, 3.5rem) clamp(1rem, 4vw, 2rem) 4rem;
+  padding: clamp(2rem, 5vw, 3.5rem) clamp(1rem, 4vw, 2rem) 2.5rem;
+  border-top: 1px solid var(--line);
 }
 
 .faq-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  grid-template-columns: minmax(240px, 0.95fr) minmax(0, 1.05fr);
   gap: clamp(1.5rem, 4vw, 3rem);
   align-items: start;
+}
+
+.faq-list {
+  min-width: 0;
 }
 
 .faq-intro h2 {
@@ -1674,8 +1679,19 @@ footer {
 
 .site-footer {
   border-top: 1px solid var(--line);
-  padding: 2rem clamp(1rem, 4vw, 3rem) 1.5rem;
+  padding: 2rem clamp(1rem, 4vw, 3rem) 1.75rem;
   background: #04060c;
+}
+
+.footer-build {
+  margin: 1.75rem 0 0;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--muted);
+  opacity: 0.75;
+  font-family: 'JetBrains Mono', monospace;
 }
 
 .footer-shell {
@@ -2043,6 +2059,28 @@ footer {
   .actions .primary,
   .actions .chip {
     width: 100%;
+  }
+}
+
+@media (min-width: 1100px) {
+  .faq-intro {
+    position: sticky;
+    top: 5.5rem;
+  }
+
+  .faq-layout {
+    grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+  }
+
+  .faq-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: clamp(1.25rem, 3vw, 2.5rem);
+    row-gap: 0;
+  }
+
+  .faq-item {
+    border-bottom: 1px solid var(--line);
   }
 }
 
