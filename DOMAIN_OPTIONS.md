@@ -17,7 +17,7 @@ Availability checked via DNS NS lookup (Status NXDOMAIN ≈ likely free to regis
 | TLD | **Cloudflare** | **Spaceship** | **Namecheap** | **GoDaddy** |
 |-----|----------------|---------------|---------------|-------------|
 | **.ai** | **$80.00 → $80.00** (often 2-yr min) | **$79.98 → $79.98** (2-yr min) | $89.98 → $114.98 (2-yr min) | $49.99 → **$159.99** (2-yr min; yr2 at renew rate) |
-| **.app** | **$8.20 → $14.20** | $10.35 → $14.49 | $10.98 → $22.98 | $15.99 → $27.99 |
+| **.app** | **$8.20 → $14.20** | **$4.98 → $14.69** (promo limit 1) | $10.98 → $22.98 | $15.99 → $27.99 |
 | **.dev** | **$8.20 → $12.20** | **$6.21 → $12.42** | $10.98 → $20.98 | $15.99 → $23.99 |
 | **.io** | **$32.00 → $50.00** | $31.98 → $51.75 | $34.98 → $75.98 | ~$59.99 → $89.99‡ |
 | **.com** | $10.46 → $10.46 | **$8.88 → $9.98** | $10.98 → $18.48 | ~$4.99 → $22.99‡ |
@@ -29,7 +29,7 @@ Availability checked via DNS NS lookup (Status NXDOMAIN ≈ likely free to regis
 | TLD | **Cloudflare** | **Spaceship** | **Namecheap** | **GoDaddy** |
 |-----|----------------|---------------|---------------|-------------|
 | **.ai** | **₹7,712 → ₹7,712** | **₹7,710 → ₹7,710** | ₹8,674 → ₹11,084 | ₹4,819 → **₹15,423** |
-| **.app** | **₹790 → ₹1,369** | ₹998 → ₹1,397 | ₹1,058 → ₹2,215 | ₹1,541 → ₹2,698 |
+| **.app** | **₹790 → ₹1,369** | **₹480 → ₹1,416** (promo limit 1) | ₹1,058 → ₹2,215 | ₹1,541 → ₹2,698 |
 | **.dev** | **₹790 → ₹1,176** | **₹599 → ₹1,197** | ₹1,058 → ₹2,022 | ₹1,541 → ₹2,313 |
 | **.io** | **₹3,085 → ₹4,820** | ₹3,083 → ₹4,989 | ₹3,372 → ₹7,324 | ~₹5,783 → ₹8,675 |
 | **.com** | ₹1,008 → ₹1,008 | **₹856 → ₹962** | ₹1,058 → ₹1,781 | ~₹481 → ₹2,216 |
@@ -50,8 +50,8 @@ Availability checked via DNS NS lookup (Status NXDOMAIN ≈ likely free to regis
 ### Recommendation
 
 1. **`thumbric.ai`** → **Cloudflare** or **Spaceship** (≈ **$80 / ₹7,700 per year**; often **2-yr min** → ≈ **$160 / ₹15,400** first checkout). Prefer Cloudflare if you want CF DNS for GitHub Pages and zero upsells.
-2. **`thumbric.app`** (or `.dev`) → **Cloudflare** for lowest honest renewal (**~$14 / ₹1,370** `.app`; **~$12 / ₹1,180** `.dev`). Spaceship wins **year-one** on `.dev` (~$6) but renews almost the same as CF.
-3. **Skip GoDaddy** for Thumbric — cheap first year on `.ai` is wiped out by **~$160 / ₹15,400** renewals.
+2. **`thumbric.app` / `snapric.app`** (or `.dev`) → **Cloudflare** (or Spaceship yr-1 promo) for honest renewals (**~$14 / ₹1,370** `.app`). **Do not** buy `.app` on GoDaddy IN — see **`snapric.app` GoDaddy IN** below.
+3. **Skip GoDaddy** for product TLDs — `.ai` renew ~**₹15.4k**; `.app` renew ~**₹2.7k** vs CF ~**₹1.4k**.
 4. **Namecheap** is fine if you already have an account; budget ~**$115 / ₹11,000** `.ai` renew and ~**$23 / ₹2,200** `.app` renew.
 
 ## Recommended shortlist
@@ -158,14 +158,21 @@ Rough TLD cost (reuse tables above): **`.ai` ~₹7.7k/yr** · **`.app` ~₹1.4k 
 | **5** | **Sparkthumb** | Spark ≈ creative/AI energy without forced “AI” | Clear product; longer (10 letters) | **All five free** | Strong `.com` option; `.ai` optional |
 | **6** | **Frameric** | Frame = composition craft | Works globally; a bit formal | `.ai` `.app` `.dev` `.in` free; **`.com` taken** | Lead with `frameric.ai` (~₹7.7k) or `.app` (~₹1.4k) |
 
-### Keep Thumbric vs rename?
+### Keep Thumbric vs rename vs `thumbnail.guru`? (ranked for this product)
 
-- **Keep Thumbric** if you want continuity: live Pages URL, existing docs, and **`thumbric.ai` / `thumbric.app` still NXDOMAIN**. Cheapest coherent path remains **`thumbric.app`** (~₹1.4k renew) ± parked **`thumbric.in`**, buy **`.ai`** when budget allows (~₹7.7k/yr).
-- **Rename only if** you want a **`.com`** primary (Thumbric’s is taken) or a fresher snap/pulse story. Then prefer **Snapric** or **Pulseric** — both unlock `.com` + `.ai` + `.app`.
+Re-checked DNS **6 Oct 2026** (Cloudflare DoH NS): `snapric.com` / `.app` / `.ai` still **NXDOMAIN**; `thumbric.app` / `.ai` / `.in` still **NXDOMAIN**; `thumbnail.guru` still **NXDOMAIN**; `thumbric.com` still **taken**.
 
-**Favorites if renaming:** **1) Snapric** · **2) Pulseric**. Otherwise **stay on Thumbric** and buy domains.
+| Rank | Choice | Why | Buy (INR @ ₹96.40) |
+|------|--------|-----|---------------------|
+| **1** | **Rename → Snapric** | Unlocks a real **`.com`** primary (Thumbric’s is gone). Short, *-ric* sibling, no SEO vanity tax. Custom domain not live yet — rename cost is code/docs only. | **`snapric.com` on Cloudflare ~₹1,008/yr** (primary). Optional park **`snapric.app` on CF ~₹790 → ₹1,369** — **not** GoDaddy IN. |
+| **2** | **Keep Thumbric** | Continuity with live Pages URL + docs. Still coherent if you don’t care about `.com`. | **`thumbric.app` on CF ~₹790 → ₹1,369**; park **`thumbric.in`** cheap; **`.ai`** later (~₹7.7k/yr). |
+| **3** | **`thumbnail.guru` SEO** | Literal EMD only. Weak as a product brand; renew **₹3.2k–7.1k**. | **Skip as primary** (see section below). |
 
-“free” = NXDOMAIN at check time · “taken” = NS/A records present · naming suggestions only — **do not rename the product in code** until you decide.
+**Do not** buy **`snapric.app` on GoDaddy IN at ₹1,537.50** — Cloudflare/Spaceship are cheaper year 1 *and* renew ~half of GoDaddy’s ~₹2,691 list. Prefer **`snapric.com`** over `.app` if renaming.
+
+**Favorites if renaming:** **1) Snapric** · **2) Pulseric**. Naming-only until you decide — **do not rename the product in code** yet.
+
+“free” = NXDOMAIN at check time · “taken” = NS/A records present.
 
 ## TLD price guide (Cloudflare list, Oct 2026)
 
@@ -177,6 +184,31 @@ Rough TLD cost (reuse tables above): **`.ai` ~₹7.7k/yr** · **`.app` ~₹1.4k 
 | **.io** | $32 / ₹3,085 | $50 / ₹4,820 | Only if you love `.io` |
 | **.com** | $10.46 / ₹1,008 | $10.46 / ₹1,008 | Ideal but `thumbric.com` taken |
 | **.online** | Promo $2–5 | ~$25–30 | Not worth it long-term |
+
+## `snapric.app` (GoDaddy India screenshot, Oct 2026)
+
+User screenshot (`godaddy.com/en-in`): **`snapric.app` ₹1,537.50** first year (struck **₹2,691.35**), SSL included. Ignore XYZ/info/net/store bundle and GoDaddy keyword fluff. Same TLD pricing applies to **`thumbric.app`**.
+
+### `.app` renewal: GoDaddy IN vs Cloudflare / Spaceship
+
+FX **₹96.40 / USD**. GoDaddy IN struck ≈ list/renew; US list **$27.99** ≈ **₹2,698** — matches the ₹2,691.35 strike within rounding/tax display.
+
+| Registrar | First year | Renewal | ≈ 3-year total | Notes |
+|-----------|------------|---------|----------------|-------|
+| **GoDaddy IN** (this offer) | **₹1,537.50** | **~₹2,691** (struck list) | **~₹6,920** | Promo ≠ renew; upsells; SSL credit is `.app` hygiene, not a bargain |
+| **Cloudflare** | **$8.20 / ₹790** | **$14.20 / ₹1,369** | **~₹3,528** | Best honest renew; CF DNS → GitHub Pages |
+| **Spaceship** | **$4.98 / ₹480** (limit 1) | **$14.69 / ₹1,416** | **~₹3,312** | Cheapest yr-1; renew ~tied with CF |
+
+**Verdict — do not buy `snapric.app` on GoDaddy IN.** Register on **Cloudflare** (or Spaceship if grabbing the $4.98 promo). Same math for **`thumbric.app`**.
+
+### Buy Snapric where?
+
+| Option | Cost | Recommendation |
+|--------|------|----------------|
+| **`snapric.com` on Cloudflare** | **~$10.46 / ~₹1,008**/yr flat | **Best if renaming** — real `.com`, still free (NXDOMAIN) |
+| **`snapric.app` on Cloudflare** | ₹790 → ₹1,369 | Fine secondary / app-feel URL; not needed if `.com` is primary |
+| **`snapric.app` on GoDaddy IN** | ₹1,538 → ~₹2,691 | **Skip** — pays more than CF every year |
+| Keep **Thumbric** + **`thumbric.app` on CF** | ₹790 → ₹1,369 | Best if *not* renaming |
 
 ## `thumbnail.guru` (GoDaddy India promo, Oct 2026)
 
@@ -227,14 +259,16 @@ FX **₹96.40 / USD**. GoDaddy India struck price ≈ **$73.80** retail renew �
 
 ## Decision cheat-sheet
 
-1. **Want exact brand + AI signal** → buy **`thumbric.ai`** on **Cloudflare** or **Spaceship** (~**$80 / ₹7,700**/yr; budget **2 years** up front).
-2. **Want cheap + clean** → buy **`thumbric.app`** (or `.dev`) on Cloudflare (~**$14 / ₹1,370** renew for `.app`).
-3. **India promo on GoDaddy** → **`thumbric.in` at ₹1 / 3-yr** is fine as a **parked redirect** (~**₹1,800** for 3 years) — not the product brand. See **`.in` / India promo** above.
-4. **`thumbnail.guru` at ₹384** → **skip as primary**; optional vanity park only after transfer off GoDaddy — see **`thumbnail.guru`** section above.
-5. **`.ai` already gone when you check** → try **`thumbrix.ai`** / **`thumbora.ai`**, or see **Alternate brand names** (**Snapric** / **Pulseric** if renaming). Or keep **`thumbric.app`**.
-6. **Considering a rename** → prefer **Snapric** or **Pulseric** (both unlock `.com`); otherwise **keep Thumbric**. Naming-only until you decide — don’t rename in code yet.
+**Product rank (INR):** **1) Snapric + `snapric.com` on CF (~₹1k/yr)** · **2) Keep Thumbric + `thumbric.app` on CF (~₹1.4k renew)** · **3) Skip `thumbnail.guru` as primary**.
+
+1. **Renaming to Snapric** → buy **`snapric.com` on Cloudflare (~₹1,008/yr)**; optional **`snapric.app` on CF** — **not** GoDaddy IN ₹1,537.50 (renew ~₹2.7k). See **`snapric.app` GoDaddy IN**.
+2. **Keeping Thumbric + cheap + clean** → buy **`thumbric.app`** (or `.dev`) on Cloudflare (~**₹1,370** renew). Same TLD prices as Snapric `.app`.
+3. **Want exact brand + AI signal (Thumbric)** → buy **`thumbric.ai`** on **Cloudflare** or **Spaceship** (~**₹7,700**/yr; often **2-yr** up front).
+4. **India promo on GoDaddy** → **`thumbric.in` at ₹1 / 3-yr** is fine as a **parked redirect** (~**₹1,800** for 3 years) — not the product brand.
+5. **`thumbnail.guru` at ₹384** → **skip as primary**; optional vanity park only after transfer off GoDaddy.
+6. **`snapric.app` GoDaddy IN** → **skip**; CF/Spaceship cheaper register + renew.
 7. **$0 for now** → keep https://thiru-cloud-architect.github.io/thumbric/ (already live).
-8. **Comparing registrars from India** → force USD view or convert at one FX rate; don’t mix CF `$` with GoDaddy/Namecheap `₹` pages.
+8. **Comparing registrars from India** → force USD view or convert at one FX rate; don’t mix CF `$` with GoDaddy `₹` pages.
 
 ## After purchase (registrar DNS → GitHub Pages)
 
