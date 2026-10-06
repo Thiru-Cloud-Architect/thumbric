@@ -52,9 +52,19 @@ No Cloudflare zones, `*.pages.dev`, or `*.workers.dev` deployments are available
 
 **Zero-touch custom domain is impossible** in this environment. The only free hostname that works with zero user action remains the GitHub project Pages URL above.
 
+### Free vs buy (recommendation)
+
+| Choice | Cost | Notes |
+|--------|------|-------|
+| Stay on github.io | **Free** | Live now; fine for launch |
+| `thumbric.ai` | **~$80/yr** | Preferred brand match; Cloudflare Registrar |
+| `thumbric.app` | **~$8–15/yr** | Cheaper alternative if `.ai` feels steep |
+
+**Not purchased yet** — do not claim domain progress. Live stays on github.io until someone buys + follows steps below.
+
 ## Single unavoidable user step (custom domain)
 
-1. **Buy `thumbric.ai`** (Cloudflare Registrar recommended) with your payment method.
+1. **Buy `thumbric.ai`** (or cheaper `thumbric.app`) with your payment method. Cloudflare Registrar recommended for `.ai`.
 
 Optional but best for agents afterward: create a Cloudflare API token (Zone DNS Edit + Registrar if available) and put it in the Cursor environment / repo secret as `CLOUDFLARE_API_TOKEN`. Then say `@team.md domain` — agents can finish DNS + Pages + `VITE_*` without further clicks.
 

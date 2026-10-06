@@ -163,15 +163,20 @@ export function clampTextPosition(
   layout: LayoutId,
   textPos: TextPosition,
 ): TextPosition {
+  // Clamp against the full canvas — not the layout text column.
+  // photo-full's layout text box starts ~55–58% down; clamping to that
+  // region blocked dragging the title into the upper third.
   const text = layoutBoxes(platform, layout).text
   const W = platform.width
   const H = platform.height
-  const padX = Math.round(text.w * 0.07)
-  const padY = Math.round(text.h * 0.04)
-  const minX = (text.x + padX) / W
-  const minY = (text.y + padY) / H
-  const maxX = (text.x + text.w - padX) / W
-  const maxY = (text.y + text.h - padY) / H
+  const margin = Math.round(Math.min(W, H) * 0.03)
+  // Keep a sliver of the title block on-canvas so it cannot vanish off-edge.
+  const keepX = Math.min(Math.round(text.w * 0.35), Math.round(W * 0.22))
+  const keepY = Math.min(Math.round(text.h * 0.35), Math.round(H * 0.2))
+  const minX = margin / W
+  const minY = margin / H
+  const maxX = Math.max(minX, (W - margin - keepX) / W)
+  const maxY = Math.max(minY, (H - margin - keepY) / H)
   return {
     x: Math.min(maxX, Math.max(minX, textPos.x)),
     y: Math.min(maxY, Math.max(minY, textPos.y)),

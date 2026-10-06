@@ -130,6 +130,7 @@ export default function HomePage() {
   const fileRef = useRef<HTMLInputElement>(null)
   const dragIndexRef = useRef<number | null>(null)
   const dragTargetRef = useRef<DragTarget>(null)
+  const dragOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
 
   const niche = useMemo(() => getNiche(nicheId), [nicheId])
   const platform = useMemo(() => getPlatform(platformId), [platformId])
@@ -327,6 +328,11 @@ export default function HomePage() {
       event.currentTarget.setPointerCapture(event.pointerId)
       dragIndexRef.current = stickerIndex
       dragTargetRef.current = 'sticker'
+      const sticker = stickers[stickerIndex]
+      dragOffsetRef.current = {
+        x: point.x - sticker.x * platform.width,
+        y: point.y - sticker.y * platform.height,
+      }
       setActiveStickerIndex(stickerIndex)
       setTextSelected(false)
       setDragging(true)
@@ -338,6 +344,10 @@ export default function HomePage() {
       event.currentTarget.setPointerCapture(event.pointerId)
       dragTargetRef.current = 'text'
       dragIndexRef.current = null
+      dragOffsetRef.current = {
+        x: point.x - textPos.x * platform.width,
+        y: point.y - textPos.y * platform.height,
+      }
       setActiveStickerIndex(null)
       setTextSelected(true)
       setDragging(true)
@@ -355,13 +365,14 @@ export default function HomePage() {
     if (target === 'sticker') {
       const dragIndex = dragIndexRef.current
       if (dragIndex === null) return
+      const offset = dragOffsetRef.current
       setStickers((current) =>
         current.map((item, index) =>
           index === dragIndex
             ? {
                 ...item,
-                x: clampStickerPos(point.x / platform.width),
-                y: clampStickerPos(point.y / platform.height),
+                x: clampStickerPos((point.x - offset.x) / platform.width),
+                y: clampStickerPos((point.y - offset.y) / platform.height),
               }
             : item,
         ),
@@ -370,10 +381,11 @@ export default function HomePage() {
       return
     }
     if (target === 'text') {
+      const offset = dragOffsetRef.current
       setTextPos(
         clampTextPosition(platform, layout, {
-          x: point.x / platform.width,
-          y: point.y / platform.height,
+          x: (point.x - offset.x) / platform.width,
+          y: (point.y - offset.y) / platform.height,
         }),
       )
       event.currentTarget.style.cursor = 'grabbing'

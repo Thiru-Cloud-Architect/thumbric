@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest'
 import { DEFAULT_TITLE_FONT_SIZE, getFont } from './fonts'
 import { getNiche } from './niches'
 import { getPlatform } from './platforms'
-import { defaultTextPosition, hitTestSticker, hitTestTextBlock } from './render'
+import {
+  clampTextPosition,
+  defaultTextPosition,
+  hitTestSticker,
+  hitTestTextBlock,
+} from './render'
 import { clampStickerPos } from './stickers'
 
 describe('sticker placement', () => {
@@ -56,5 +61,26 @@ describe('text placement', () => {
       hitTestTextBlock(input, textPos.x * platform.width + 20, textPos.y * platform.height + 40),
     ).toBe(true)
     expect(hitTestTextBlock(input, platform.width * 0.05, platform.height * 0.05)).toBe(false)
+  })
+
+  it('allows photo-full titles in the upper third of the canvas', () => {
+    const platform = getPlatform('youtube')
+    const upper = clampTextPosition(platform, 'photo-full', { x: 0.08, y: 0.08 })
+    expect(upper.y).toBeLessThan(0.2)
+    expect(upper.y).toBeGreaterThan(0)
+
+    const clampedTop = clampTextPosition(platform, 'photo-full', { x: 0.08, y: -1 })
+    expect(clampedTop.y).toBeGreaterThan(0)
+    expect(clampedTop.y).toBeLessThan(0.1)
+
+    const clampedBottom = clampTextPosition(platform, 'photo-full', { x: 0.08, y: 2 })
+    expect(clampedBottom.y).toBeLessThan(1)
+    expect(clampedBottom.y).toBeGreaterThan(0.5)
+  })
+
+  it('allows shorts photo-full titles near the top', () => {
+    const platform = getPlatform('shorts')
+    const upper = clampTextPosition(platform, 'photo-full', { x: 0.1, y: 0.05 })
+    expect(upper.y).toBeLessThan(0.15)
   })
 })
