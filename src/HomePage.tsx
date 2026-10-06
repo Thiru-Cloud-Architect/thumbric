@@ -115,7 +115,10 @@ export default function HomePage() {
   const [simpleUser, setSimpleUser] = useState<SimpleUser | null>(() => loadSimpleUser())
   const [aiHint, setAiHint] = useState('')
   const [aiBusy, setAiBusy] = useState(false)
-  const [editorTab, setEditorTab] = useState<EditorTab>('setup')
+  const [editorTab, setEditorTab] = useState<EditorTab>(() => {
+    const hash = normalizeHash(typeof window !== 'undefined' ? window.location.hash : '')
+    return hash === 'editor-ai' || hash === 'editor-title' ? 'title' : 'setup'
+  })
   const aiAbortRef = useRef<AbortController | null>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
