@@ -105,22 +105,67 @@ Registry wholesale for `.in` is only **₹500/yr** (NIXI); retail is registrar m
 
 **Buy `.in` now as cheap parked brand protection** (GoDaddy ₹1/3-yr if cart ≈ ₹1.8k, or Spaceship if you want honest renewals) **and redirect later** — **do not** make `thumbric.in` the public product name. Still buy **`thumbric.app`** soon (budget primary) and/or **`thumbric.ai`** when ready (~₹7.7k/yr). Skip treating the ₹1 offer as “the domain strategy.”
 
-## Alternative brand names (same idea as Thumbric)
+## Alternate brand names (shortlist)
 
-| Name | .ai | .app | .dev | .io | .com | Notes |
-|------|-----|------|------|-----|------|-------|
-| **thumbric** | free | free | free | free | **taken** | **Primary pick** |
-| **thumbrix** | free | free | free | free | **taken** | Close alternate if `.ai` scooped |
-| **thumbora** | free | free | free | free | **taken** | Softer brand |
-| **thumbricks** | free | free | free | free | free | Longer; `.com` available |
-| **getthumbric** | free | free | free | free | free | Weaker (“get…” prefix) |
-| **usethumbric** | free | free | free | free | free | Weaker |
-| **makethumb** | free | **taken** | free | free | free | Generic |
-| **clickthumb** | free | free | free | **taken** | **taken** | Generic |
-| **thumbforge** | **taken** | **taken** | free | **taken** | ? | Old repo name — mostly gone |
-| **thumbly** | **taken** | **taken** | free | **taken** | **taken** | Crowded |
+Brainstorm themes: **thumb + click / spark / forge / pulse / frame / snap / glow**, short & pronounceable, lightly AI-adjacent. DNS via **Cloudflare DoH** (NS query; Status **3 NXDOMAIN ≈ free**, **0 ≈ taken**). Always confirm at registrar checkout. Checked **6 Oct 2026**.
 
-“free” = NXDOMAIN at check time · “taken” = NS records present.
+### Full brainstorm (18)
+
+| Name | .ai | .app | .dev | .in | .com | Vibe |
+|------|-----|------|------|-----|------|------|
+| **snapric** | free | free | free | free | **free** | Snap + *-ric* (Thumbric sibling); strongest clean slate |
+| **pulseric** | free | free | free | free | **free** | Pulse/CTR energy; same brand pattern |
+| **glowric** | free | free | free | ?‡ | **free** | Glow premium; short |
+| **frameric** | free | free | free | free | **taken** | Frame craft; keep `.ai`/`.app` |
+| **thumbglow** | free | free | free | free | **free** | Product-clear; glow = polish |
+| **glowthumb** | free | free | free | free | **free** | Same idea, flipped compound |
+| **sparkthumb** | free | free | free | free | **free** | Spark ≈ AI spark without “AI” in the name |
+| **pulsethumb** | free | free | free | free | **free** | Engagement / click-pulse |
+| **thumbspark** | free | free | free | free | **taken** | Same spark story; lose `.com` |
+| **snappulse** | free | free | free | free | **taken** | Snap + pulse; no `.com` |
+| **thumbpulse** | free | free | free | free | **taken** | Clear; no `.com` |
+| **clipglow** | free | free | free | free | **taken** | Clip/thumbnail + glow |
+| **framesnap** | free | **taken** | **taken** | free | **taken** | Crowded TLD map |
+| **frameglow** | free | **taken** | free | free | **taken** | Soft craft; `.ai` only strong |
+| **clickora** | free | **taken** | free | **taken** | **taken** | Soft India-friendly sound; scarce |
+| **clickpix** | free | free | free | **taken** | **taken** | Literal; weaker brand |
+| **pixforge** | **taken** | free | **taken** | free | **taken** | Tool/forge vibe; mostly gone |
+| **thumbkit** | free | **taken** | **taken** | free | **taken** | Utility; weak as hero brand |
+
+‡ `glowric.in` returned DoH **SERVFAIL** (not NXDOMAIN) — treat as **confirm at registrar**, not “taken.”
+
+### Prior close variants (still useful)
+
+| Name | .ai | .app | .dev | .com | Notes |
+|------|-----|------|------|------|-------|
+| **thumbric** | free | free | free | **taken** | **Current brand** — keep unless renaming |
+| **thumbrix** | free | free | free | **taken** | Closest spelling alternate |
+| **thumbora** | free | free | free | **taken** | Softer |
+| **thumbricks** | free | free | free | free | Longer; `.com` available |
+| **thumbforge** | **taken** | **taken** | free | ? | Old repo name — avoid |
+| **thumbly** | **taken** | **taken** | free | **taken** | Crowded |
+
+### Top 6 ranked
+
+Rough TLD cost (reuse tables above): **`.ai` ~₹7.7k/yr** · **`.app` ~₹1.4k renew** · **`.in` cheap India park** · **`.com` ~₹1k/yr**.
+
+| Rank | Name | Brand feel | India + global | Availability | Cost path |
+|------|------|------------|----------------|--------------|-----------|
+| **1** | **Snapric** | Short, punchy, Thumbric-like *-ric*; “snap” = click/capture | Easy to say in EN/HI markets; no awkward clusters | **`.ai` `.app` `.dev` `.in` `.com` all free** | Best: `snapric.com` (~₹1k) + `snapric.app` (~₹1.4k) or `snapric.ai` (~₹7.7k) |
+| **2** | **Pulseric** | Same pattern; pulse = CTR / live energy | Global SaaS feel; clear in India | **All five TLDs free** | Same cost ladder as Snapric |
+| **3** | **Thumbglow** | Instantly “thumbnail + polish”; slightly more descriptive | Readable everywhere; less invented | **All five free** | Prefer `.com`/`.app`; `.ai` only if pushing AI story |
+| **4** | **Glowric** | Premium short; glow without saying thumb | Soft brand; India-friendly | `.ai` `.app` `.dev` `.com` free; `.in` confirm | `glowric.com` + `.app` budget path |
+| **5** | **Sparkthumb** | Spark ≈ creative/AI energy without forced “AI” | Clear product; longer (10 letters) | **All five free** | Strong `.com` option; `.ai` optional |
+| **6** | **Frameric** | Frame = composition craft | Works globally; a bit formal | `.ai` `.app` `.dev` `.in` free; **`.com` taken** | Lead with `frameric.ai` (~₹7.7k) or `.app` (~₹1.4k) |
+
+### Keep Thumbric vs rename?
+
+- **Keep Thumbric** if you want continuity: live Pages URL, existing docs, and **`thumbric.ai` / `thumbric.app` still NXDOMAIN**. Cheapest coherent path remains **`thumbric.app`** (~₹1.4k renew) ± parked **`thumbric.in`**, buy **`.ai`** when budget allows (~₹7.7k/yr).
+- **Rename only if** you want a **`.com`** primary (Thumbric’s is taken) or a fresher snap/pulse story. Then prefer **Snapric** or **Pulseric** — both unlock `.com` + `.ai` + `.app`.
+
+**Favorites if renaming:** **1) Snapric** · **2) Pulseric**. Otherwise **stay on Thumbric** and buy domains.
+
+“free” = NXDOMAIN at check time · “taken” = NS/A records present · naming suggestions only — **do not rename the product in code** until you decide.
 
 ## TLD price guide (Cloudflare list, Oct 2026)
 
@@ -138,9 +183,10 @@ Registry wholesale for `.in` is only **₹500/yr** (NIXI); retail is registrar m
 1. **Want exact brand + AI signal** → buy **`thumbric.ai`** on **Cloudflare** or **Spaceship** (~**$80 / ₹7,700**/yr; budget **2 years** up front).
 2. **Want cheap + clean** → buy **`thumbric.app`** (or `.dev`) on Cloudflare (~**$14 / ₹1,370** renew for `.app`).
 3. **India promo on GoDaddy** → **`thumbric.in` at ₹1 / 3-yr** is fine as a **parked redirect** (~**₹1,800** for 3 years) — not the product brand. See **`.in` / India promo** above.
-4. **`.ai` already gone when you check** → try **`thumbrix.ai`** or **`thumbora.ai`**, or keep **`thumbric.app`**.
-5. **$0 for now** → keep https://thiru-cloud-architect.github.io/thumbric/ (already live).
-6. **Comparing registrars from India** → force USD view or convert at one FX rate; don’t mix CF `$` with GoDaddy/Namecheap `₹` pages.
+4. **`.ai` already gone when you check** → try **`thumbrix.ai`** / **`thumbora.ai`**, or see **Alternate brand names** (**Snapric** / **Pulseric** if renaming). Or keep **`thumbric.app`**.
+5. **Considering a rename** → prefer **Snapric** or **Pulseric** (both unlock `.com`); otherwise **keep Thumbric**. Naming-only until you decide — don’t rename in code yet.
+6. **$0 for now** → keep https://thiru-cloud-architect.github.io/thumbric/ (already live).
+7. **Comparing registrars from India** → force USD view or convert at one FX rate; don’t mix CF `$` with GoDaddy/Namecheap `₹` pages.
 
 ## After purchase (registrar DNS → GitHub Pages)
 
