@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { PRODUCT_NAME, UI_BUILD } from './brand'
+import { PRODUCT_NAME_FULL, UI_BUILD } from './brand'
 import {
   CREATOR_CLEAN_DOWNLOADS_PER_MONTH,
   activateDemoPlan,
@@ -126,7 +126,7 @@ export default function PricingPage() {
           </p>
         </section>
       </main>
-      <SiteFooter buildLabel={`${PRODUCT_NAME} · UI ${UI_BUILD}`} />
+      <SiteFooter buildLabel={`${PRODUCT_NAME_FULL} · UI ${UI_BUILD}`} />
     </div>
   )
 }

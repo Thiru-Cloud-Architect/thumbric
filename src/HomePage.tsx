@@ -32,6 +32,7 @@ import {
   Testimonials,
 } from './LandingSections'
 import { LazyReveal } from './LazyReveal'
+import { PlushInfoSection } from './PlushInfoSection'
 import { SiteHeader } from './SiteHeader'
 import { planPriceLabel } from './plans'
 import { COLOR_PRESETS, LAYOUTS, PHOTO_SHAPES, type LayoutId, type PhotoShapeId } from './layout'
@@ -61,7 +62,7 @@ import {
   type PlacedSticker,
   type StickerId,
 } from './stickers'
-import { DOWNLOAD_PREFIX, PRODUCT_NAME, UI_BUILD } from './brand'
+import { DOWNLOAD_PREFIX, PRODUCT_NAME_FULL, UI_BUILD } from './brand'
 import './App.css'
 
 const POPULAR: NicheId[] = ['tech', 'finance', 'gaming', 'cooking', 'travel', 'fitness', 'education', 'vlog']
@@ -167,17 +168,24 @@ export default function HomePage() {
   }, [previewInput, platform.width, platform.height])
 
   useEffect(() => {
-    if (platform.orientation === 'vertical' && layout === 'photo-left') {
+    const nextPlatform = getPlatform(platformId)
+    if (nextPlatform.orientation === 'vertical' && layout === 'photo-left') {
       setLayout('photo-top')
+      return
     }
-  }, [platform.orientation, layout])
+    if (nextPlatform.orientation !== 'vertical' && layout === 'photo-top') {
+      setLayout('photo-left')
+    }
+  }, [platformId, platform.orientation, layout])
 
   useEffect(() => {
     const scrollY = window.scrollY
     setTextPos(defaultTextPosition(getPlatform(platformId), layout))
     setTextSelected(false)
     requestAnimationFrame(() => {
-      window.scrollTo(0, scrollY)
+      requestAnimationFrame(() => {
+        window.scrollTo(0, scrollY)
+      })
     })
   }, [platformId, layout])
 
@@ -434,6 +442,7 @@ export default function HomePage() {
             document.getElementById('editor')?.scrollIntoView({ behavior: 'smooth' })
           }}
         />
+        <PlushInfoSection />
         <LazyReveal minHeight="8rem">
           <StatsStrip />
         </LazyReveal>
@@ -458,7 +467,7 @@ export default function HomePage() {
             </h2>
             <p className="editor-lede">
               Platform-sized canvas, moods, and drag-to-place text — tuned to match the rest of{' '}
-              {PRODUCT_NAME}.
+              {PRODUCT_NAME_FULL}.
             </p>
           </div>
         <section className="workbench editor-workbench" aria-label="Thumbnail maker">
@@ -480,8 +489,9 @@ export default function HomePage() {
                 aria-selected={editorTab === 'setup'}
                 className={editorTab === 'setup' ? 'editor-tab is-active' : 'editor-tab'}
                 onClick={() => setEditorTab('setup')}
+                title="Platform and mood"
               >
-                1 · Platform &amp; mood
+                1 · Setup
               </button>
               <button
                 type="button"
@@ -489,6 +499,7 @@ export default function HomePage() {
                 aria-selected={editorTab === 'title'}
                 className={editorTab === 'title' ? 'editor-tab is-active' : 'editor-tab'}
                 onClick={() => setEditorTab('title')}
+                title="Title, font, and size"
               >
                 2 · Title
               </button>
@@ -498,8 +509,9 @@ export default function HomePage() {
                 aria-selected={editorTab === 'polish'}
                 className={editorTab === 'polish' ? 'editor-tab is-active' : 'editor-tab'}
                 onClick={() => setEditorTab('polish')}
+                title="Polish and export"
               >
-                3 · Polish &amp; export
+                3 · Export
               </button>
             </div>
 
@@ -915,6 +927,7 @@ export default function HomePage() {
 
           <div className="preview-panel">
             <p className="preview-label">Live preview · {platform.label}</p>
+            <div className="preview-viewport">
             <div
               className={`preview-wrap ${platform.orientation}`}
               style={{ aspectRatio: `${platform.width} / ${platform.height}` }}
@@ -930,6 +943,7 @@ export default function HomePage() {
                 onPointerUp={onCanvasPointerUp}
                 onPointerCancel={onCanvasPointerUp}
               />
+            </div>
             </div>
             <p className="preview-hint">Drag the title block or stickers directly on the canvas.</p>
           </div>
@@ -953,7 +967,7 @@ export default function HomePage() {
         </LazyReveal>
       </main>
 
-      <SiteFooter buildLabel={`${PRODUCT_NAME} · UI ${UI_BUILD}`} />
+      <SiteFooter buildLabel={`${PRODUCT_NAME_FULL} · UI ${UI_BUILD}`} />
 
       {modal !== 'none' ? (
         <div className="modal-backdrop" role="presentation" onClick={() => setModal('none')}>

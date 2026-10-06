@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { NavHashLink } from './nav'
-import { PRODUCT_NAME, PRODUCT_TAGLINE } from './brand'
+import { PRODUCT_NAME, PRODUCT_NAME_FULL, PRODUCT_TAGLINE } from './brand'
 import { CREATOR_CLEAN_DOWNLOADS_PER_MONTH } from './entitlement'
 import { FEATURES } from './features'
 import { HERO_THUMBS, type HeroThumb } from './heroThumbs'
@@ -9,7 +9,7 @@ import { HERO_THUMBS, type HeroThumb } from './heroThumbs'
 const FAQ_ITEMS = [
   {
     q: 'Will a better thumbnail actually help my videos?',
-    a: 'Strong titles and contrast help people stop scrolling. ThumbnailPulse gives you platform-sized layouts, bold type, and moods tuned for YouTube-style clicks — you bring the title and photo.',
+    a: 'Strong titles and contrast help people stop scrolling. Thumbric.ai gives you platform-sized layouts, bold type, and moods tuned for YouTube-style clicks — you bring the title and photo.',
   },
   {
     q: 'What if I am bad at design?',
@@ -355,7 +355,7 @@ export function SiteFooter({ buildLabel }: { buildLabel?: string }) {
       <div className="footer-shell">
         <div className="footer-grid">
           <div className="footer-col footer-col-brand">
-            <p className="footer-brand">{PRODUCT_NAME}</p>
+            <p className="footer-brand">{PRODUCT_NAME_FULL}</p>
             <p className="footer-tag">Free browser thumbnail maker for YouTube &amp; social.</p>
           </div>
           <div className="footer-col">
@@ -364,6 +364,7 @@ export function SiteFooter({ buildLabel }: { buildLabel?: string }) {
             <NavHashLink hash="how">How it works</NavHashLink>
             <NavHashLink hash="features">Feature list</NavHashLink>
             <Link to="/pricing">Plans &amp; pricing</Link>
+            <Link to="/career">Careers</Link>
             <NavHashLink hash="faq">FAQ</NavHashLink>
           </div>
           <div className="footer-col">

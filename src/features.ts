@@ -6,7 +6,7 @@ export type FeatureItem = {
   available: boolean
 }
 
-/** What ThumbnailPulse actually does today — honest, user-facing. */
+/** What Thumbric.ai actually does today — honest, user-facing. */
 export const FEATURES: FeatureItem[] = [
   {
     id: 'platform-export',

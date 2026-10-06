@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { PRODUCT_NAME } from './brand'
+import { PRODUCT_NAME_FULL } from './brand'
 import { NavHashLink, useOnHomePage } from './nav'
 
 export function SiteHeader() {
@@ -11,13 +11,14 @@ export function SiteHeader() {
         <span className="brand-mark" aria-hidden>
           ▶
         </span>
-        {PRODUCT_NAME}
+        {PRODUCT_NAME_FULL}
       </Link>
       <nav className="top-nav" aria-label="Sections">
         <NavHashLink hash="features">Features</NavHashLink>
         <Link to="/pricing">Pricing</Link>
         <NavHashLink hash="how">How it works</NavHashLink>
         <NavHashLink hash="editor">Editor</NavHashLink>
+        <Link to="/career">Careers</Link>
       </nav>
       {onHome ? (
         <a className="top-cta top-cta-light" href="#editor">

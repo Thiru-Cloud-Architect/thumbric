@@ -2271,3 +2271,197 @@ footer {
     max-height: 180px;
   }
 }
+
+.plush-info-section {
+  padding: clamp(2rem, 5vw, 3.5rem) clamp(1rem, 4vw, 2rem);
+}
+
+.plush-info-head {
+  margin-bottom: 1.5rem;
+}
+
+.plush-info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.plush-info-card {
+  position: relative;
+  padding: 1.15rem 1.1rem 1.2rem;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.01));
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(32px) scale(0.97);
+  transition:
+    opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: calc(var(--stagger, 0) * 70ms);
+}
+
+.plush-info-card.is-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.plush-info-card.tone-violet {
+  border-color: rgba(167, 139, 250, 0.35);
+  box-shadow: 0 16px 40px rgba(124, 58, 237, 0.12);
+}
+
+.plush-info-card.tone-pink {
+  border-color: rgba(236, 72, 153, 0.35);
+}
+
+.plush-info-card.tone-cyan {
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
+.plush-info-card.tone-lime {
+  border-color: rgba(214, 255, 60, 0.28);
+}
+
+.plush-info-kicker {
+  margin: 0 0 0.35rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-bright);
+  font-weight: 800;
+}
+
+.plush-info-card h3 {
+  margin: 0 0 0.45rem;
+  font-size: 1.02rem;
+  line-height: 1.25;
+}
+
+.plush-info-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.plush-info-shine {
+  position: absolute;
+  inset: -40% auto auto -30%;
+  width: 55%;
+  height: 140%;
+  background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.07), transparent);
+  transform: rotate(12deg);
+  animation: plush-shine 4.5s ease-in-out infinite;
+  animation-delay: calc(var(--stagger, 0) * 400ms);
+  pointer-events: none;
+}
+
+.plush-info-card.is-visible .plush-info-shine {
+  animation-play-state: running;
+}
+
+@keyframes plush-shine {
+  0%,
+  100% {
+    transform: translateX(-20%) rotate(12deg);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translateX(120%) rotate(12deg);
+    opacity: 0.85;
+  }
+}
+
+@media (max-width: 980px) {
+  .plush-info-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 981px) and (max-width: 1100px) {
+  .plush-info-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.career-page-main {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding-bottom: 3rem;
+}
+
+.career-hero {
+  padding: clamp(2rem, 5vw, 3rem) clamp(1rem, 4vw, 2rem) 1rem;
+  text-align: center;
+}
+
+.career-card-wrap {
+  padding: 0 clamp(1rem, 4vw, 2rem) 2rem;
+}
+
+.career-status-card {
+  padding: clamp(1.25rem, 3vw, 1.75rem);
+  border-radius: 22px;
+  border: 1px solid var(--line);
+  background: var(--raise);
+  display: grid;
+  gap: 0.85rem;
+}
+
+.career-status-card h2 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.career-status-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.career-status-card a {
+  color: var(--accent-bright);
+}
+
+.career-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  padding-top: 0.35rem;
+}
+
+.preview-viewport {
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-anchor: none;
+}
+
+.editor-workbench .preview-panel {
+  overflow-anchor: none;
+}
+
+.editor-workbench .preview-wrap {
+  animation: none;
+}
+
+.editor-workbench .editor-tabs {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.editor-workbench .editor-tab {
+  min-width: 0;
+  padding: 0.55rem 0.45rem;
+  font-size: clamp(0.62rem, 2.2vw, 0.72rem);
+  white-space: nowrap;
+}
+
+@media (min-width: 981px) {
+  .preview-viewport {
+    min-height: 340px;
+  }
+}

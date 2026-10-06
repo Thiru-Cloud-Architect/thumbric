@@ -1,33 +1,18 @@
-# ThumbnailPulse
+# Thumbric.ai
 
 Free browser thumbnail maker for **YouTube**, Shorts/Reels, Instagram, LinkedIn, and Facebook.
 
 **Live site:** https://thiru-cloud-architect.github.io/thumbforge/
 
-## Product name vs GitHub repo
+## Brand vs GitHub repo
 
 | What | Name |
 |------|------|
-| **Product (UI, marketing)** | **ThumbnailPulse** |
-| **GitHub repo / Pages path** | `thumbforge` → `/thumbforge/` URL (kept so existing links work) |
-| **npm package name** | `thumbnailpulse` |
+| **Product** | **Thumbric.ai** |
+| **GitHub repo / Pages URL** | `thumbforge` → `/thumbforge/` (kept so existing links work) |
+| **npm package** | `thumbric` |
 
-Renaming the GitHub repo to `thumbnailpulse` is optional: update Pages settings and add redirects from `/thumbforge/` if you do.
-
-### `.ai` name ideas (check domain + trademark before buying)
-
-These are **alternatives**, not live brands yet:
-
-| Name | Notes |
-|------|--------|
-| **ThumbnailPulse.ai** | Matches current product name; clear category. |
-| **ClickFrame.ai** | Short, CTR/thumbnail vibe. |
-| **PulseThumb.ai** | Compact variant of ThumbnailPulse. |
-| **FrameRush.ai** | Energy / speed for creators. |
-| **HookFrame.ai** | Title + thumbnail “hook” angle. |
-| **ThumbLab.ai** | Studio / maker feel. |
-
-`thumbforge.ai` is reported taken. Prefer a name you can register on a registrar and connect via GitHub Pages custom domain.
+Point a custom domain (e.g. **thumbric.ai**) at GitHub Pages when the domain is registered.
 
 ## For anyone (no tech skill needed)
 
@@ -38,14 +23,14 @@ These are **alternatives**, not live brands yet:
 
 ## Free vs clean
 
-- **Free preview:** unlimited downloads with a small on-image watermark.
-- **Clean export:** register email, then **Creator** (9 clean PNGs/month) or **Pro** (unlimited). See pricing on `/pricing`. Stripe checkout can be wired later; demo unlock works in-browser today.
+- **Free preview:** unlimited downloads with a small on-image watermark (`Thumbric.ai · free preview`).
+- **Clean export:** register email, then **Creator** (9 clean PNGs/month) or **Pro** (unlimited). See `/pricing`.
 
-## Share & SEO (GitHub Pages)
+## Share & SEO
 
-- [Google Search Console](https://search.google.com/search-console) URL prefix: `https://thiru-cloud-architect.github.io/thumbforge/`
+- [Google Search Console](https://search.google.com/search-console): `https://thiru-cloud-architect.github.io/thumbforge/`
 - Sitemap: https://thiru-cloud-architect.github.io/thumbforge/sitemap.xml
-- Repo **About**: “ThumbnailPulse — free YouTube thumbnail maker” + website link; topics: `youtube`, `thumbnail`, `github-pages`
+- Repo **About**: “Thumbric.ai — free YouTube thumbnail maker” + website link
 
 ## Run locally
 
@@ -59,4 +44,4 @@ Open http://127.0.0.1:43201/thumbforge/
 
 ## Stack
 
-React 19, TypeScript, Vite, client-side canvas (`src/render.ts`). No backend required for the current editor.
+React 19, TypeScript, Vite, client-side canvas (`src/render.ts`).

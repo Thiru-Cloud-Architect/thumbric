@@ -1,5 +1,10 @@
-const STORAGE_KEY = 'thumbnailpulse-entitlement-v2'
-const LEGACY_STORAGE_KEYS = ['thumbnailpulse-entitlement-v1', 'thumbforge-entitlement-v1']
+const STORAGE_KEY = 'thumbric-entitlement-v2'
+const LEGACY_STORAGE_KEYS = [
+  'thumbric-entitlement-v1',
+  'thumbnailpulse-entitlement-v2',
+  'thumbnailpulse-entitlement-v1',
+  'thumbforge-entitlement-v1',
+]
 
 export const CREATOR_CLEAN_DOWNLOADS_PER_MONTH = 9
 
