@@ -36,28 +36,49 @@ type LandingProps = {
   onQuickIdea: () => void
 }
 
-function HeroThumbTile({ thumb }: { thumb: HeroThumb }) {
+function HeroThumbTile({ thumb, eager }: { thumb: HeroThumb; eager?: boolean }) {
+  const [loaded, setLoaded] = useState(false)
   return (
     <div
-      className="hero-thumb-tile"
-      style={{
-        backgroundImage: `url(${thumb.image})`,
-        ['--tile-hue' as string]: thumb.hue,
-      }}
+      className={loaded ? 'hero-thumb-tile is-loaded' : 'hero-thumb-tile'}
+      style={{ ['--tile-hue' as string]: thumb.hue }}
     >
+      <img
+        className="hero-thumb-photo"
+        src={thumb.image}
+        alt=""
+        width={640}
+        height={360}
+        loading={eager ? 'eager' : 'lazy'}
+        decoding="async"
+        fetchPriority={eager ? 'high' : 'auto'}
+        onLoad={() => setLoaded(true)}
+      />
       <span className="hero-thumb-tag">{thumb.tag}</span>
       <span className="hero-thumb-title">{thumb.headline}</span>
     </div>
   )
 }
 
-function ThumbStrip({ reverse, offset = 0 }: { reverse?: boolean; offset?: number }) {
+function ThumbStrip({
+  reverse,
+  offset = 0,
+  stripIndex = 0,
+}: {
+  reverse?: boolean
+  offset?: number
+  stripIndex?: number
+}) {
   const ordered = [...HERO_THUMBS.slice(offset), ...HERO_THUMBS.slice(0, offset)]
   const tiles = [...ordered, ...ordered]
   return (
     <div className={reverse ? 'mosaic-strip reverse' : 'mosaic-strip'}>
       {tiles.map((thumb, index) => (
-        <HeroThumbTile key={`${thumb.id}-${index}`} thumb={thumb} />
+        <HeroThumbTile
+          key={`${thumb.id}-${index}`}
+          thumb={thumb}
+          eager={stripIndex === 0 && index < 4}
+        />
       ))}
     </div>
   )
@@ -102,13 +123,13 @@ export function HeroFlashy({ onQuickIdea }: LandingProps) {
   return (
     <section className="hero-flashy" aria-labelledby="hero-title">
       <div className="hero-mosaic-wrap" aria-hidden>
-        <ThumbStrip offset={0} />
-        <ThumbStrip reverse offset={3} />
-        <ThumbStrip offset={5} />
+        <ThumbStrip offset={0} stripIndex={0} />
+        <ThumbStrip reverse offset={3} stripIndex={1} />
+        <ThumbStrip offset={5} stripIndex={2} />
       </div>
       <div className="hero-scrim" aria-hidden />
       <div className="hero-inner">
-        <p className="hero-badge">Free in browser · No AI required</p>
+        <p className="hero-badge">Free in browser · Photo stays on your device</p>
         <h1 id="hero-title">
           YouTube thumbnails that <span className="gradient-text">get the click.</span>
         </h1>
@@ -366,11 +387,11 @@ export function SiteFooter({ buildLabel }: { buildLabel?: string }) {
     <footer className="site-footer">
       <div className="footer-shell">
         <div className="footer-grid">
-          <div>
+          <div className="footer-col footer-col-brand">
             <p className="footer-brand">{PRODUCT_NAME}</p>
             <p className="footer-tag">Free browser thumbnail maker for YouTube &amp; social.</p>
           </div>
-          <div>
+          <div className="footer-col">
             <p className="footer-head">Product</p>
             <Link to="/#editor">Editor</Link>
             <Link to="/#how">How it works</Link>
@@ -378,7 +399,7 @@ export function SiteFooter({ buildLabel }: { buildLabel?: string }) {
             <Link to="/pricing">Pricing</Link>
             <Link to="/#faq">FAQ</Link>
           </div>
-          <div>
+          <div className="footer-col">
             <p className="footer-head">Resources</p>
             <a href="https://github.com/Thiru-Cloud-Architect/thumbforge" rel="noopener noreferrer">
               GitHub

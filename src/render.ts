@@ -134,7 +134,7 @@ function layoutBoxes(platform: Platform, layout: LayoutId): { photo: Box; text: 
   }
 
   const photoW = Math.round(W * 0.36)
-  const gutter = Math.round(pad * 1.35)
+  const gutter = Math.round(pad * 1.85)
   if (layout === 'photo-right') {
     return {
       photo: { x: W - pad - photoW, y: pad, w: photoW, h: H - pad * 2 },
@@ -150,8 +150,8 @@ function layoutBoxes(platform: Platform, layout: LayoutId): { photo: Box; text: 
 
 export function defaultTextPosition(platform: Platform, layout: LayoutId): TextPosition {
   const text = layoutBoxes(platform, layout).text
-  const padX = Math.round(text.w * 0.04)
-  const padY = Math.round(text.h * 0.03)
+  const padX = Math.round(text.w * 0.07)
+  const padY = Math.round(text.h * 0.04)
   return {
     x: (text.x + padX) / platform.width,
     y: (text.y + padY) / platform.height,
@@ -166,8 +166,8 @@ export function clampTextPosition(
   const text = layoutBoxes(platform, layout).text
   const W = platform.width
   const H = platform.height
-  const padX = Math.round(text.w * 0.04)
-  const padY = Math.round(text.h * 0.03)
+  const padX = Math.round(text.w * 0.07)
+  const padY = Math.round(text.h * 0.04)
   const minX = (text.x + padX) / W
   const minY = (text.y + padY) / H
   const maxX = (text.x + text.w - padX) / W
@@ -482,8 +482,10 @@ function measureTextBlockBounds(input: ThumbInput, box: Box): Box {
     return { x: box.x, y: box.y, w: box.w, h: box.h * 0.5 }
   }
 
+  const strokePad = Math.round(titleSize * 0.2)
+  const innerW = Math.max(40, box.w - strokePad * 2)
   ctx.font = `${font.weight} ${titleSize}px ${font.css}`
-  const lines = wrapLines(ctx, title.toUpperCase(), box.w, maxLines)
+  const lines = wrapLines(ctx, title.toUpperCase(), innerW, maxLines)
   const contentH = tagSize + titleSize + 28 + lines.length * (titleSize + 8) + 12
   const totalH = Math.min(box.h, contentH)
 
@@ -514,20 +516,24 @@ function drawTextBlock(ctx: CanvasRenderingContext2D, input: ThumbInput) {
 
   ctx.textAlign = 'left'
   ctx.textBaseline = 'alphabetic'
+  const strokePad = Math.round(titleSize * 0.2)
+  const innerX = box.x + strokePad
+  const innerW = Math.max(40, box.w - strokePad * 2)
+
   ctx.save()
   ctx.beginPath()
-  ctx.rect(box.x, box.y, box.w, box.h)
+  ctx.rect(box.x - strokePad, box.y, box.w + strokePad * 2, box.h)
   ctx.clip()
 
   ctx.font = `800 ${tagSize}px "DM Sans", sans-serif`
-  drawPunchText(ctx, tag, box.x, box.y + tagSize + 8, accent, styleId, accent)
+  drawPunchText(ctx, tag, innerX, box.y + tagSize + 8, accent, styleId, accent)
 
   ctx.font = `${font.weight} ${titleSize}px ${font.css}`
-  const lines = wrapLines(ctx, title.toUpperCase(), box.w, maxLines)
+  const lines = wrapLines(ctx, title.toUpperCase(), innerW, maxLines)
   let y = box.y + tagSize + titleSize + 28
 
   for (const line of lines) {
-    drawPunchText(ctx, line, box.x, y, '#FFFFFF', styleId, accent)
+    drawPunchText(ctx, line, innerX, y, '#FFFFFF', styleId, accent)
     y += titleSize + 8
   }
   ctx.restore()

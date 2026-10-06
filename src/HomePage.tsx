@@ -884,7 +884,7 @@ export default function HomePage() {
                 ) : null}
               </div>
 
-              <div className="actions">
+              <div className="actions download-actions">
                 <button type="submit" className="primary">
                   Save free preview
                 </button>
