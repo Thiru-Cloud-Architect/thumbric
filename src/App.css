@@ -446,14 +446,14 @@ a {
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(0, 0, 0, 0.32);
-  color: var(--text);
+  color: var(--ink);
   font-size: 0.82rem;
   line-height: 1.4;
 }
 
 .ai-inline-status.is-busy {
   border-color: rgba(255, 127, 138, 0.45);
-  color: #ffd7cf;
+  color: #ffc2c8;
 }
 
 .ai-inline-status.is-ok {
