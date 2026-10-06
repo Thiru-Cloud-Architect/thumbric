@@ -1,0 +1,8 @@
+Live verified 2026-10-06
+URL https://thiru-cloud-architect.github.io/thumbric/
+stamp 2026.10.06-al (current live; our AI Features ship was bd476a9 / 2026.10.06-ah, later polished on main)
+bundle index-7Rhp7yAc.js
+markers present: feature-ai-panel, Describe the scene, Generate AI scene, Works now, Not yet, AI scene image
+markers absent: Open in editor →, Live now, Photo or AI face
+Pages: bd476a9 run 37461664216 success; latest main Pages also green
+/thumbforge redirects to /thumbric/

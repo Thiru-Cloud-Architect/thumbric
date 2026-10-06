@@ -1,12 +1,87 @@
 import type { Niche } from './niches'
 import type { Platform } from './platforms'
 
+/** Visual recipe chips — free Pollinations still, stronger CTR-style prompting. */
+export type AiStyleId =
+  | 'auto'
+  | 'face-reaction'
+  | 'kids-fun'
+  | 'music-stage'
+  | 'product-hero'
+  | 'dark-moody'
+  | 'cartoon'
+
+export type AiStyle = {
+  id: AiStyleId
+  label: string
+  /** Extra prompt clauses for this look. */
+  boost: string
+}
+
+export const AI_STYLES: AiStyle[] = [
+  {
+    id: 'auto',
+    label: 'Auto',
+    boost: 'match the scene description as closely as possible',
+  },
+  {
+    id: 'face-reaction',
+    label: 'Face reaction',
+    boost:
+      'close-up expressive human face looking at camera, strong emotion (shock, joy, or intensity), shallow depth of field, studio key light',
+  },
+  {
+    id: 'kids-fun',
+    label: 'Kids / fun',
+    boost:
+      'bright colorful kids content energy, cute animals or playful characters, cheerful high-key lighting, family-friendly, cartoon-friendly photoreal mix — NOT a random adult stock family portrait unless the scene asks for people',
+  },
+  {
+    id: 'music-stage',
+    label: 'Music stage',
+    boost:
+      'live music or cover-song mood, warm stage spotlights, bokeh, singer or instrument as clear hero subject',
+  },
+  {
+    id: 'product-hero',
+    label: 'Product hero',
+    boost:
+      'clean product or object hero shot on simple dramatic background, soft studio lighting, lots of negative space for title',
+  },
+  {
+    id: 'dark-moody',
+    label: 'Dark moody',
+    boost:
+      'dark cinematic thriller grade, rim light, high contrast, mysterious atmosphere, deep shadows',
+  },
+  {
+    id: 'cartoon',
+    label: 'Cartoon',
+    boost:
+      'stylized illustrated cartoon / 3D animated look, bold shapes, saturated colors, clear silhouette, YouTube kids-friendly illustration — not photoreal stock photo',
+  },
+]
+
+export function getAiStyle(id: AiStyleId | string | undefined): AiStyle {
+  return AI_STYLES.find((item) => item.id === id) ?? AI_STYLES[0]!
+}
+
 export type AiThumbOptions = {
   title: string
   niche: Niche
   platform: Platform
   /** User scene description for the thumbnail backdrop (preferred). */
   hint?: string
+  /** Optional style chip. */
+  styleId?: AiStyleId
+}
+
+export type AiGeneratedImage = {
+  image: HTMLImageElement
+  objectUrl: string
+  prompt: string
+  seed: number
+  styleId: AiStyleId
 }
 
 /** Soft ceiling so hung Pollinations requests still surface an error in the UI. */
@@ -58,6 +133,7 @@ function aspectFraming(platform: Platform) {
 export function buildAiThumbnailPrompt(options: AiThumbOptions) {
   const title = options.title.trim()
   const scene = sanitizeSceneText(options.hint ?? '')
+  const style = getAiStyle(options.styleId)
   const subject =
     scene ||
     sanitizeSceneText(title) ||
@@ -88,18 +164,26 @@ export function buildAiThumbnailPrompt(options: AiThumbOptions) {
     'no borders',
     'no frames',
     'no montage grid',
+    'no unrelated stock family portraits',
+    'no watermark corner badges',
   ].join(', ')
 
+  const medium =
+    style.id === 'cartoon' || style.id === 'kids-fun'
+      ? 'Bold YouTube thumbnail illustration / stylized still'
+      : 'Cinematic YouTube thumbnail photograph'
+
   const parts = [
-    'Cinematic YouTube thumbnail photograph',
+    medium,
     aspectFraming(options.platform),
     `one coherent scene only: ${subject}`,
+    `style recipe (${style.label}): ${style.boost}`,
     `niche mood: ${options.niche.label} — ${options.niche.hint}`,
     titleClause,
     // CTR-style composition (leaders optimize for phone tile readability, not "pretty art").
     'single subject focus, subject on one third, clear negative space on the opposite side for a large title overlay',
     'high contrast, bold readable composition at phone-tile size (~320px wide), saturated cinematic color grade, sharp focus',
-    'photoreal or stylized as the scene implies, expressive face or clear focal object preferred when the scene includes a person',
+    'expressive face or clear focal object when the scene includes a character — follow the scene literally',
     `avoid: ${negative}`,
   ].filter(Boolean)
 
@@ -215,11 +299,13 @@ async function fetchImageBlob(url: string, signal: AbortSignal) {
 export async function generateAiThumbnailImage(
   options: AiThumbOptions,
   signal?: AbortSignal,
-): Promise<{ image: HTMLImageElement; objectUrl: string; prompt: string }> {
-  const prompt = buildAiThumbnailPrompt(options)
+  seedOverride?: number,
+): Promise<AiGeneratedImage> {
+  const styleId = getAiStyle(options.styleId).id
+  const prompt = buildAiThumbnailPrompt({ ...options, styleId })
   const width = Math.min(1280, options.platform.width)
   const height = Math.round((width * options.platform.height) / options.platform.width)
-  const seed = Math.floor(Math.random() * 1_000_000)
+  const seed = seedOverride ?? Math.floor(Math.random() * 1_000_000)
   const candidates = buildPollinationsCandidateUrls(prompt, width, height, seed)
   const gate = mergeAbortSignals(signal, AI_IMAGE_TIMEOUT_MS)
 
@@ -231,7 +317,7 @@ export async function generateAiThumbnailImage(
         const blob = await fetchImageBlob(candidate.url, gate.signal)
         const objectUrl = URL.createObjectURL(blob)
         const image = await loadImage(objectUrl, gate.signal)
-        return { image, objectUrl, prompt }
+        return { image, objectUrl, prompt, seed, styleId }
       } catch (error) {
         if (isAbortError(error) || (error instanceof DOMException && error.name === 'TimeoutError')) {
           throw error
@@ -263,6 +349,48 @@ export async function generateAiThumbnailImage(
   } finally {
     gate.dispose()
   }
+}
+
+/**
+ * Generate up to `count` different seeds so the user can pick the best backdrop.
+ * Runs sequentially to respect free Pollinations rate limits; stops early on abort.
+ */
+export async function generateAiThumbnailVariants(
+  options: AiThumbOptions,
+  count = 3,
+  signal?: AbortSignal,
+  onProgress?: (done: number, total: number) => void,
+): Promise<AiGeneratedImage[]> {
+  const total = Math.max(1, Math.min(4, count))
+  const results: AiGeneratedImage[] = []
+  const base = Math.floor(Math.random() * 1_000_000)
+
+  for (let i = 0; i < total; i++) {
+    if (signal?.aborted) break
+    onProgress?.(i, total)
+    try {
+      const item = await generateAiThumbnailImage(options, signal, base + i * 9973)
+      results.push(item)
+      onProgress?.(i + 1, total)
+    } catch (error) {
+      if (isAbortError(error) || (error instanceof DOMException && error.name === 'TimeoutError')) {
+        // Keep any earlier successes if the user already got options.
+        if (results.length > 0 && !(signal?.aborted)) {
+          break
+        }
+        throw error
+      }
+      // Soft-fail one seed; continue so the picker still gets something.
+      if (i === total - 1 && results.length === 0) {
+        throw friendlyNetworkError(error)
+      }
+    }
+  }
+
+  if (results.length === 0) {
+    throw new Error('AI scene generation failed. Try again in a moment.')
+  }
+  return results
 }
 
 function loadImage(src: string, signal?: AbortSignal) {

@@ -63,7 +63,13 @@ import {
   type PlacedSticker,
   type StickerId,
 } from './stickers'
-import { generateAiThumbnailImage, titleFromScene } from './aiThumbnail'
+import {
+  AI_STYLES,
+  generateAiThumbnailVariants,
+  titleFromScene,
+  type AiGeneratedImage,
+  type AiStyleId,
+} from './aiThumbnail'
 import {
   loadSimpleUser,
   registerSimpleUser,
@@ -115,6 +121,9 @@ export default function HomePage() {
   const [simpleUser, setSimpleUser] = useState<SimpleUser | null>(() => loadSimpleUser())
   const [aiHint, setAiHint] = useState('')
   const [aiBusy, setAiBusy] = useState(false)
+  const [aiStyleId, setAiStyleId] = useState<AiStyleId>('auto')
+  const [aiVariants, setAiVariants] = useState<AiGeneratedImage[]>([])
+  const [aiPick, setAiPick] = useState(0)
   /** Local feedback beside Generate — Download status alone is easy to miss. */
   const [aiStatus, setAiStatus] = useState<{ kind: 'idle' | 'busy' | 'ok' | 'err'; text: string }>({
     kind: 'idle',
@@ -430,12 +439,36 @@ export default function HomePage() {
   }
 
   function clearPhoto() {
-    if (photoUrl) URL.revokeObjectURL(photoUrl)
+    revokeAiVariants(photoUrl)
     setPhoto(null)
     setPhotoUrl('')
     setPhotoName('')
+    setAiPick(0)
     if (fileRef.current) fileRef.current.value = ''
     setStatus('Photo removed.')
+  }
+
+  function applyAiBackdrop(result: AiGeneratedImage, pickIndex = 0) {
+    // Variants own their object URLs until the next generate / clearPhoto.
+    setPhoto(result.image)
+    setPhotoUrl(result.objectUrl)
+    setPhotoName(`AI scene · option ${pickIndex + 1}`)
+    setLayout('photo-full')
+    setPhotoShape('square')
+    setStickers([])
+    setActiveStickerIndex(null)
+    if (!title.trim()) {
+      setTitle(titleFromScene(aiHint, title))
+    }
+  }
+
+  function revokeAiVariants(extraUrl?: string) {
+    setAiVariants((prev) => {
+      const urls = new Set(prev.map((item) => item.objectUrl))
+      for (const item of prev) URL.revokeObjectURL(item.objectUrl)
+      if (extraUrl && !urls.has(extraUrl)) URL.revokeObjectURL(extraUrl)
+      return []
+    })
   }
 
   async function runAiThumbnail() {
@@ -445,34 +478,43 @@ export default function HomePage() {
     const runId = ++aiRunIdRef.current
     aiAbortRef.current = controller
     setAiBusy(true)
-    const busyMsg = 'Generating free AI scene… usually 5–20s (may take up to ~45s).'
+    revokeAiVariants(photoUrl)
+    setPhoto(null)
+    setPhotoUrl('')
+    setPhotoName('')
+    setAiPick(0)
+    const busyMsg = 'Generating 3 free AI options… usually 15–45s total.'
     setAiStatus({ kind: 'busy', text: busyMsg })
     setStatus(busyMsg)
     try {
-      const result = await generateAiThumbnailImage(
+      const results = await generateAiThumbnailVariants(
         {
           title,
           niche,
           platform,
           hint: aiHint,
+          styleId: aiStyleId,
         },
+        3,
         controller.signal,
+        (done, total) => {
+          if (runId !== aiRunIdRef.current) return
+          const text =
+            done >= total
+              ? `Generated ${total} options — pick one below.`
+              : `Generating free AI option ${done + 1} of ${total}…`
+          setAiStatus({ kind: 'busy', text })
+          setStatus(text)
+        },
       )
       if (runId !== aiRunIdRef.current) return
-      if (photoUrl) URL.revokeObjectURL(photoUrl)
-      setPhoto(result.image)
-      setPhotoUrl(result.objectUrl)
-      setPhotoName('AI scene')
-      // Full-bleed backdrop — not a neon-bordered inset photo-in-photo.
-      setLayout('photo-full')
-      setPhotoShape('square')
-      setStickers([])
-      setActiveStickerIndex(null)
-      // Empty title → short title from the scene so the canvas is not "YOUR TITLE HERE".
-      if (!title.trim()) {
-        setTitle(titleFromScene(aiHint, title))
-      }
-      const okMsg = 'AI backdrop applied full-bleed — tweak the title, then download.'
+      setAiVariants(results)
+      setAiPick(0)
+      applyAiBackdrop(results[0]!, 0)
+      const okMsg =
+        results.length > 1
+          ? `${results.length} AI options ready — tap a thumbnail below to switch.`
+          : 'AI backdrop applied full-bleed — tweak the title, then download.'
       setAiStatus({ kind: 'ok', text: okMsg })
       setStatus(okMsg)
       setEditorTab('title')
@@ -492,6 +534,17 @@ export default function HomePage() {
         if (aiAbortRef.current === controller) aiAbortRef.current = null
       }
     }
+  }
+
+  function pickAiVariant(index: number) {
+    const item = aiVariants[index]
+    if (!item) return
+    setAiPick(index)
+    setPhoto(item.image)
+    setPhotoUrl(item.objectUrl)
+    setPhotoName(`AI scene · option ${index + 1}`)
+    setLayout('photo-full')
+    setPhotoShape('square')
   }
 
   async function onSimpleLogin(event: FormEvent) {
@@ -911,12 +964,30 @@ export default function HomePage() {
                 <div>
                   <p className="photo-title">AI scene image</p>
                   <p className="photo-help">
-                    Fill the YouTube title field above, then describe the visual scene here.
-                    Free AI paints a full-bleed backdrop from your scene (plus title + niche) —
-                    not a small bordered photo.
+                    Fill the YouTube title above, pick a style, describe the scene, then generate.
+                    Free AI paints a full-bleed backdrop — you get up to 3 options to choose from.
                   </p>
                   {photoName ? <p className="photo-name">Selected: {photoName}</p> : null}
                 </div>
+                <fieldset className="ai-style-field">
+                  <legend>Style</legend>
+                  <div className="ai-style-row" role="list">
+                    {AI_STYLES.map((style) => (
+                      <button
+                        key={style.id}
+                        type="button"
+                        role="listitem"
+                        className={
+                          style.id === aiStyleId ? 'chip solid ai-style-chip is-selected' : 'chip ai-style-chip'
+                        }
+                        aria-pressed={style.id === aiStyleId}
+                        onClick={() => setAiStyleId(style.id)}
+                      >
+                        {style.label}
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
                 <label className="ai-hint-field">
                   Describe the scene for your thumbnail
                   <input
@@ -924,13 +995,12 @@ export default function HomePage() {
                     type="text"
                     value={aiHint}
                     onChange={(event) => setAiHint(event.target.value)}
-                    placeholder="e.g. Tamil singer in warm stage light, soft bokeh, music cover mood"
+                    placeholder="e.g. cute cartoon animals playing in a sunny jungle for kids"
                   />
                 </label>
                 <p className="ai-honesty-note">
-                  Tip: write the clickable YouTube title up top, and a visual scene here (one coherent
-                  shot — person, setting, mood). Empty title uses a short title from your scene.
-                  Free Pollinations image (no API key) — not YouTube-URL / video analysis.
+                  Tip: for kids/animals use the <strong>Kids / fun</strong> or <strong>Cartoon</strong> style.
+                  Free Pollinations Flux (no API key) — Gemini / video-URL backends can come later when you budget for them.
                 </p>
                 <div className="photo-actions">
                   <button
@@ -940,7 +1010,7 @@ export default function HomePage() {
                     aria-busy={aiBusy}
                     onClick={() => void runAiThumbnail()}
                   >
-                    {aiBusy ? 'Generating…' : 'Generate AI scene'}
+                    {aiBusy ? 'Generating…' : 'Generate 3 AI options'}
                   </button>
                   <button
                     type="button"
@@ -955,6 +1025,23 @@ export default function HomePage() {
                     </button>
                   ) : null}
                 </div>
+                {aiVariants.length > 1 ? (
+                  <div className="ai-variant-picker" role="listbox" aria-label="AI scene options">
+                    {aiVariants.map((item, index) => (
+                      <button
+                        key={`${item.seed}-${index}`}
+                        type="button"
+                        role="option"
+                        aria-selected={index === aiPick}
+                        className={index === aiPick ? 'ai-variant-card is-selected' : 'ai-variant-card'}
+                        onClick={() => pickAiVariant(index)}
+                      >
+                        <img src={item.objectUrl} alt={`AI option ${index + 1}`} />
+                        <span>Option {index + 1}</span>
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
                 {aiStatus.text ? (
                   <p
                     className={`ai-inline-status is-${aiStatus.kind}`}

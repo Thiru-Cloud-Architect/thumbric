@@ -57,10 +57,13 @@ No Cloudflare zones, `*.pages.dev`, or `*.workers.dev` deployments are available
 | Choice | Cost | Notes |
 |--------|------|-------|
 | Stay on github.io | **Free** | Live now; fine for launch |
-| `thumbric.ai` | **~$80/yr** | Preferred brand match; Cloudflare Registrar |
-| `thumbric.app` | **~$8–15/yr** | Cheaper alternative if `.ai` feels steep |
+| `thumbric.ai` | **~$80/yr** (often 2-yr min) | Preferred brand match; Cloudflare Registrar |
+| `thumbric.app` / `.dev` | **~$8–15/yr** | Strong cheaper alternatives |
+| Other names (`thumbrix`, `thumbora`, …) | see **DOMAIN_OPTIONS.md** | Full TLD + alternate-name matrix |
 
 **Not purchased yet** — do not claim domain progress. Live stays on github.io until someone buys + follows steps below.
+
+See **[DOMAIN_OPTIONS.md](./DOMAIN_OPTIONS.md)** for Cloudflare pricing choices across `.ai` / `.app` / `.dev` / `.io` and alternate brands.
 
 ## Single unavoidable user step (custom domain)
 

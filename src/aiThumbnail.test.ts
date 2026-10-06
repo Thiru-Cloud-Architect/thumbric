@@ -58,16 +58,16 @@ describe('buildAiThumbnailPrompt', () => {
     expect(prompt).toMatch(/320px/i)
   })
 
-  it('includes a real title as topic mood without forcing it into the image as text', () => {
+  it('includes style recipe when a chip is selected', () => {
     const prompt = buildAiThumbnailPrompt({
-      title: 'Own Voice Cover',
-      niche,
+      title: 'Kids Animals',
+      niche: getNiche('parenting'),
       platform,
-      hint: 'Tamil singer on a warm stage',
+      hint: 'cute cartoon animals in a sunny jungle',
+      styleId: 'kids-fun',
     })
-    expect(prompt).toMatch(/Own Voice Cover/)
-    expect(prompt).toMatch(/Tamil singer on a warm stage/)
-    expect(prompt).toMatch(/avoid:/i)
+    expect(prompt).toMatch(/Kids \/ fun|kids content|cartoon/i)
+    expect(prompt).toMatch(/cute cartoon animals/)
   })
 })
 
