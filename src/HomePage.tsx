@@ -115,11 +115,17 @@ export default function HomePage() {
   const [simpleUser, setSimpleUser] = useState<SimpleUser | null>(() => loadSimpleUser())
   const [aiHint, setAiHint] = useState('')
   const [aiBusy, setAiBusy] = useState(false)
+  /** Local feedback beside Generate — Download status alone is easy to miss. */
+  const [aiStatus, setAiStatus] = useState<{ kind: 'idle' | 'busy' | 'ok' | 'err'; text: string }>({
+    kind: 'idle',
+    text: '',
+  })
   const [editorTab, setEditorTab] = useState<EditorTab>(() => {
     const hash = normalizeHash(typeof window !== 'undefined' ? window.location.hash : '')
     return hash === 'editor-ai' || hash === 'editor-title' ? 'title' : 'setup'
   })
   const aiAbortRef = useRef<AbortController | null>(null)
+  const aiRunIdRef = useRef(0)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const dragIndexRef = useRef<number | null>(null)
@@ -424,9 +430,12 @@ export default function HomePage() {
     if (aiBusy) return
     aiAbortRef.current?.abort()
     const controller = new AbortController()
+    const runId = ++aiRunIdRef.current
     aiAbortRef.current = controller
     setAiBusy(true)
-    setStatus('Generating free AI scene… this can take a few seconds.')
+    const busyMsg = 'Generating free AI scene… usually 5–20s (may take up to ~45s).'
+    setAiStatus({ kind: 'busy', text: busyMsg })
+    setStatus(busyMsg)
     try {
       const result = await generateAiThumbnailImage(
         {
@@ -437,6 +446,7 @@ export default function HomePage() {
         },
         controller.signal,
       )
+      if (runId !== aiRunIdRef.current) return
       if (photoUrl) URL.revokeObjectURL(photoUrl)
       setPhoto(result.image)
       setPhotoUrl(result.objectUrl)
@@ -450,13 +460,25 @@ export default function HomePage() {
       if (!title.trim()) {
         setTitle(titleFromScene(aiHint, title))
       }
-      setStatus('AI backdrop applied full-bleed — tweak the title, then download.')
+      const okMsg = 'AI backdrop applied full-bleed — tweak the title, then download.'
+      setAiStatus({ kind: 'ok', text: okMsg })
+      setStatus(okMsg)
       setEditorTab('title')
     } catch (error) {
-      if (error instanceof DOMException && error.name === 'AbortError') return
-      setStatus(error instanceof Error ? error.message : 'AI scene generation failed.')
+      if (runId !== aiRunIdRef.current) return
+      // User-started supersede only — timeouts throw a normal Error with a message.
+      if (error instanceof DOMException && error.name === 'AbortError' && controller.signal.aborted) {
+        setAiStatus({ kind: 'idle', text: '' })
+        return
+      }
+      const message = error instanceof Error ? error.message : 'AI scene generation failed.'
+      setAiStatus({ kind: 'err', text: message })
+      setStatus(message)
     } finally {
-      setAiBusy(false)
+      if (runId === aiRunIdRef.current) {
+        setAiBusy(false)
+        if (aiAbortRef.current === controller) aiAbortRef.current = null
+      }
     }
   }
 
@@ -825,6 +847,7 @@ export default function HomePage() {
                     type="button"
                     className="chip solid ai-generate"
                     disabled={aiBusy}
+                    aria-busy={aiBusy}
                     onClick={() => void runAiThumbnail()}
                   >
                     {aiBusy ? 'Generating…' : 'Generate AI scene'}
@@ -842,6 +865,16 @@ export default function HomePage() {
                     </button>
                   ) : null}
                 </div>
+                {aiStatus.text ? (
+                  <p
+                    className={`ai-inline-status is-${aiStatus.kind}`}
+                    role="status"
+                    aria-live="polite"
+                  >
+                    {aiStatus.kind === 'busy' ? <span className="ai-inline-spinner" aria-hidden /> : null}
+                    {aiStatus.text}
+                  </p>
+                ) : null}
                 <input
                   ref={fileRef}
                   className="file-input"

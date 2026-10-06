@@ -16,10 +16,10 @@ When someone says `@team.md can you help here`, treat these as the open threads:
 
 | Thread | State |
 |--------|--------|
-| Features AI-first section | **Live** — stamp `UI_BUILD=2026.10.06-ak`. Banner: “Describe the scene…”, Works now / Not yet, `#editor-ai` deep link. |
-| Editor AI | **Live** — Title step → “AI scene image” + “Generate AI scene” (Pollinations, no API key). |
+| Features AI-first section | **Live** — stamp `UI_BUILD=2026.10.06-aq`. Banner: “Describe the scene…”, Works now / Not yet, `#editor-ai` deep link. |
+| Editor AI | **Live** — Title step → “AI scene image” + “Generate AI scene” (Pollinations, no API key). Inline status + 45s timeout + flux/turbo fallbacks. |
 | Custom domain `thumbric.ai` | **Blocked — one user step** — NXDOMAIN; no CF/AWS/Namecheap/Route53 tokens; no owned zones or `*.pages.dev`. Zero-touch host = github.io only. |
-| Old UI complaints | **Resolved on origin** — hard-refresh or open `/thumbric/` (not `/thumbforge/`). Footer stamp should show `2026.10.06-ak`. |
+| Old UI complaints | **Resolved on origin** — hard-refresh or open `/thumbric/` (not `/thumbforge/`). Footer stamp should show `2026.10.06-aq`. |
 
 ## AI product truth (cost-aware)
 

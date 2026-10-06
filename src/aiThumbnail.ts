@@ -9,6 +9,9 @@ export type AiThumbOptions = {
   hint?: string
 }
 
+/** Soft ceiling so hung Pollinations requests still surface an error in the UI. */
+export const AI_IMAGE_TIMEOUT_MS = 45_000
+
 /** Strip junk punctuation that models treat as collage / split cues. */
 export function sanitizeSceneText(raw: string) {
   return raw
@@ -103,14 +106,110 @@ export function buildAiThumbnailPrompt(options: AiThumbOptions) {
   return parts.join('. ')
 }
 
-function pollinationsUrl(prompt: string, width: number, height: number, seed: number) {
-  // Keep prompt under URL limits but prefer enough room for negative cues.
+type PollinationsVariant = {
+  label: string
+  /** Query string after `?` (no leading ?). */
+  query: string
+}
+
+/** Ordered retry set: quality first, then leaner / faster free endpoints. */
+const POLLINATIONS_VARIANTS: PollinationsVariant[] = [
+  {
+    label: 'flux+enhance',
+    query: 'model=flux&nologo=true&enhance=true&nofeed=true&private=true',
+  },
+  {
+    label: 'flux',
+    query: 'model=flux&nologo=true&nofeed=true&private=true',
+  },
+  {
+    label: 'turbo',
+    query: 'model=turbo&nologo=true&nofeed=true&private=true',
+  },
+]
+
+/**
+ * Build candidate Pollinations image URLs (primary + fallbacks).
+ * Exported for unit tests.
+ */
+export function buildPollinationsCandidateUrls(
+  prompt: string,
+  width: number,
+  height: number,
+  seed: number,
+  bust = Date.now().toString(36),
+) {
   const encoded = encodeURIComponent(prompt.slice(0, 900))
-  // Pin free Flux — Pollinations defaults have shifted (e.g. zimage); flux stays free/anonymous.
-  // `nofeed=true` + random seed + timestamp reduce sticky cached junk regenerations.
-  // Note: `nologo=true` may be ignored without a Pollinations account.
-  const bust = Date.now().toString(36)
-  return `https://image.pollinations.ai/prompt/${encoded}?width=${width}&height=${height}&seed=${seed}&model=flux&nologo=true&enhance=true&nofeed=true&private=true&t=${bust}`
+  return POLLINATIONS_VARIANTS.map((variant) => ({
+    label: variant.label,
+    url: `https://image.pollinations.ai/prompt/${encoded}?width=${width}&height=${height}&seed=${seed}&${variant.query}&t=${bust}`,
+  }))
+}
+
+function isAbortError(error: unknown) {
+  return (
+    (error instanceof DOMException && error.name === 'AbortError') ||
+    (error instanceof Error && error.name === 'AbortError')
+  )
+}
+
+function friendlyNetworkError(error: unknown): Error {
+  if (isAbortError(error)) return error instanceof Error ? error : new DOMException('Aborted', 'AbortError')
+  const message = error instanceof Error ? error.message : String(error)
+  if (/failed to fetch|networkerror|load failed|network request failed/i.test(message)) {
+    return new Error(
+      'Could not reach the free AI image service (network/CORS/ad-block). Disable blockers for this site or try again.',
+    )
+  }
+  return error instanceof Error ? error : new Error(message || 'AI scene generation failed.')
+}
+
+function mergeAbortSignals(userSignal: AbortSignal | undefined, timeoutMs: number) {
+  const timeoutController = new AbortController()
+  const timer = globalThis.setTimeout(() => {
+    timeoutController.abort(new DOMException('AI scene timed out', 'TimeoutError'))
+  }, timeoutMs)
+
+  const signals = userSignal ? [userSignal, timeoutController.signal] : [timeoutController.signal]
+  const anyFactory = (AbortSignal as typeof AbortSignal & { any?: (s: AbortSignal[]) => AbortSignal })
+    .any
+  const merged = typeof anyFactory === 'function' ? anyFactory(signals) : fallbackAnySignal(signals)
+
+  return {
+    signal: merged,
+    timedOut: () => timeoutController.signal.aborted,
+    dispose: () => globalThis.clearTimeout(timer),
+  }
+}
+
+function fallbackAnySignal(signals: AbortSignal[]) {
+  const controller = new AbortController()
+  for (const signal of signals) {
+    if (signal.aborted) {
+      controller.abort(signal.reason)
+      return controller.signal
+    }
+    signal.addEventListener(
+      'abort',
+      () => {
+        controller.abort(signal.reason)
+      },
+      { once: true },
+    )
+  }
+  return controller.signal
+}
+
+async function fetchImageBlob(url: string, signal: AbortSignal) {
+  const response = await fetch(url, { signal, mode: 'cors' })
+  if (!response.ok) {
+    throw new Error(`AI image request failed (${response.status}). Try again in a moment.`)
+  }
+  const blob = await response.blob()
+  if (!blob.type.startsWith('image/')) {
+    throw new Error('AI service did not return an image. Try a shorter description or again later.')
+  }
+  return blob
 }
 
 export async function generateAiThumbnailImage(
@@ -121,19 +220,49 @@ export async function generateAiThumbnailImage(
   const width = Math.min(1280, options.platform.width)
   const height = Math.round((width * options.platform.height) / options.platform.width)
   const seed = Math.floor(Math.random() * 1_000_000)
-  const url = pollinationsUrl(prompt, width, height, seed)
+  const candidates = buildPollinationsCandidateUrls(prompt, width, height, seed)
+  const gate = mergeAbortSignals(signal, AI_IMAGE_TIMEOUT_MS)
 
-  const response = await fetch(url, { signal, mode: 'cors' })
-  if (!response.ok) {
-    throw new Error(`AI image request failed (${response.status}). Try again in a moment.`)
+  let lastError: Error | null = null
+  try {
+    for (const candidate of candidates) {
+      if (gate.signal.aborted) break
+      try {
+        const blob = await fetchImageBlob(candidate.url, gate.signal)
+        const objectUrl = URL.createObjectURL(blob)
+        const image = await loadImage(objectUrl, gate.signal)
+        return { image, objectUrl, prompt }
+      } catch (error) {
+        if (isAbortError(error) || (error instanceof DOMException && error.name === 'TimeoutError')) {
+          throw error
+        }
+        lastError = friendlyNetworkError(error)
+        // Try the next fallback host/variant.
+      }
+    }
+
+    if (gate.timedOut()) {
+      throw new Error(
+        `AI scene timed out after ${Math.round(AI_IMAGE_TIMEOUT_MS / 1000)}s. Try a shorter scene, or tap Generate again.`,
+      )
+    }
+    if (signal?.aborted) {
+      throw new DOMException('Aborted', 'AbortError')
+    }
+    throw lastError ?? new Error('AI scene generation failed. Try again in a moment.')
+  } catch (error) {
+    if (gate.timedOut() && (isAbortError(error) || (error instanceof DOMException && error.name === 'TimeoutError'))) {
+      throw new Error(
+        `AI scene timed out after ${Math.round(AI_IMAGE_TIMEOUT_MS / 1000)}s. Try a shorter scene, or tap Generate again.`,
+      )
+    }
+    if (isAbortError(error) && signal?.aborted) {
+      throw error
+    }
+    throw friendlyNetworkError(error)
+  } finally {
+    gate.dispose()
   }
-  const blob = await response.blob()
-  if (!blob.type.startsWith('image/')) {
-    throw new Error('AI service did not return an image. Try a shorter description or again later.')
-  }
-  const objectUrl = URL.createObjectURL(blob)
-  const image = await loadImage(objectUrl, signal)
-  return { image, objectUrl, prompt }
 }
 
 function loadImage(src: string, signal?: AbortSignal) {

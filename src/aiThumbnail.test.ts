@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { buildAiThumbnailPrompt, sanitizeSceneText, titleFromScene } from './aiThumbnail'
+import {
+  buildAiThumbnailPrompt,
+  buildPollinationsCandidateUrls,
+  sanitizeSceneText,
+  titleFromScene,
+} from './aiThumbnail'
 import { getNiche } from './niches'
 import { getPlatform } from './platforms'
 
@@ -63,5 +68,28 @@ describe('buildAiThumbnailPrompt', () => {
     expect(prompt).toMatch(/Own Voice Cover/)
     expect(prompt).toMatch(/Tamil singer on a warm stage/)
     expect(prompt).toMatch(/avoid:/i)
+  })
+})
+
+describe('buildPollinationsCandidateUrls', () => {
+  it('returns flux primary plus leaner fallbacks on image.pollinations.ai', () => {
+    const urls = buildPollinationsCandidateUrls('kids animals scene', 1280, 720, 42, 'bust1')
+    expect(urls).toHaveLength(3)
+    expect(urls[0]?.label).toBe('flux+enhance')
+    expect(urls[1]?.label).toBe('flux')
+    expect(urls[2]?.label).toBe('turbo')
+    for (const item of urls) {
+      expect(item.url).toMatch(/^https:\/\/image\.pollinations\.ai\/prompt\//)
+      expect(item.url).toMatch(/width=1280/)
+      expect(item.url).toMatch(/height=720/)
+      expect(item.url).toMatch(/seed=42/)
+      expect(item.url).toMatch(/t=bust1/)
+      expect(item.url).toMatch(/nologo=true/)
+    }
+    expect(urls[0]?.url).toMatch(/model=flux/)
+    expect(urls[0]?.url).toMatch(/enhance=true/)
+    expect(urls[1]?.url).toMatch(/model=flux/)
+    expect(urls[1]?.url).not.toMatch(/enhance=true/)
+    expect(urls[2]?.url).toMatch(/model=turbo/)
   })
 })
