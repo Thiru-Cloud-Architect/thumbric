@@ -135,33 +135,32 @@ main {
   gap: 6px;
   padding: 6px;
   transform: scale(1.08);
-  filter: saturate(1.15);
+  opacity: 0.38;
+  filter: saturate(0.55) brightness(0.62);
 }
 
 .mosaic-tile {
   border-radius: 12px;
   background: linear-gradient(
     145deg,
-    hsl(var(--tile-hue) 82% 48%),
-    hsl(calc(var(--tile-hue) + 25) 88% 32%)
+    hsl(var(--tile-hue) 72% 40%),
+    hsl(calc(var(--tile-hue) + 25) 78% 28%)
   );
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   display: grid;
   place-items: center;
   font: 800 clamp(0.65rem, 2vw, 1.1rem) 'Bebas Neue', Impact, sans-serif;
   letter-spacing: 0.06em;
-  color: rgba(255, 255, 255, 0.95);
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-  opacity: 1;
+  color: rgba(255, 255, 255, 0.42);
+  text-shadow: none;
 }
 
 .hero-scrim {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 85% 75% at 50% 42%, rgba(6, 8, 15, 0.28), rgba(6, 8, 15, 0.62) 72%),
-    linear-gradient(180deg, rgba(6, 8, 15, 0.15), rgba(6, 8, 15, 0.55));
+    radial-gradient(ellipse 72% 58% at 50% 44%, rgba(6, 8, 15, 0.48), rgba(6, 8, 15, 0.9) 72%),
+    linear-gradient(180deg, rgba(6, 8, 15, 0.38), rgba(6, 8, 15, 0.94));
   pointer-events: none;
 }
 

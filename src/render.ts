@@ -184,7 +184,7 @@ function drawBackground(ctx: CanvasRenderingContext2D, input: ThumbInput) {
   ctx.fillStyle = base
   ctx.fillRect(0, 0, W, H)
 
-  const washStrength = niche.backdrop === 'neon' ? 0.42 : niche.backdrop === 'warm' ? 0.38 : 0.28
+  const washStrength = niche.backdrop === 'neon' ? 0.58 : niche.backdrop === 'warm' ? 0.48 : 0.4
   const wash = ctx.createRadialGradient(W * 0.22, H * 0.12, 20, W * 0.22, H * 0.12, Math.max(W, H) * 0.58)
   wash.addColorStop(0, `${accent}${Math.round(washStrength * 255)
     .toString(16)
@@ -217,9 +217,25 @@ function drawBackground(ctx: CanvasRenderingContext2D, input: ThumbInput) {
     ctx.restore()
   }
 
+  ctx.save()
+  ctx.globalCompositeOperation = 'screen'
+  ctx.globalAlpha = 0.14
+  const bloomA = ctx.createRadialGradient(W * 0.78, H * 0.22, 8, W * 0.78, H * 0.22, W * 0.52)
+  bloomA.addColorStop(0, accent)
+  bloomA.addColorStop(1, `${accent}00`)
+  ctx.fillStyle = bloomA
+  ctx.fillRect(0, 0, W, H)
+  const bloomB = ctx.createRadialGradient(W * 0.12, H * 0.78, 8, W * 0.12, H * 0.78, W * 0.48)
+  bloomB.addColorStop(0, `${accent}CC`)
+  bloomB.addColorStop(1, `${accent}00`)
+  ctx.fillStyle = bloomB
+  ctx.fillRect(0, 0, W, H)
+  ctx.restore()
+
   if (niche.backdrop === 'grid') {
     ctx.save()
-    ctx.strokeStyle = `${accent}22`
+    ctx.strokeStyle = `${accent}44`
+    ctx.globalAlpha = 0.22
     ctx.lineWidth = 1
     const step = Math.max(40, Math.round(Math.min(W, H) * 0.065))
     for (let x = 0; x <= W; x += step) {
@@ -267,7 +283,7 @@ function drawBackground(ctx: CanvasRenderingContext2D, input: ThumbInput) {
     Math.max(W, H) * 0.82,
   )
   vignette.addColorStop(0, 'rgba(0,0,0,0)')
-  vignette.addColorStop(1, niche.backdrop === 'warm' ? 'rgba(0,0,0,0.28)' : 'rgba(0,0,0,0.42)')
+  vignette.addColorStop(1, niche.backdrop === 'warm' ? 'rgba(0,0,0,0.18)' : 'rgba(0,0,0,0.24)')
   ctx.fillStyle = vignette
   ctx.fillRect(0, 0, W, H)
 }
@@ -305,8 +321,27 @@ function drawPhoto(
       ctx.fillRect(box.x, box.y, box.w, box.h)
     }
   } else {
-    ctx.fillStyle = input.niche.panel
+    const panelGrad = ctx.createLinearGradient(box.x, box.y, box.x + box.w, box.y + box.h)
+    panelGrad.addColorStop(0, input.niche.background[1])
+    panelGrad.addColorStop(0.55, input.niche.panel)
+    panelGrad.addColorStop(1, input.niche.background[0])
+    ctx.fillStyle = panelGrad
     ctx.fillRect(box.x, box.y, box.w, box.h)
+    const innerGlow = ctx.createRadialGradient(
+      box.x + box.w * 0.5,
+      box.y + box.h * 0.45,
+      Math.min(box.w, box.h) * 0.05,
+      box.x + box.w * 0.5,
+      box.y + box.h * 0.45,
+      Math.min(box.w, box.h) * 0.55,
+    )
+    innerGlow.addColorStop(0, `${accent}33`)
+    innerGlow.addColorStop(1, `${accent}00`)
+    ctx.fillStyle = innerGlow
+    ctx.fillRect(box.x, box.y, box.w, box.h)
+    ctx.save()
+    ctx.shadowColor = accent
+    ctx.shadowBlur = Math.round(Math.min(box.w, box.h) * 0.08)
     ctx.fillStyle = accent
     ctx.beginPath()
     ctx.moveTo(box.x + box.w * 0.42, box.y + box.h * 0.38)
@@ -314,12 +349,15 @@ function drawPhoto(
     ctx.lineTo(box.x + box.w * 0.42, box.y + box.h * 0.62)
     ctx.closePath()
     ctx.fill()
+    ctx.restore()
   }
   ctx.restore()
 
   ctx.save()
   ctx.strokeStyle = accent
-  ctx.lineWidth = Math.max(6, Math.round(Math.min(box.w, box.h) * 0.02))
+  ctx.shadowColor = `${accent}AA`
+  ctx.shadowBlur = Math.max(8, Math.round(Math.min(box.w, box.h) * 0.035))
+  ctx.lineWidth = Math.max(6, Math.round(Math.min(box.w, box.h) * 0.022))
   if (input.photoShape === 'circle') {
     ctx.beginPath()
     ctx.arc(box.x + box.w / 2, box.y + box.h / 2, Math.min(box.w, box.h) / 2, 0, Math.PI * 2)
@@ -341,9 +379,9 @@ function drawPunchText(
   accent: string,
 ) {
   const style = getTextStyle(styleId)
-  const base = Math.max(12, Math.round(ctx.canvas.height * 0.012))
-  const thick = Math.round(base * 1.45)
-  const classic = base
+  const base = Math.max(14, Math.round(ctx.canvas.height * 0.014))
+  const thick = Math.round(base * 1.55)
+  const classic = Math.round(base * 1.08)
 
   let textFill = fill
   let stroke = '#000000'
