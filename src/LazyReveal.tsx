@@ -1,44 +1,94 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+
+type RevealVariant = 'rise' | 'fade-scale' | 'slide-left' | 'slide-right'
 
 type LazyRevealProps = {
   children: ReactNode
   className?: string
-  minHeight?: string
+  /** Stagger delay between nested `.reveal-item` children (ms). */
+  staggerMs?: number
+  variant?: RevealVariant
+  /** Keep children mounted (default true) so CSS can animate them smoothly. */
+  once?: boolean
+  style?: CSSProperties
 }
 
-export function LazyReveal({ children, className = '', minHeight = '10rem' }: LazyRevealProps) {
+function usePrefersReducedMotion() {
+  const [reduced, setReduced] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
+    setReduced(mq.matches)
+    const onChange = () => setReduced(mq.matches)
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [])
+  return reduced
+}
+
+/** Scroll-triggered reveal. Children stay mounted; visibility toggles CSS classes. */
+export function LazyReveal({
+  children,
+  className = '',
+  staggerMs = 70,
+  variant = 'rise',
+  once = true,
+  style,
+}: LazyRevealProps) {
   const ref = useRef<HTMLDivElement>(null)
-  const [visible, setVisible] = useState(false)
+  const reduced = usePrefersReducedMotion()
+  const [visible, setVisible] = useState(reduced)
 
   useEffect(() => {
-    const node = ref.current
-    if (!node) return
-
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    if (reduced) {
       setVisible(true)
       return
     }
+    const node = ref.current
+    if (!node) return
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
+        const hit = entries.some((entry) => entry.isIntersecting)
+        if (hit) {
           setVisible(true)
-          observer.disconnect()
+          if (once) observer.disconnect()
+        } else if (!once) {
+          setVisible(false)
         }
       },
-      { rootMargin: '12% 0px 10% 0px', threshold: 0.02 },
+      { rootMargin: '0px 0px -8% 0px', threshold: 0.12 },
     )
     observer.observe(node)
     return () => observer.disconnect()
-  }, [])
+  }, [once, reduced])
 
   return (
     <div
       ref={ref}
-      className={`lazy-reveal ${visible ? 'is-visible' : ''} ${className}`.trim()}
-      style={!visible ? { minHeight } : undefined}
+      className={`lazy-reveal variant-${variant} ${visible ? 'is-visible' : ''} ${className}`.trim()}
+      style={{ ['--reveal-stagger' as string]: `${staggerMs}ms`, ...style }}
     >
-      {visible ? children : null}
+      {children}
+    </div>
+  )
+}
+
+/** Nested item inside LazyReveal — picks up stagger via sibling index CSS. */
+export function RevealItem({
+  children,
+  className = '',
+  index = 0,
+}: {
+  children: ReactNode
+  className?: string
+  index?: number
+}) {
+  return (
+    <div
+      className={`reveal-item ${className}`.trim()}
+      style={{ ['--reveal-i' as string]: index }}
+    >
+      {children}
     </div>
   )
 }

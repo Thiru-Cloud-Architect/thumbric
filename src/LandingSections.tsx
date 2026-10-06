@@ -5,6 +5,7 @@ import { PRODUCT_NAME, PRODUCT_NAME_FULL, PRODUCT_TAGLINE } from './brand'
 import { CREATOR_CLEAN_DOWNLOADS_PER_MONTH } from './entitlement'
 import { FEATURES } from './features'
 import { HERO_THUMBS, type HeroThumb } from './heroThumbs'
+import { RevealItem } from './LazyReveal'
 
 const FAQ_ITEMS = [
   {
@@ -128,12 +129,14 @@ export function StatsStrip() {
   return (
     <section className="stats-strip" aria-label="Highlights">
       <div className="stats-grid">
-        {stats.map((item) => (
-          <div key={item.label} className="stat-cell">
-            <p className="stat-value">{item.value}</p>
-            <p className="stat-label">{item.label}</p>
-            <p className="stat-sub">{item.sub}</p>
-          </div>
+        {stats.map((item, index) => (
+          <RevealItem key={item.label} index={index} className="stat-cell-wrap">
+            <div className="stat-cell">
+              <p className="stat-value">{item.value}</p>
+              <p className="stat-label">{item.label}</p>
+              <p className="stat-sub">{item.sub}</p>
+            </div>
+          </RevealItem>
         ))}
       </div>
     </section>
@@ -160,16 +163,20 @@ export function ProblemSection() {
   ]
   return (
     <section className="problem-section" aria-labelledby="problem-title">
-      <p className="section-eyebrow">The problem</p>
-      <h2 id="problem-title" className="section-title">
-        Stop losing views to weak <span className="gradient-text">thumbnails</span>
-      </h2>
+      <RevealItem index={0}>
+        <p className="section-eyebrow">The problem</p>
+        <h2 id="problem-title" className="section-title">
+          Stop losing views to weak <span className="gradient-text">thumbnails</span>
+        </h2>
+      </RevealItem>
       <div className="problem-grid">
-        {cards.map((card) => (
-          <article key={card.title} className={`problem-card tone-${card.tone}`}>
-            <h3>{card.title}</h3>
-            <p>{card.body}</p>
-          </article>
+        {cards.map((card, index) => (
+          <RevealItem key={card.title} index={index + 1}>
+            <article className={`problem-card tone-${card.tone}`}>
+              <h3>{card.title}</h3>
+              <p>{card.body}</p>
+            </article>
+          </RevealItem>
         ))}
       </div>
     </section>
@@ -205,17 +212,21 @@ export function HowItWorks() {
   ]
   return (
     <section id="how" className="how-section" aria-labelledby="how-title">
-      <p className="section-eyebrow">How it works</p>
-      <h2 id="how-title" className="section-title center">
-        Title in. <span className="gradient-text">Thumbnail out.</span>
-      </h2>
+      <RevealItem index={0}>
+        <p className="section-eyebrow">How it works</p>
+        <h2 id="how-title" className="section-title center">
+          Title in. <span className="gradient-text">Thumbnail out.</span>
+        </h2>
+      </RevealItem>
       <div className="how-steps">
-        {steps.map((step) => (
-          <article key={step.n} className={`how-card tone-${step.tone}`}>
-            <span className="how-num">{step.n}</span>
-            <h3>{step.title}</h3>
-            <p>{step.body}</p>
-          </article>
+        {steps.map((step, index) => (
+          <RevealItem key={step.n} index={index + 1}>
+            <article className={`how-card tone-${step.tone}`}>
+              <span className="how-num">{step.n}</span>
+              <h3>{step.title}</h3>
+              <p>{step.body}</p>
+            </article>
+          </RevealItem>
         ))}
       </div>
     </section>
@@ -242,19 +253,25 @@ export function Testimonials() {
   ]
   return (
     <section className="testimonials" aria-labelledby="social-title">
-      <h2 id="social-title" className="section-title center">
-        Built for creators who publish often
-      </h2>
-      <p className="section-lede center">Real workflow — honest free tier, no fake AI promises.</p>
+      <RevealItem index={0}>
+        <h2 id="social-title" className="section-title center">
+          Built for creators who publish often
+        </h2>
+        <p className="section-lede center">
+          Fast browser workflow — free preview saves, optional clean exports, AI image assist when you want it.
+        </p>
+      </RevealItem>
       <div className="testimonial-grid">
-        {quotes.map((item) => (
-          <blockquote key={item.name} className="testimonial-card">
-            <p>{item.text}</p>
-            <footer>
-              <strong>{item.name}</strong>
-              <span>{item.role}</span>
-            </footer>
-          </blockquote>
+        {quotes.map((item, index) => (
+          <RevealItem key={item.name} index={index + 1}>
+            <blockquote className="testimonial-card">
+              <p>{item.text}</p>
+              <footer>
+                <strong>{item.name}</strong>
+                <span>{item.role}</span>
+              </footer>
+            </blockquote>
+          </RevealItem>
         ))}
       </div>
     </section>
@@ -303,26 +320,32 @@ export function FaqAccordion() {
 export function FeaturesSection() {
   return (
     <section id="features" className="features-section" aria-labelledby="features-title">
-      <p className="section-eyebrow">Features</p>
-      <h2 id="features-title" className="section-title center">
-        Built for creators, <span className="gradient-text">not designers</span>
-      </h2>
-      <p className="section-lede center">
-        Everything below works in your browser today. No fake “AI from URL” — just fast control.
-      </p>
+      <RevealItem index={0}>
+        <p className="section-eyebrow">Features</p>
+        <h2 id="features-title" className="section-title center">
+          Built for creators, <span className="gradient-text">not designers</span>
+        </h2>
+        <p className="section-lede center">
+          Everything below works in your browser today — live canvas, templates, and optional AI image.
+        </p>
+      </RevealItem>
       <div className="features-grid">
-        {FEATURES.filter((item) => item.available).map((item) => (
-          <a key={item.id} href={item.href} className="feature-card">
-            <h3>{item.title}</h3>
-            <p>{item.description}</p>
-            <span className="feature-card-link">Open in editor →</span>
-          </a>
+        {FEATURES.filter((item) => item.available).map((item, index) => (
+          <RevealItem key={item.id} index={index + 1}>
+            <a href={item.href} className="feature-card">
+              <h3>{item.title}</h3>
+              <p>{item.description}</p>
+              <span className="feature-card-link">Open in editor →</span>
+            </a>
+          </RevealItem>
         ))}
       </div>
-      <p id="roadmap" className="features-roadmap">
-        <strong>Live now:</strong> AI face/backdrop from your title in the editor. Next up: payments and
-        full accounts when traffic grows — paste-a-YouTube-URL assist can follow.
-      </p>
+      <RevealItem index={FEATURES.length + 1}>
+        <p id="roadmap" className="features-roadmap">
+          <strong>Live now:</strong> AI face/backdrop from your title in the editor. Next up: payments and
+          full accounts when traffic grows — paste-a-YouTube-URL assist can follow.
+        </p>
+      </RevealItem>
     </section>
   )
 }
@@ -358,31 +381,33 @@ export function SiteFooter({ buildLabel }: { buildLabel?: string }) {
             <p className="footer-brand">{PRODUCT_NAME_FULL}</p>
             <p className="footer-tag">Free browser thumbnail maker for YouTube &amp; social.</p>
           </div>
-          <div className="footer-col">
-            <p className="footer-head">Product</p>
-            <NavHashLink hash="editor">Open editor</NavHashLink>
-            <NavHashLink hash="how">How it works</NavHashLink>
-            <NavHashLink hash="features">Feature list</NavHashLink>
-            <Link to="/pricing">Plans &amp; pricing</Link>
-            <NavHashLink hash="faq">FAQ</NavHashLink>
-          </div>
-          <div className="footer-col">
-            <p className="footer-head">Resources</p>
-            <a
-              href="https://github.com/Thiru-Cloud-Architect/thumbric"
-              rel="noopener noreferrer"
-              target="_blank"
-            >
-              GitHub repo
-            </a>
-            <a
-              href="https://github.com/Thiru-Cloud-Architect/thumbric/issues"
-              rel="noopener noreferrer"
-              target="_blank"
-            >
-              Report an issue
-            </a>
-            <a href="https://thiru-cloud-architect.github.io/thumbric/sitemap.xml">Sitemap</a>
+          <div className="footer-nav-group" role="navigation" aria-label="Footer">
+            <div className="footer-col">
+              <p className="footer-head">Product</p>
+              <NavHashLink hash="editor">Open editor</NavHashLink>
+              <NavHashLink hash="how">How it works</NavHashLink>
+              <NavHashLink hash="features">Feature list</NavHashLink>
+              <Link to="/pricing">Plans &amp; pricing</Link>
+              <NavHashLink hash="faq">FAQ</NavHashLink>
+            </div>
+            <div className="footer-col">
+              <p className="footer-head">Resources</p>
+              <a
+                href="https://github.com/Thiru-Cloud-Architect/thumbric"
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                GitHub repo
+              </a>
+              <a
+                href="https://github.com/Thiru-Cloud-Architect/thumbric/issues"
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                Report an issue
+              </a>
+              <a href="https://thiru-cloud-architect.github.io/thumbric/sitemap.xml">Sitemap</a>
+            </div>
           </div>
         </div>
         {buildLabel ? <p className="footer-build">{buildLabel}</p> : null}

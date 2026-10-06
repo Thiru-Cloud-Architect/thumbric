@@ -509,19 +509,19 @@ export default function HomePage() {
           }}
         />
         <PlushInfoSection />
-        <LazyReveal minHeight="8rem">
+        <LazyReveal staggerMs={80} variant="rise">
           <StatsStrip />
         </LazyReveal>
-        <LazyReveal minHeight="14rem">
+        <LazyReveal staggerMs={90} variant="rise">
           <ProblemSection />
         </LazyReveal>
-        <LazyReveal minHeight="14rem">
+        <LazyReveal staggerMs={85} variant="fade-scale">
           <HowItWorks />
         </LazyReveal>
-        <LazyReveal minHeight="16rem">
+        <LazyReveal staggerMs={70} variant="rise">
           <FeaturesSection />
         </LazyReveal>
-        <LazyReveal minHeight="10rem">
+        <LazyReveal variant="slide-left">
           <PricingTeaser />
         </LazyReveal>
 
@@ -1043,10 +1043,10 @@ export default function HomePage() {
           </button>
         </div>
 
-        <LazyReveal minHeight="12rem">
+        <LazyReveal staggerMs={90} variant="rise">
           <Testimonials />
         </LazyReveal>
-        <LazyReveal minHeight="14rem">
+        <LazyReveal variant="fade-scale">
           <FaqAccordion />
         </LazyReveal>
       </main>

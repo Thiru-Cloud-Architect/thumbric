@@ -47,8 +47,8 @@ const BOXES: InfoBox[] = [
   {
     id: 'roadmap',
     kicker: 'Roadmap',
-    title: 'AI assists later — control first',
-    body: 'We are polishing the manual editor before optional AI hooks. No fake “paste URL” promises today.',
+    title: 'AI image when you want it',
+    body: 'Generate a face or backdrop from your title and mood, then fine-tune type and layout on the live canvas.',
     tone: 'pink',
   },
 ]
