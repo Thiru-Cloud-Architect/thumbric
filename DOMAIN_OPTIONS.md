@@ -178,15 +178,63 @@ Rough TLD cost (reuse tables above): **`.ai` ~₹7.7k/yr** · **`.app` ~₹1.4k 
 | **.com** | $10.46 / ₹1,008 | $10.46 / ₹1,008 | Ideal but `thumbric.com` taken |
 | **.online** | Promo $2–5 | ~$25–30 | Not worth it long-term |
 
+## `thumbnail.guru` (GoDaddy India promo, Oct 2026)
+
+Screenshot: GoDaddy en-in search for **`thumbnail.guru`** — promo **₹383.65** first year (struck **₹7,114.42**), “for first year.” DNS NS = **NXDOMAIN** (likely free; confirm at checkout). Ignore the `.email`/`.life`/`.ie` bundle.
+
+### `.guru` first-year vs renewal (promo trap)
+
+FX **₹96.40 / USD**. GoDaddy India struck price ≈ **$73.80** retail renew — not the industry floor.
+
+| Registrar | First year (typical) | Renewal | ≈ INR renew |
+|-----------|----------------------|---------|-------------|
+| **GoDaddy IN** (this offer) | **₹383.65** (~$4) promo | **₹7,114** struck list (~$74) | **~18.5×** jump if you stay |
+| **Cloudflare** | $33.20 (no promo; at-cost) | **$33.20** | **~₹3,200** |
+| **Spaceship** | ~$2–$3 promo often | **~$34.36** | **~₹3,310** |
+| **Namecheap** | promo ≪ renew | **$54.98 → $61.48** (Identity Digital hike **6 Oct 2026**) | **~₹5,300 → ₹5,930** |
+
+**Trap math:** Year 1 looks like coffee money; year 2+ on GoDaddy is ~**₹7.1k** — nearly a full **`thumbric.ai`** year. Escape hatch: register (or transfer after 60 days) to **Cloudflare / Spaceship** and budget **~$33–35 / ~₹3.2–3.3k/yr**, not ₹7k. Still a permanent ~₹3k/yr tax for a non-brand domain.
+
+### Brand fit (YouTube thumbnail maker)
+
+| Lens | Take |
+|------|------|
+| **SEO / literal** | Strong exact-match (“thumbnail” + advice vibe). Weak in practice — Google long ago devalued EMDs; rankings come from product/content, not the TLD string. |
+| **vs Thumbric / Snapric** | Different brand family. Primary use would **split** recognition you’re building on Thumbric (or a Snapric rename). |
+| **Memorability** | Easy to understand, hard to *own* — generic, forgettable as a product name, awkward in app stores / social handles. |
+| **“guru” vibe** | 2013–era new-gTLD / blogger-consultant feel; slightly spammy next to modern AI SaaS (`.ai` / `.app` / `.com`). |
+| **Global vs India** | `.guru` is a **global** gTLD; the India page is only pricing locale. No India SEO bonus like `.in`. |
+
+### Compare to current options
+
+| Option | ~Ongoing cost | Role vs `thumbnail.guru` |
+|--------|---------------|---------------------------|
+| **thumbric.ai** | ~**₹7.7k**/yr | Exact brand + AI signal — worth more than a literal EMD |
+| **thumbric.app** | ~**₹1.4k** renew | Cheaper *and* on-brand; better default spend |
+| **thumbric.in** | ~**₹1.8k / 3 yr** park | India defense/redirect — still aligns with Thumbric spelling |
+| **Snapric.com** (if renaming) | ~**₹1k**/yr | Real `.com` primary; beats any `.guru` vanity |
+| **thumbnail.guru** | ₹384 → **₹3.2k–7.1k**/yr | Literal SEO vanity; not a product brand |
+
+### Verdict
+
+| Use | Decision |
+|-----|----------|
+| **Primary brand** | **No** |
+| **SEO / vanity redirect** | **Maybe** — only if you treat ₹384 as a throwaway park, transfer off GoDaddy to CF/Spaceship (~₹3.2k renew), and never market the product as “Thumbnail Guru” |
+| **Skip** | **Default** — put the money toward **`thumbric.app`** (or **Snapric.com** if renaming). EMD redirect ROI is too thin for the renew bill and brand dilution |
+
+**Cheat-sheet line:** don’t buy `thumbnail.guru` as the product name; skip the bundle; prefer brand TLDs above.
+
 ## Decision cheat-sheet
 
 1. **Want exact brand + AI signal** → buy **`thumbric.ai`** on **Cloudflare** or **Spaceship** (~**$80 / ₹7,700**/yr; budget **2 years** up front).
 2. **Want cheap + clean** → buy **`thumbric.app`** (or `.dev`) on Cloudflare (~**$14 / ₹1,370** renew for `.app`).
 3. **India promo on GoDaddy** → **`thumbric.in` at ₹1 / 3-yr** is fine as a **parked redirect** (~**₹1,800** for 3 years) — not the product brand. See **`.in` / India promo** above.
-4. **`.ai` already gone when you check** → try **`thumbrix.ai`** / **`thumbora.ai`**, or see **Alternate brand names** (**Snapric** / **Pulseric** if renaming). Or keep **`thumbric.app`**.
-5. **Considering a rename** → prefer **Snapric** or **Pulseric** (both unlock `.com`); otherwise **keep Thumbric**. Naming-only until you decide — don’t rename in code yet.
-6. **$0 for now** → keep https://thiru-cloud-architect.github.io/thumbric/ (already live).
-7. **Comparing registrars from India** → force USD view or convert at one FX rate; don’t mix CF `$` with GoDaddy/Namecheap `₹` pages.
+4. **`thumbnail.guru` at ₹384** → **skip as primary**; optional vanity park only after transfer off GoDaddy — see **`thumbnail.guru`** section above.
+5. **`.ai` already gone when you check** → try **`thumbrix.ai`** / **`thumbora.ai`**, or see **Alternate brand names** (**Snapric** / **Pulseric** if renaming). Or keep **`thumbric.app`**.
+6. **Considering a rename** → prefer **Snapric** or **Pulseric** (both unlock `.com`); otherwise **keep Thumbric**. Naming-only until you decide — don’t rename in code yet.
+7. **$0 for now** → keep https://thiru-cloud-architect.github.io/thumbric/ (already live).
+8. **Comparing registrars from India** → force USD view or convert at one FX rate; don’t mix CF `$` with GoDaddy/Namecheap `₹` pages.
 
 ## After purchase (registrar DNS → GitHub Pages)
 
