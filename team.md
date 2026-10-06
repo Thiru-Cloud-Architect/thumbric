@@ -16,11 +16,12 @@ When someone says `@team.md can you help here`, treat these as the open threads:
 
 | Thread | State |
 |--------|--------|
-| Features AI-first section | **Live** — stamp `UI_BUILD=2026.10.06-ar`. Banner: “Describe the scene…”, Works now / Not yet, `#editor-ai` deep link. |
+| Features AI-first section | **Live** — stamp `UI_BUILD=2026.10.06-as`. Banner: “Describe the scene…”, Works now / Not yet, `#editor-ai` deep link. |
 | Editor AI | **Live** — Title step → “AI scene image” + “Generate AI scene” (Pollinations, no API key). Inline status + 45s timeout + flux/turbo fallbacks. |
+| Accents | **Live** — coral→soft magenta (`#ff7f8a` / `#d4a6f0`); purple peeks in gradients, coral stays primary. |
 | Pricing | **Live** — Creator $19 (was $39), Pro $49 (was $99); INR ₹999 / ₹2499. Launch offer copy on Pricing. |
 | Custom domain `thumbric.ai` | **Blocked — one user step** — NXDOMAIN; no CF/AWS/Namecheap/Route53 tokens; no owned zones or `*.pages.dev`. Zero-touch host = github.io only. |
-| Old UI complaints | **Resolved on origin** — hard-refresh or open `/thumbric/` (not `/thumbforge/`). Footer stamp should show `2026.10.06-ar`. |
+| Old UI complaints | **Resolved on origin** — hard-refresh or open `/thumbric/` (not `/thumbforge/`). Footer stamp should show `2026.10.06-as`. |
 
 ## AI product truth (cost-aware)
 
@@ -44,7 +45,7 @@ Details: `DEPLOY.md`.
 curl -sL https://thiru-cloud-architect.github.io/thumbric/ \
   | rg -o '/thumbric/assets/index-[^"]+\.js'
 # Expect UI_BUILD string inside that bundle:
-# 2026.10.06-ar  and  "Describe the scene"
+# 2026.10.06-as  and  "Describe the scene"
 ```
 
 Wrong path: `…/thumbforge/` is a redirect stub — use `…/thumbric/`.
