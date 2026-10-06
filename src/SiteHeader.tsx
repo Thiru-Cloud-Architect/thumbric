@@ -18,7 +18,6 @@ export function SiteHeader() {
         <Link to="/pricing">Pricing</Link>
         <NavHashLink hash="how">How it works</NavHashLink>
         <NavHashLink hash="editor">Editor</NavHashLink>
-        <Link to="/career">Careers</Link>
       </nav>
       {onHome ? (
         <a className="top-cta top-cta-light" href="#editor">

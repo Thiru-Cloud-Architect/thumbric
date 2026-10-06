@@ -364,7 +364,6 @@ export function SiteFooter({ buildLabel }: { buildLabel?: string }) {
             <NavHashLink hash="how">How it works</NavHashLink>
             <NavHashLink hash="features">Feature list</NavHashLink>
             <Link to="/pricing">Plans &amp; pricing</Link>
-            <Link to="/career">Careers</Link>
             <NavHashLink hash="faq">FAQ</NavHashLink>
           </div>
           <div className="footer-col">
