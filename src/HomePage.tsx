@@ -524,7 +524,7 @@ export default function HomePage() {
           }}
         />
         <PlushInfoSection />
-        <LazyReveal staggerMs={80} variant="rise">
+        <LazyReveal staggerMs={75} variant="soft-rise">
           <StatsStrip />
         </LazyReveal>
         <LazyReveal staggerMs={90} variant="rise">
@@ -533,7 +533,9 @@ export default function HomePage() {
         <LazyReveal staggerMs={85} variant="fade-scale">
           <HowItWorks />
         </LazyReveal>
-        <FeaturesSection />
+        <LazyReveal staggerMs={70} variant="soft-rise">
+          <FeaturesSection />
+        </LazyReveal>
         <LazyReveal variant="slide-left">
           <PricingTeaser />
         </LazyReveal>
@@ -1061,7 +1063,7 @@ export default function HomePage() {
           </button>
         </div>
 
-        <LazyReveal staggerMs={90} variant="rise">
+        <LazyReveal staggerMs={60} variant="blur-up">
           <Testimonials />
         </LazyReveal>
         <LazyReveal variant="fade-scale">
