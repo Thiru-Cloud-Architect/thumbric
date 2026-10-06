@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { PRODUCT_NAME, PRODUCT_TAGLINE } from './brand'
+import { FEATURES } from './features'
+import { PLANS } from './plans'
 
 const MOSAIC = [
   { hue: 330, label: 'WOW' },
@@ -47,22 +49,65 @@ type LandingProps = {
   onQuickIdea: () => void
 }
 
+function MosaicStrip({ reverse }: { reverse?: boolean }) {
+  const tiles = [...MOSAIC, ...MOSAIC]
+  return (
+    <div className={reverse ? 'mosaic-strip reverse' : 'mosaic-strip'}>
+      {tiles.map((tile, index) => (
+        <div
+          key={`${tile.label}-${index}`}
+          className="mosaic-tile"
+          style={{ ['--tile-hue' as string]: tile.hue }}
+        >
+          <span>{tile.label}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+export function FeaturesMenu() {
+  const [open, setOpen] = useState(false)
+  const live = FEATURES.filter((item) => item.available)
+  return (
+    <div
+      className="nav-dropdown"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
+      <button
+        type="button"
+        className="nav-dropdown-trigger"
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+      >
+        Features
+      </button>
+      {open ? (
+        <div className="nav-dropdown-panel" role="menu">
+          {live.map((item) => (
+            <a key={item.id} href={item.href} className="nav-dropdown-item" role="menuitem">
+              <strong>{item.title}</strong>
+              <span>{item.description}</span>
+            </a>
+          ))}
+          <a href="#features" className="nav-dropdown-item nav-dropdown-more" role="menuitem">
+            <strong>View all features</strong>
+            <span>What you can use today in the editor</span>
+          </a>
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 export function HeroFlashy({ onQuickIdea }: LandingProps) {
   return (
     <section className="hero-flashy" aria-labelledby="hero-title">
-      <div className="hero-mosaic" aria-hidden>
-        {MOSAIC.map((tile, index) => (
-          <div
-            key={tile.label + index}
-            className="mosaic-tile"
-            style={{
-              ['--tile-hue' as string]: tile.hue,
-              ['--tile-i' as string]: index,
-            }}
-          >
-            <span>{tile.label}</span>
-          </div>
-        ))}
+      <div className="hero-mosaic-wrap" aria-hidden>
+        <MosaicStrip />
+        <MosaicStrip reverse />
+        <MosaicStrip />
       </div>
       <div className="hero-scrim" aria-hidden />
       <div className="hero-inner">
@@ -271,6 +316,75 @@ export function FaqAccordion() {
   )
 }
 
+export function FeaturesSection() {
+  return (
+    <section id="features" className="features-section" aria-labelledby="features-title">
+      <p className="section-eyebrow">Features</p>
+      <h2 id="features-title" className="section-title center">
+        Built for creators, <span className="gradient-text">not designers</span>
+      </h2>
+      <p className="section-lede center">
+        Everything below works in your browser today. No fake “AI from URL” — just fast control.
+      </p>
+      <div className="features-grid">
+        {FEATURES.filter((item) => item.available).map((item) => (
+          <a key={item.id} href={item.href} className="feature-card">
+            <h3>{item.title}</h3>
+            <p>{item.description}</p>
+          </a>
+        ))}
+      </div>
+      <p id="roadmap" className="features-roadmap">
+        <strong>On the roadmap:</strong> paste a YouTube link and get AI-assisted layouts — after we nail
+        the manual editor you see here.
+      </p>
+    </section>
+  )
+}
+
+export function PricingSection() {
+  return (
+    <section id="pricing" className="pricing-section" aria-labelledby="pricing-title">
+      <p className="section-eyebrow">Pricing</p>
+      <h2 id="pricing-title" className="section-title center">
+        Simple plans — about <span className="gradient-text">⅕ the cost</span> of AI thumbnail SaaS
+      </h2>
+      <p className="section-lede center">
+        Typical tools charge $15–25/mo. We stay free for previews and price Pro for India-first
+        creators.
+      </p>
+      <div className="pricing-grid">
+        {PLANS.map((plan) => (
+          <article
+            key={plan.id}
+            className={plan.popular ? 'price-card is-popular' : 'price-card'}
+          >
+            {plan.popular ? <p className="price-popular-tag">Most popular</p> : null}
+            <h3>{plan.name}</h3>
+            <p className="price-tagline">{plan.tagline}</p>
+            <p className="price-amount">
+              {plan.compareAtLabel ? (
+                <span className="price-was">{plan.compareAtLabel}</span>
+              ) : null}
+              <span>{plan.priceLabel}</span>
+              {plan.priceInr > 0 ? <small>/mo</small> : null}
+            </p>
+            {plan.highlight ? <p className="price-highlight">{plan.highlight}</p> : null}
+            <ul>
+              {plan.features.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+            <a className={plan.popular ? 'btn-gradient price-cta' : 'btn-outline price-cta'} href={plan.ctaHref}>
+              {plan.cta}
+            </a>
+          </article>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 export function SiteFooter() {
   return (
     <footer className="site-footer">
@@ -283,6 +397,8 @@ export function SiteFooter() {
           <p className="footer-head">Product</p>
           <a href="#editor">Editor</a>
           <a href="#how">How it works</a>
+          <a href="#features">Features</a>
+          <a href="#pricing">Pricing</a>
           <a href="#faq">FAQ</a>
         </div>
         <div>

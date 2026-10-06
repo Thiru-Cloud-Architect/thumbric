@@ -133,32 +133,59 @@ function layoutBoxes(platform: Platform, layout: LayoutId): { photo: Box; text: 
     }
   }
 
-  const photoW = Math.round(W * 0.38)
+  const photoW = Math.round(W * 0.36)
+  const gutter = Math.round(pad * 1.35)
   if (layout === 'photo-right') {
     return {
       photo: { x: W - pad - photoW, y: pad, w: photoW, h: H - pad * 2 },
-      text: { x: pad, y: pad, w: W - photoW - pad * 3, h: H - pad * 2 },
+      text: { x: pad, y: pad, w: W - photoW - pad - gutter - pad, h: H - pad * 2 },
     }
   }
 
   return {
     photo: { x: pad, y: pad, w: photoW, h: H - pad * 2 },
-    text: { x: pad * 2 + photoW, y: pad, w: W - photoW - pad * 3, h: H - pad * 2 },
+    text: { x: pad + photoW + gutter, y: pad, w: W - photoW - pad - gutter - pad, h: H - pad * 2 },
   }
 }
 
 export function defaultTextPosition(platform: Platform, layout: LayoutId): TextPosition {
   const text = layoutBoxes(platform, layout).text
-  return { x: text.x / platform.width, y: text.y / platform.height }
+  const padX = Math.round(text.w * 0.04)
+  const padY = Math.round(text.h * 0.03)
+  return {
+    x: (text.x + padX) / platform.width,
+    y: (text.y + padY) / platform.height,
+  }
+}
+
+export function clampTextPosition(
+  platform: Platform,
+  layout: LayoutId,
+  textPos: TextPosition,
+): TextPosition {
+  const text = layoutBoxes(platform, layout).text
+  const W = platform.width
+  const H = platform.height
+  const padX = Math.round(text.w * 0.04)
+  const padY = Math.round(text.h * 0.03)
+  const minX = (text.x + padX) / W
+  const minY = (text.y + padY) / H
+  const maxX = (text.x + text.w - padX) / W
+  const maxY = (text.y + text.h - padY) / H
+  return {
+    x: Math.min(maxX, Math.max(minX, textPos.x)),
+    y: Math.min(maxY, Math.max(minY, textPos.y)),
+  }
 }
 
 export function textBoxFromInput(input: ThumbInput): Box {
   const base = layoutBoxes(input.platform, input.layout).text
   const W = input.platform.width
   const H = input.platform.height
+  const pos = clampTextPosition(input.platform, input.layout, input.textPos)
   return {
-    x: input.textPos.x * W,
-    y: input.textPos.y * H,
+    x: pos.x * W,
+    y: pos.y * H,
     w: base.w,
     h: base.h,
   }
@@ -355,15 +382,18 @@ function drawPhoto(
 
   ctx.save()
   ctx.strokeStyle = accent
-  ctx.shadowColor = `${accent}AA`
-  ctx.shadowBlur = Math.max(8, Math.round(Math.min(box.w, box.h) * 0.035))
-  ctx.lineWidth = Math.max(6, Math.round(Math.min(box.w, box.h) * 0.022))
+  ctx.shadowColor = `${accent}66`
+  ctx.shadowBlur = Math.max(4, Math.round(Math.min(box.w, box.h) * 0.02))
+  const lineWidth = Math.max(5, Math.round(Math.min(box.w, box.h) * 0.018))
+  ctx.lineWidth = lineWidth
+  const inset = lineWidth * 0.55
   if (input.photoShape === 'circle') {
+    const r = Math.min(box.w, box.h) / 2 - inset
     ctx.beginPath()
-    ctx.arc(box.x + box.w / 2, box.y + box.h / 2, Math.min(box.w, box.h) / 2, 0, Math.PI * 2)
+    ctx.arc(box.x + box.w / 2, box.y + box.h / 2, r, 0, Math.PI * 2)
     ctx.stroke()
   } else {
-    roundRect(ctx, box.x, box.y, box.w, box.h, radius)
+    roundRect(ctx, box.x + inset, box.y + inset, box.w - inset * 2, box.h - inset * 2, radius)
     ctx.stroke()
   }
   ctx.restore()

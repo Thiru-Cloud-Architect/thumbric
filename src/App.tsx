@@ -22,8 +22,11 @@ import {
 } from './fonts'
 import {
   FaqAccordion,
+  FeaturesMenu,
+  FeaturesSection,
   HeroFlashy,
   HowItWorks,
+  PricingSection,
   ProblemSection,
   SiteFooter,
   StatsStrip,
@@ -41,6 +44,7 @@ import { pickQuickIdea } from './quickIdeas'
 import { PLATFORMS, type PlatformId, getPlatform } from './platforms'
 import { TEXT_STYLES, type TextStyleId } from './textStyle'
 import {
+  clampTextPosition,
   defaultTextPosition,
   downloadThumbnail,
   hitTestSticker,
@@ -61,6 +65,7 @@ import './App.css'
 const POPULAR: NicheId[] = ['tech', 'finance', 'gaming', 'cooking', 'travel', 'fitness', 'education', 'vlog']
 
 type DragTarget = 'sticker' | 'text' | null
+type EditorTab = 'setup' | 'title' | 'polish'
 
 export default function App() {
   const [platformId, setPlatformId] = useState<PlatformId>('youtube')
@@ -89,6 +94,7 @@ export default function App() {
   const [entitlement, setEntitlement] = useState<Entitlement>(() => loadEntitlement())
   const [modal, setModal] = useState<'none' | 'register' | 'pay'>('none')
   const [emailDraft, setEmailDraft] = useState('')
+  const [editorTab, setEditorTab] = useState<EditorTab>('setup')
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const dragIndexRef = useRef<number | null>(null)
@@ -291,10 +297,12 @@ export default function App() {
       return
     }
     if (target === 'text') {
-      setTextPos({
-        x: clampStickerPos(point.x / platform.width),
-        y: clampStickerPos(point.y / platform.height),
-      })
+      setTextPos(
+        clampTextPosition(platform, layout, {
+          x: point.x / platform.width,
+          y: point.y / platform.height,
+        }),
+      )
       event.currentTarget.style.cursor = 'grabbing'
       return
     }
@@ -423,9 +431,10 @@ export default function App() {
           {PRODUCT_NAME}
         </a>
         <nav className="top-nav" aria-label="Sections">
+          <FeaturesMenu />
+          <a href="#pricing">Pricing</a>
           <a href="#how">How it works</a>
           <a href="#editor">Editor</a>
-          <a href="#faq">FAQ</a>
         </nav>
         <a className="top-cta top-cta-light" href="#editor">
           Start free
@@ -442,6 +451,8 @@ export default function App() {
         <StatsStrip />
         <ProblemSection />
         <HowItWorks />
+        <FeaturesSection />
+        <PricingSection />
 
         <section id="editor" className="editor-section" aria-label="Thumbnail editor">
           <p className="section-kicker">Editor</p>
@@ -457,15 +468,40 @@ export default function App() {
               saveMarked()
             }}
           >
-            <section className="step">
-              <header>
-                <span className="step-num">1</span>
-                <div>
-                  <h2>Platform &amp; mood</h2>
-                  <p>Size and color vibe — one tap each.</p>
-                </div>
-              </header>
-              <div className="choice-row" role="radiogroup" aria-label="Platform">
+            <div className="editor-tabs" role="tablist" aria-label="Editor steps">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={editorTab === 'setup'}
+                className={editorTab === 'setup' ? 'editor-tab is-active' : 'editor-tab'}
+                onClick={() => setEditorTab('setup')}
+              >
+                1 · Platform &amp; mood
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={editorTab === 'title'}
+                className={editorTab === 'title' ? 'editor-tab is-active' : 'editor-tab'}
+                onClick={() => setEditorTab('title')}
+              >
+                2 · Title
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={editorTab === 'polish'}
+                className={editorTab === 'polish' ? 'editor-tab is-active' : 'editor-tab'}
+                onClick={() => setEditorTab('polish')}
+              >
+                3 · Polish &amp; export
+              </button>
+            </div>
+
+            {editorTab === 'setup' ? (
+            <section className="step step-clean">
+              <p className="step-lede">Pick where you post and the color mood. Preview updates on the right.</p>
+              <div className="choice-row platform-row" role="radiogroup" aria-label="Platform">
                 {PLATFORMS.map((item) => (
                   <button
                     key={item.id}
@@ -558,16 +594,11 @@ export default function App() {
                 </button>
               )}
             </section>
+            ) : null}
 
-            <section className="step">
-              <header>
-                <span className="step-num">2</span>
-                <div>
-                  <h2>Title &amp; layout</h2>
-                  <p>Templates and text first — fine-tune under Advanced.</p>
-                </div>
-              </header>
-
+            {editorTab === 'title' ? (
+            <section className="step step-clean">
+              <p className="step-lede">Headline first — templates set platform and layout for you.</p>
               <fieldset>
                 <legend>Starter templates</legend>
                 <div className="template-gallery" role="list">
@@ -617,7 +648,23 @@ export default function App() {
                   placeholder="Write the title people should notice"
                 />
               </label>
+              <button
+                type="button"
+                className="linkish"
+                onClick={() => {
+                  setTextPos(defaultTextPosition(platform, layout))
+                  setTextSelected(false)
+                  setStatus('Title position reset for this layout.')
+                }}
+              >
+                Reset title position on preview
+              </button>
+            </section>
+            ) : null}
 
+            {editorTab === 'polish' ? (
+            <section className="step step-clean">
+              <p className="step-lede">Fonts, size, photo, and extras — watch the live preview.</p>
               <fieldset>
                 <legend>Title style</legend>
                 <div className="title-style-row" role="listbox" aria-label="Title style">
@@ -802,18 +849,6 @@ export default function App() {
                     </label>
                   </fieldset>
 
-                  <button
-                    type="button"
-                    className="linkish"
-                    onClick={() => {
-                      setTextPos(defaultTextPosition(platform, layout))
-                      setTextSelected(false)
-                      setStatus('Title position reset for this layout.')
-                    }}
-                  >
-                    Reset title position
-                  </button>
-
                   <fieldset>
                     <legend>Stickers (up to 3)</legend>
                     <div className="sticker-row">
@@ -838,15 +873,15 @@ export default function App() {
                 </div>
               </details>
             </section>
+            ) : null}
 
             <section className="step save-step">
               <header>
-                <span className="step-num">3</span>
                 <div>
-                  <h2>Save your thumbnail</h2>
+                  <h2>Download</h2>
                   <p>
-                    Free saves keep a mark on the photo (hard to crop away). Register for{' '}
-                    {FREE_CLEAN_DOWNLOADS} clean downloads, then {PAID_PRICE_LABEL}.
+                    Free preview PNG anytime. Register for {FREE_CLEAN_DOWNLOADS} clean downloads, then{' '}
+                    {PAID_PRICE_LABEL} — see <a href="#pricing">pricing</a>.
                   </p>
                 </div>
               </header>
