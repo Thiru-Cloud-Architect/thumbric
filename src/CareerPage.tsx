@@ -30,7 +30,7 @@ export default function CareerPage() {
             <p>
               <strong>Watch this space</strong> — bookmark this page or star the{' '}
               <a
-                href="https://github.com/Thiru-Cloud-Architect/thumbforge"
+                href="https://github.com/Thiru-Cloud-Architect/thumbric"
                 rel="noopener noreferrer"
                 target="_blank"
               >
@@ -44,7 +44,7 @@ export default function CareerPage() {
               </Link>
               <a
                 className="btn-gradient"
-                href="https://github.com/Thiru-Cloud-Architect/thumbforge/issues"
+                href="https://github.com/Thiru-Cloud-Architect/thumbric/issues"
                 rel="noopener noreferrer"
                 target="_blank"
               >

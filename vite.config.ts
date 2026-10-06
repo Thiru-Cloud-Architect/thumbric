@@ -2,8 +2,8 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
-/** GitHub project site: `/thumbforge/` matches repo name. Custom domain: set VITE_BASE_PATH=/ */
-const base = process.env.VITE_BASE_PATH || '/thumbforge/'
+/** GitHub project site: `/thumbric/` matches repo name. Custom domain: set VITE_BASE_PATH=/ */
+const base = process.env.VITE_BASE_PATH || '/thumbric/'
 
 export default defineConfig({
   base,

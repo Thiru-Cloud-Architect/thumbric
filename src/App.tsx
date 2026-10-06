@@ -6,7 +6,7 @@ import { ScrollToHash } from './nav'
 
 export default function App() {
   return (
-    <BrowserRouter basename="/thumbforge">
+    <BrowserRouter basename="/thumbric">
       <ScrollToHash />
       <Routes>
         <Route path="/" element={<HomePage />} />

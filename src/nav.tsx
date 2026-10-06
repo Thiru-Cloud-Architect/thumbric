@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 
 export function useOnHomePage() {
   const { pathname } = useLocation()
-  return pathname === '/' || pathname === '/thumbforge' || pathname.endsWith('/thumbforge/')
+  return pathname === '/' || pathname === '/thumbric' || pathname.endsWith('/thumbric/')
 }
 
 export function NavHashLink({ hash, children }: { hash: string; children: ReactNode }) {

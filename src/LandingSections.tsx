@@ -270,7 +270,7 @@ export function FaqAccordion() {
           <h2 id="faq-title">Frequently asked questions</h2>
           <p>
             Haven&apos;t found what you need? Open the{' '}
-            <a href="https://github.com/Thiru-Cloud-Architect/thumbforge" rel="noopener noreferrer">
+            <a href="https://github.com/Thiru-Cloud-Architect/thumbric" rel="noopener noreferrer">
               GitHub repo
             </a>{' '}
             and leave feedback.
@@ -369,20 +369,20 @@ export function SiteFooter({ buildLabel }: { buildLabel?: string }) {
           <div className="footer-col">
             <p className="footer-head">Resources</p>
             <a
-              href="https://github.com/Thiru-Cloud-Architect/thumbforge"
+              href="https://github.com/Thiru-Cloud-Architect/thumbric"
               rel="noopener noreferrer"
               target="_blank"
             >
               GitHub repo
             </a>
             <a
-              href="https://github.com/Thiru-Cloud-Architect/thumbforge/issues"
+              href="https://github.com/Thiru-Cloud-Architect/thumbric/issues"
               rel="noopener noreferrer"
               target="_blank"
             >
               Report an issue
             </a>
-            <a href="https://thiru-cloud-architect.github.io/thumbforge/sitemap.xml">Sitemap</a>
+            <a href="https://thiru-cloud-architect.github.io/thumbric/sitemap.xml">Sitemap</a>
           </div>
         </div>
         {buildLabel ? <p className="footer-build">{buildLabel}</p> : null}

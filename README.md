@@ -2,14 +2,14 @@
 
 Free browser thumbnail maker for **YouTube**, Shorts/Reels, Instagram, LinkedIn, and Facebook — plus **AI image** generation in the editor.
 
-**Live site:** https://thiru-cloud-architect.github.io/thumbforge/
+**Live site:** https://thiru-cloud-architect.github.io/thumbric/
 
 ## Brand vs URL
 
 | What | Name |
 |------|------|
 | **Product** | **Thumbric.ai** |
-| **GitHub Pages path** | `/thumbforge/` (repo name) until you attach a custom domain |
+| **GitHub Pages path** | `/thumbric/` (repo name) until you attach a custom domain |
 
 ### Connect `thumbric.ai` on Cloudflare (recommended)
 
@@ -17,7 +17,7 @@ Free browser thumbnail maker for **YouTube**, Shorts/Reels, Instagram, LinkedIn,
 2. Add the domain to **Cloudflare DNS** (orange-cloud proxy optional).
 3. In GitHub → repo **Settings → Pages → Custom domain** → enter `thumbric.ai` (and `www` if you want).
 4. Add DNS records GitHub shows (usually `A` / `AAAA` or `CNAME` for `www`).
-5. Wait for HTTPS. Optionally set Vite `base: '/'` once the site is only served from the apex domain (not `/thumbforge/`).
+5. Wait for HTTPS. Optionally set Vite `base: '/'` once the site is only served from the apex domain (not `/thumbric/`).
 
 Worker API (optional user JSON sync) can live on `api.thumbric.ai` — see `worker/`.
 
@@ -51,7 +51,7 @@ npm test
 npm run dev
 ```
 
-Open http://127.0.0.1:43201/thumbforge/
+Open http://127.0.0.1:43201/thumbric/
 
 ## Stack
 
