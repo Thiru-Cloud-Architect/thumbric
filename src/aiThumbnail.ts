@@ -93,8 +93,10 @@ export function buildAiThumbnailPrompt(options: AiThumbOptions) {
     `one coherent scene only: ${subject}`,
     `niche mood: ${options.niche.label} — ${options.niche.hint}`,
     titleClause,
-    'single subject focus, high contrast, bold readable composition, room for large title overlay later',
-    'photoreal or stylized as the scene implies, saturated cinematic color grade, sharp focus',
+    // CTR-style composition (leaders optimize for phone tile readability, not "pretty art").
+    'single subject focus, subject on one third, clear negative space on the opposite side for a large title overlay',
+    'high contrast, bold readable composition at phone-tile size (~320px wide), saturated cinematic color grade, sharp focus',
+    'photoreal or stylized as the scene implies, expressive face or clear focal object preferred when the scene includes a person',
     `avoid: ${negative}`,
   ].filter(Boolean)
 
@@ -104,9 +106,11 @@ export function buildAiThumbnailPrompt(options: AiThumbOptions) {
 function pollinationsUrl(prompt: string, width: number, height: number, seed: number) {
   // Keep prompt under URL limits but prefer enough room for negative cues.
   const encoded = encodeURIComponent(prompt.slice(0, 900))
+  // Pin free Flux — Pollinations defaults have shifted (e.g. zimage); flux stays free/anonymous.
   // `nofeed=true` + random seed + timestamp reduce sticky cached junk regenerations.
+  // Note: `nologo=true` may be ignored without a Pollinations account.
   const bust = Date.now().toString(36)
-  return `https://image.pollinations.ai/prompt/${encoded}?width=${width}&height=${height}&seed=${seed}&nologo=true&enhance=true&nofeed=true&t=${bust}`
+  return `https://image.pollinations.ai/prompt/${encoded}?width=${width}&height=${height}&seed=${seed}&model=flux&nologo=true&enhance=true&nofeed=true&private=true&t=${bust}`
 }
 
 export async function generateAiThumbnailImage(

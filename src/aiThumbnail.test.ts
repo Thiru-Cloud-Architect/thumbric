@@ -49,6 +49,8 @@ describe('buildAiThumbnailPrompt', () => {
     expect(prompt).toMatch(/no collage/i)
     expect(prompt).toMatch(/no split screen/i)
     expect(prompt).toMatch(/one coherent scene/i)
+    expect(prompt).toMatch(/negative space/i)
+    expect(prompt).toMatch(/320px/i)
   })
 
   it('includes a real title as topic mood without forcing it into the image as text', () => {
