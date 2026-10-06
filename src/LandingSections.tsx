@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { NavHashLink } from './nav'
 import { PRODUCT_NAME, PRODUCT_NAME_FULL, PRODUCT_TAGLINE } from './brand'
 import { CREATOR_CLEAN_DOWNLOADS_PER_MONTH } from './entitlement'
-import { FEATURES } from './features'
+import { FEATURES, AI_FEATURE } from './features'
 import { HERO_THUMBS, type HeroThumb } from './heroThumbs'
 import { RevealItem } from './LazyReveal'
 
@@ -318,6 +318,7 @@ export function FaqAccordion() {
 }
 
 export function FeaturesSection() {
+  const core = FEATURES.filter((item) => item.available)
   return (
     <section id="features" className="features-section" aria-labelledby="features-title">
       <RevealItem index={0}>
@@ -326,26 +327,33 @@ export function FeaturesSection() {
           Built for creators, <span className="gradient-text">not designers</span>
         </h2>
         <p className="section-lede center">
-          Everything below works in your browser today — live canvas, templates, and optional AI image.
+          Six core tools in the editor — plus AI image generation on the Title step.
         </p>
       </RevealItem>
+
+      <RevealItem index={1}>
+        <a href={AI_FEATURE.href} className="feature-ai-banner">
+          <div className="feature-ai-copy">
+            <p className="feature-where">{AI_FEATURE.where}</p>
+            <h3>{AI_FEATURE.title}</h3>
+            <p>{AI_FEATURE.description}</p>
+          </div>
+          <span className="feature-ai-cta">{AI_FEATURE.cta} →</span>
+        </a>
+      </RevealItem>
+
       <div className="features-grid">
-        {FEATURES.filter((item) => item.available).map((item, index) => (
-          <RevealItem key={item.id} index={index + 1}>
+        {core.map((item, index) => (
+          <RevealItem key={item.id} index={index + 2}>
             <a href={item.href} className="feature-card">
+              {item.where ? <p className="feature-where">{item.where}</p> : null}
               <h3>{item.title}</h3>
               <p>{item.description}</p>
-              <span className="feature-card-link">Open in editor →</span>
+              <span className="feature-card-link">{item.cta ?? 'Open editor'} →</span>
             </a>
           </RevealItem>
         ))}
       </div>
-      <RevealItem index={FEATURES.length + 1}>
-        <p id="roadmap" className="features-roadmap">
-          <strong>Live now:</strong> AI face/backdrop from your title in the editor. Next up: payments and
-          full accounts when traffic grows — paste-a-YouTube-URL assist can follow.
-        </p>
-      </RevealItem>
     </section>
   )
 }

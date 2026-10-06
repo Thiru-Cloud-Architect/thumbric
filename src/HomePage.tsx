@@ -169,6 +169,21 @@ export default function HomePage() {
   }, [photoUrl])
 
   useEffect(() => {
+    const openFromHash = () => {
+      const hash = window.location.hash.replace(/^#/, '')
+      if (hash === 'editor-ai' || hash === 'editor-title') {
+        setEditorTab('title')
+        window.setTimeout(() => {
+          document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }, 80)
+      }
+    }
+    openFromHash()
+    window.addEventListener('hashchange', openFromHash)
+    return () => window.removeEventListener('hashchange', openFromHash)
+  }, [])
+
+  useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
     canvas.width = platform.width
@@ -680,7 +695,7 @@ export default function HomePage() {
             ) : null}
 
             {editorTab === 'title' ? (
-            <section className="step step-clean">
+            <section id="editor-title" className="step step-clean">
               <p className="step-lede">Headline first — templates set platform and layout for you.</p>
               <fieldset>
                 <legend>Starter templates</legend>
@@ -824,7 +839,7 @@ export default function HomePage() {
                 bigger for Shorts.
               </p>
 
-              <div className="photo-box">
+              <div id="editor-ai" className="photo-box">
                 <div>
                   <p className="photo-title">Photo or AI face</p>
                   <p className="photo-help">
