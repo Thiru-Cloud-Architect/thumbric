@@ -63,7 +63,7 @@ import {
   type PlacedSticker,
   type StickerId,
 } from './stickers'
-import { generateAiThumbnailImage } from './aiThumbnail'
+import { generateAiThumbnailImage, titleFromScene } from './aiThumbnail'
 import {
   loadSimpleUser,
   registerSimpleUser,
@@ -441,12 +441,16 @@ export default function HomePage() {
       setPhoto(result.image)
       setPhotoUrl(result.objectUrl)
       setPhotoName('AI scene')
-      setLayout((current) =>
-        platform.orientation === 'vertical' || platform.orientation === 'square'
-          ? current
-          : 'photo-left',
-      )
-      setStatus('AI scene applied — drag your title to fit, then download.')
+      // Full-bleed backdrop — not a neon-bordered inset photo-in-photo.
+      setLayout('photo-full')
+      setPhotoShape('square')
+      setStickers([])
+      setActiveStickerIndex(null)
+      // Empty title → short title from the scene so the canvas is not "YOUR TITLE HERE".
+      if (!title.trim()) {
+        setTitle(titleFromScene(aiHint, title))
+      }
+      setStatus('AI backdrop applied full-bleed — tweak the title, then download.')
       setEditorTab('title')
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return
@@ -795,8 +799,9 @@ export default function HomePage() {
                 <div>
                   <p className="photo-title">AI scene image</p>
                   <p className="photo-help">
-                    Describe the thumbnail idea / scene. Free AI draws a backdrop from your words,
-                    title, niche, and platform — then you finish the title on the live canvas.
+                    Fill the YouTube title field above, then describe the visual scene here.
+                    Free AI paints a full-bleed backdrop from your scene (plus title + niche) —
+                    not a small bordered photo.
                   </p>
                   {photoName ? <p className="photo-name">Selected: {photoName}</p> : null}
                 </div>
@@ -807,13 +812,13 @@ export default function HomePage() {
                     type="text"
                     value={aiHint}
                     onChange={(event) => setAiHint(event.target.value)}
-                    placeholder="e.g. shocked creator at a neon desk, city night behind them"
+                    placeholder="e.g. Tamil singer in warm stage light, soft bokeh, music cover mood"
                   />
                 </label>
                 <p className="ai-honesty-note">
-                  Free AI scene image — not full video analysis. Paste-a-YouTube-URL thumbs come later
-                  when we can fund a paid model. Uses Pollinations (no API key). Empty scene field
-                  falls back to your title + niche.
+                  Tip: write the clickable YouTube title up top, and a visual scene here (one coherent
+                  shot — person, setting, mood). Empty title uses a short title from your scene.
+                  Free Pollinations image (no API key) — not YouTube-URL / video analysis.
                 </p>
                 <div className="photo-actions">
                   <button

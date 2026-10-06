@@ -380,6 +380,9 @@ function drawPhoto(
   }
   ctx.restore()
 
+  // Full-bleed backdrops should not get a neon inset-photo border.
+  if (input.layout === 'photo-full') return
+
   ctx.save()
   ctx.strokeStyle = accent
   ctx.shadowColor = `${accent}66`
@@ -473,7 +476,8 @@ function measureTextBlockBounds(input: ThumbInput, box: Box): Box {
   const vertical = input.platform.orientation === 'vertical'
   const font = getFont(input.fontId)
   const titleSize = scaledTitleFontSize(input.titleFontSizePx, input.platform)
-  const tagSize = Math.round(titleSize * 0.34)
+  const hasTag = Boolean(input.tag.trim())
+  const tagSize = hasTag ? Math.round(titleSize * 0.34) : 0
   const maxLines = vertical ? 4 : 3
 
   const canvas = document.createElement('canvas')
@@ -486,7 +490,8 @@ function measureTextBlockBounds(input: ThumbInput, box: Box): Box {
   const innerW = Math.max(40, box.w - strokePad * 2)
   ctx.font = `${font.weight} ${titleSize}px ${font.css}`
   const lines = wrapLines(ctx, title.toUpperCase(), innerW, maxLines)
-  const contentH = tagSize + titleSize + 28 + lines.length * (titleSize + 8) + 12
+  const tagGap = hasTag ? tagSize + 28 : Math.round(titleSize * 0.15)
+  const contentH = tagGap + titleSize + lines.length * (titleSize + 8) + 12
   const totalH = Math.min(box.h, contentH)
 
   return { x: box.x, y: box.y, w: box.w, h: totalH }
@@ -506,7 +511,8 @@ export function hitTestTextBlock(input: ThumbInput, canvasX: number, canvasY: nu
 function drawTextBlock(ctx: CanvasRenderingContext2D, input: ThumbInput) {
   const box = textBoxFromInput(input)
   const accent = accentOf(input)
-  const tag = (input.tag.trim() || input.niche.badge).toUpperCase()
+  // Only show a badge when the user typed a tag — do not auto-dump niche.badge (e.g. SHIPPED).
+  const tag = input.tag.trim().toUpperCase()
   const title = input.title.trim() || 'YOUR TITLE HERE'
   const font = getFont(input.fontId)
   const titleSize = scaledTitleFontSize(input.titleFontSizePx, input.platform)
@@ -525,12 +531,15 @@ function drawTextBlock(ctx: CanvasRenderingContext2D, input: ThumbInput) {
   ctx.rect(box.x - strokePad, box.y, box.w + strokePad * 2, box.h)
   ctx.clip()
 
-  ctx.font = `800 ${tagSize}px "DM Sans", sans-serif`
-  drawPunchText(ctx, tag, innerX, box.y + tagSize + 8, accent, styleId, accent)
+  let y = box.y + Math.round(titleSize * 0.15) + titleSize
+  if (tag) {
+    ctx.font = `800 ${tagSize}px "DM Sans", sans-serif`
+    drawPunchText(ctx, tag, innerX, box.y + tagSize + 8, accent, styleId, accent)
+    y = box.y + tagSize + titleSize + 28
+  }
 
   ctx.font = `${font.weight} ${titleSize}px ${font.css}`
   const lines = wrapLines(ctx, title.toUpperCase(), innerW, maxLines)
-  let y = box.y + tagSize + titleSize + 28
 
   for (const line of lines) {
     drawPunchText(ctx, line, innerX, y, '#FFFFFF', styleId, accent)

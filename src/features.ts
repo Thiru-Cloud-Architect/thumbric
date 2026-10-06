@@ -77,12 +77,12 @@ export const AI_FEATURE = {
   kicker: 'AI · free · works in your browser',
   title: 'Describe the scene. AI draws the thumbnail backdrop.',
   description:
-    'You write what the thumbnail should look like — person, setting, mood. Free AI generates a scene image, then you place your title on the live canvas.',
+    'Write your YouTube title, then describe the visual scene. Free AI generates a full-bleed backdrop — you finish the title on the live canvas.',
   nowLabel: 'Works now',
   nowItems: [
-    'Type a short scene description (or use your video title + niche)',
+    'Fill the YouTube title field, then type a short scene (person, setting, mood)',
     'Tap Generate AI scene — free via Pollinations, no API key',
-    'Fine-tune title, fonts, and stickers on the live canvas',
+    'Scene lands full-bleed on the canvas; fine-tune fonts and stickers next',
   ],
   notYetLabel: 'Not yet',
   notYetItems: [

@@ -23,7 +23,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'How does the AI thumbnail work?',
-    a: 'Open the editor → step 2 Title → “AI scene image”. Describe the scene (person, setting, mood), tap Generate AI scene, then place your title on the canvas. It uses a free image model — it does not paste a YouTube URL or analyze your video file.',
+    a: 'Open the editor → step 2 Title. Fill the YouTube title field, then under “AI scene image” describe the visual scene (person, setting, mood). Tap Generate AI scene — it paints a full-bleed backdrop via a free image model. It does not paste a YouTube URL or analyze your video file.',
   },
   {
     q: 'How long does it take?',
