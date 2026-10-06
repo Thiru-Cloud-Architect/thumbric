@@ -660,7 +660,7 @@ export default function HomePage() {
                 aria-selected={editorTab === 'polish'}
                 className={editorTab === 'polish' ? 'editor-tab is-active' : 'editor-tab'}
                 onClick={() => setEditorTab('polish')}
-                title="Polish and export"
+                title="Layout, stickers, and extras"
               >
                 3 · Export
               </button>
