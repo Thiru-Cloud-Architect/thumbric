@@ -1,10 +1,9 @@
-import { Link, useLocation } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { PRODUCT_NAME } from './brand'
-import { FeaturesMenu } from './LandingSections'
+import { NavHashLink, useOnHomePage } from './nav'
 
 export function SiteHeader() {
-  const location = useLocation()
-  const onHome = location.pathname === '/' || location.pathname === '/thumbforge/'
+  const onHome = useOnHomePage()
 
   return (
     <header className="top">
@@ -15,20 +14,20 @@ export function SiteHeader() {
         {PRODUCT_NAME}
       </Link>
       <nav className="top-nav" aria-label="Sections">
-        <FeaturesMenu />
+        <NavHashLink hash="features">Features</NavHashLink>
         <Link to="/pricing">Pricing</Link>
-        {onHome ? (
-          <>
-            <a href="#how">How it works</a>
-            <a href="#editor">Editor</a>
-          </>
-        ) : (
-          <Link to="/#editor">Editor</Link>
-        )}
+        <NavHashLink hash="how">How it works</NavHashLink>
+        <NavHashLink hash="editor">Editor</NavHashLink>
       </nav>
-      <Link className="top-cta top-cta-light" to={onHome ? '#editor' : '/#editor'}>
-        Start free
-      </Link>
+      {onHome ? (
+        <a className="top-cta top-cta-light" href="#editor">
+          Start free
+        </a>
+      ) : (
+        <Link className="top-cta top-cta-light" to={{ pathname: '/', hash: '#editor' }}>
+          Start free
+        </Link>
+      )}
     </header>
   )
 }

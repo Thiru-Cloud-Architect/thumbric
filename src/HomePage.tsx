@@ -31,6 +31,7 @@ import {
   StatsStrip,
   Testimonials,
 } from './LandingSections'
+import { LazyReveal } from './LazyReveal'
 import { SiteHeader } from './SiteHeader'
 import { planPriceLabel } from './plans'
 import { COLOR_PRESETS, LAYOUTS, PHOTO_SHAPES, type LayoutId, type PhotoShapeId } from './layout'
@@ -172,8 +173,12 @@ export default function HomePage() {
   }, [platform.orientation, layout])
 
   useEffect(() => {
+    const scrollY = window.scrollY
     setTextPos(defaultTextPosition(getPlatform(platformId), layout))
     setTextSelected(false)
+    requestAnimationFrame(() => {
+      window.scrollTo(0, scrollY)
+    })
   }, [platformId, layout])
 
   useEffect(() => {
@@ -429,11 +434,21 @@ export default function HomePage() {
             document.getElementById('editor')?.scrollIntoView({ behavior: 'smooth' })
           }}
         />
-        <StatsStrip />
-        <ProblemSection />
-        <HowItWorks />
-        <FeaturesSection />
-        <PricingTeaser />
+        <LazyReveal minHeight="8rem">
+          <StatsStrip />
+        </LazyReveal>
+        <LazyReveal minHeight="14rem">
+          <ProblemSection />
+        </LazyReveal>
+        <LazyReveal minHeight="14rem">
+          <HowItWorks />
+        </LazyReveal>
+        <LazyReveal minHeight="16rem">
+          <FeaturesSection />
+        </LazyReveal>
+        <LazyReveal minHeight="10rem">
+          <PricingTeaser />
+        </LazyReveal>
 
         <section id="editor" className="editor-section" aria-label="Thumbnail editor">
           <div className="editor-head">
@@ -884,17 +899,17 @@ export default function HomePage() {
                 ) : null}
               </div>
 
-              <div className="actions download-actions">
+              <div className="download-actions-row">
                 <button type="submit" className="primary">
                   Save free preview
                 </button>
                 <button type="button" className="chip solid" onClick={requestCleanSave}>
                   Save clean (no mark)
                 </button>
-                <p className="hint" role="status">
-                  {status}
-                </p>
               </div>
+              <p className="hint editor-status" role="status">
+                {status}
+              </p>
             </section>
           </form>
 
@@ -930,8 +945,12 @@ export default function HomePage() {
           </button>
         </div>
 
-        <Testimonials />
-        <FaqAccordion />
+        <LazyReveal minHeight="12rem">
+          <Testimonials />
+        </LazyReveal>
+        <LazyReveal minHeight="14rem">
+          <FaqAccordion />
+        </LazyReveal>
       </main>
 
       <SiteFooter buildLabel={`${PRODUCT_NAME} · UI ${UI_BUILD}`} />

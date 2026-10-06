@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { NavHashLink } from './nav'
 import { PRODUCT_NAME, PRODUCT_TAGLINE } from './brand'
 import { CREATOR_CLEAN_DOWNLOADS_PER_MONTH } from './entitlement'
 import { FEATURES } from './features'
@@ -80,41 +81,6 @@ function ThumbStrip({
           eager={stripIndex === 0 && index < 4}
         />
       ))}
-    </div>
-  )
-}
-
-export function FeaturesMenu() {
-  const [open, setOpen] = useState(false)
-  const live = FEATURES.filter((item) => item.available)
-  return (
-    <div
-      className="nav-dropdown"
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
-    >
-      <button
-        type="button"
-        className="nav-dropdown-trigger"
-        aria-expanded={open}
-        onClick={() => setOpen((value) => !value)}
-      >
-        Features
-      </button>
-      {open ? (
-        <div className="nav-dropdown-panel" role="menu">
-          {live.map((item) => (
-            <a key={item.id} href={item.href} className="nav-dropdown-item" role="menuitem">
-              <strong>{item.title}</strong>
-              <span>{item.description}</span>
-            </a>
-          ))}
-          <a href="#features" className="nav-dropdown-item nav-dropdown-more" role="menuitem">
-            <strong>View all features</strong>
-            <span>What you can use today in the editor</span>
-          </a>
-        </div>
-      ) : null}
     </div>
   )
 }
@@ -349,6 +315,7 @@ export function FeaturesSection() {
           <a key={item.id} href={item.href} className="feature-card">
             <h3>{item.title}</h3>
             <p>{item.description}</p>
+            <span className="feature-card-link">Open in editor →</span>
           </a>
         ))}
       </div>
@@ -393,16 +360,27 @@ export function SiteFooter({ buildLabel }: { buildLabel?: string }) {
           </div>
           <div className="footer-col">
             <p className="footer-head">Product</p>
-            <Link to="/#editor">Editor</Link>
-            <Link to="/#how">How it works</Link>
-            <Link to="/#features">Features</Link>
-            <Link to="/pricing">Pricing</Link>
-            <Link to="/#faq">FAQ</Link>
+            <NavHashLink hash="editor">Open editor</NavHashLink>
+            <NavHashLink hash="how">How it works</NavHashLink>
+            <NavHashLink hash="features">Feature list</NavHashLink>
+            <Link to="/pricing">Plans &amp; pricing</Link>
+            <NavHashLink hash="faq">FAQ</NavHashLink>
           </div>
           <div className="footer-col">
             <p className="footer-head">Resources</p>
-            <a href="https://github.com/Thiru-Cloud-Architect/thumbforge" rel="noopener noreferrer">
-              GitHub
+            <a
+              href="https://github.com/Thiru-Cloud-Architect/thumbforge"
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              GitHub repo
+            </a>
+            <a
+              href="https://github.com/Thiru-Cloud-Architect/thumbforge/issues"
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              Report an issue
             </a>
             <a href="https://thiru-cloud-architect.github.io/thumbforge/sitemap.xml">Sitemap</a>
           </div>
