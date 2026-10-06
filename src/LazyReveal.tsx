@@ -94,7 +94,13 @@ export function RevealItem({
   )
 }
 
-/** Count-up when scrolled into view (stats strip). */
+function parseCountValue(value: string) {
+  const match = value.match(/^([^0-9]*)([0-9]+)(.*)$/)
+  if (!match) return null
+  return { prefix: match[1], target: Number(match[2]), suffix: match[3] }
+}
+
+/** Count-up once when scrolled into view, then stay on the final value. */
 export function CountUpValue({
   value,
   className = '',
@@ -106,32 +112,43 @@ export function CountUpValue({
 }) {
   const ref = useRef<HTMLParagraphElement>(null)
   const reduced = usePrefersReducedMotion()
-  const numeric = value.match(/^([^0-9]*)([0-9]+)(.*)$/)
-  const [display, setDisplay] = useState(reduced || !numeric ? value : `${numeric[1]}0${numeric[3]}`)
+  const parsed = parseCountValue(value)
+  const prefix = parsed?.prefix ?? ''
+  const target = parsed?.target ?? 0
+  const suffix = parsed?.suffix ?? ''
+  const canCount = Boolean(parsed)
+  const [display, setDisplay] = useState(
+    reduced || !canCount ? value : `${prefix}0${suffix}`,
+  )
+  const doneRef = useRef(false)
 
   useEffect(() => {
-    if (reduced || !numeric) {
+    doneRef.current = false
+    if (reduced || !canCount) {
       setDisplay(value)
       return
     }
+
+    setDisplay(`${prefix}0${suffix}`)
     const node = ref.current
     if (!node) return
-    const prefix = numeric[1]
-    const target = Number(numeric[2])
-    const suffix = numeric[3]
+
     let raf = 0
-    let started = false
 
     const run = () => {
-      if (started) return
-      started = true
+      if (doneRef.current) return
+      doneRef.current = true
       const start = performance.now()
       const tick = (now: number) => {
         const t = Math.min(1, (now - start) / durationMs)
         const eased = 1 - Math.pow(1 - t, 3)
         const current = Math.round(target * eased)
         setDisplay(`${prefix}${current}${suffix}`)
-        if (t < 1) raf = requestAnimationFrame(tick)
+        if (t < 1) {
+          raf = requestAnimationFrame(tick)
+        } else {
+          setDisplay(value)
+        }
       }
       raf = requestAnimationFrame(tick)
     }
@@ -143,17 +160,17 @@ export function CountUpValue({
           observer.disconnect()
         }
       },
-      { threshold: 0.4 },
+      { threshold: 0.35 },
     )
     observer.observe(node)
     return () => {
       observer.disconnect()
       cancelAnimationFrame(raf)
     }
-  }, [durationMs, numeric, reduced, value])
+  }, [canCount, durationMs, prefix, reduced, suffix, target, value])
 
   return (
-    <p ref={ref} className={className}>
+    <p ref={ref} className={className} aria-label={value}>
       {display}
     </p>
   )

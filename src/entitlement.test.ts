@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
   CREATOR_CLEAN_DOWNLOADS_PER_MONTH,
+  TRIAL_DAYS,
   activateDemoPlan,
+  activateDemoTrial,
   canDownloadClean,
   cleanDownloadsLeft,
   consumeCleanDownload,
@@ -42,5 +44,18 @@ describe('entitlement', () => {
     expect(cleanDownloadsLeft(pro)).toBe(Number.POSITIVE_INFINITY)
     const afterMany = consumeCleanDownload(consumeCleanDownload(pro))
     expect(cleanDownloadsLeft(afterMany)).toBe(Number.POSITIVE_INFINITY)
+  })
+
+  it('activates a 7-day creator trial demo', () => {
+    const registered = registerEmail('trial@email.com')
+    const trial = activateDemoTrial(registered)
+    expect(trial.plan).toBe('creator')
+    expect(trial.trial).toBe(true)
+    expect(isPaid(trial)).toBe(true)
+    expect(cleanDownloadsLeft(trial)).toBe(CREATOR_CLEAN_DOWNLOADS_PER_MONTH)
+    const remainingMs = (trial.paidUntil ?? 0) - Date.now()
+    const dayMs = 24 * 60 * 60 * 1000
+    expect(remainingMs).toBeGreaterThan((TRIAL_DAYS - 0.05) * dayMs)
+    expect(remainingMs).toBeLessThanOrEqual(TRIAL_DAYS * dayMs)
   })
 })

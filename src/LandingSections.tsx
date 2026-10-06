@@ -1,11 +1,16 @@
-import { useState } from 'react'
+import { type MouseEvent, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { NavHashLink } from './nav'
+import { NavHashLink, goToHash } from './nav'
 import { PRODUCT_NAME, PRODUCT_NAME_FULL, PRODUCT_TAGLINE, SITE_URL, UI_BUILD } from './brand'
-import { CREATOR_CLEAN_DOWNLOADS_PER_MONTH } from './entitlement'
+import { CREATOR_CLEAN_DOWNLOADS_PER_MONTH, TRIAL_DAYS } from './entitlement'
 import { FEATURES, AI_FEATURE } from './features'
 import { HERO_THUMBS, type HeroThumb } from './heroThumbs'
 import { CountUpValue, RevealItem } from './LazyReveal'
+
+function onEditorHashClick(event: MouseEvent<HTMLAnchorElement>, hash: string) {
+  event.preventDefault()
+  goToHash(hash)
+}
 
 const FAQ_ITEMS = [
   {
@@ -114,7 +119,11 @@ export function HeroFlashy({ onQuickIdea }: LandingProps) {
           a PNG sized for YouTube, Shorts, Reels, or LinkedIn — in minutes, not hours.
         </p>
         <div className="hero-cta-row">
-          <a className="btn-gradient hero-cta btn-pulse" href="#editor">
+          <a
+            className="btn-gradient hero-cta btn-pulse"
+            href="#editor"
+            onClick={(event) => onEditorHashClick(event, 'editor')}
+          >
             Start creating free
             <span aria-hidden> →</span>
           </a>
@@ -122,7 +131,9 @@ export function HeroFlashy({ onQuickIdea }: LandingProps) {
             Shuffle Quick idea
           </button>
         </div>
-        <p className="hero-fine">Unlimited preview saves · Photo stays on your device</p>
+        <p className="hero-fine">
+          Unlimited preview saves · {TRIAL_DAYS}-day clean-export trial on Pricing
+        </p>
       </div>
     </section>
   )
@@ -233,14 +244,20 @@ export function HowItWorks() {
         </h2>
       </RevealItem>
       <div className="how-steps">
-        <div className="how-rail" aria-hidden />
+        <ol className="how-connector" aria-hidden>
+          <li />
+          <li />
+          <li />
+          <li />
+        </ol>
         {steps.map((step, index) => (
           <RevealItem key={step.n} index={index + 1}>
             <article className={`how-card tone-${step.tone}`}>
-              <span className="how-num">{step.n}</span>
+              <span className="how-num" aria-hidden="true">
+                {step.n}
+              </span>
               <h3>{step.title}</h3>
               <p>{step.body}</p>
-              <span className="card-shine" aria-hidden />
             </article>
           </RevealItem>
         ))}
@@ -415,7 +432,11 @@ export function FeaturesSection() {
               </div>
             </div>
           </div>
-          <a href={AI_FEATURE.href} className="feature-ai-cta btn-pulse">
+          <a
+            href={AI_FEATURE.href}
+            className="feature-ai-cta btn-pulse"
+            onClick={(event) => onEditorHashClick(event, AI_FEATURE.href)}
+          >
             {AI_FEATURE.cta} →
           </a>
         </div>
@@ -431,12 +452,15 @@ export function FeaturesSection() {
         <div className="features-grid">
           {core.map((item, index) => (
             <RevealItem key={item.id} index={index + 3}>
-              <a href={item.href} className="feature-card">
+              <a
+                href={item.href}
+                className="feature-card"
+                onClick={(event) => onEditorHashClick(event, item.href)}
+              >
                 {item.where ? <p className="feature-where">{item.where}</p> : null}
                 <h3>{item.title}</h3>
                 <p>{item.description}</p>
                 <span className="feature-card-link">{item.cta ?? 'Open editor'} →</span>
-                <span className="card-shine" aria-hidden />
               </a>
             </RevealItem>
           ))}
@@ -453,15 +477,17 @@ export function PricingTeaser() {
         <div>
           <p className="section-eyebrow">Pricing</p>
           <h2 id="pricing-teaser-title" className="section-title">
-            Free previews. <span className="gradient-text">Clean exports</span> when you&apos;re ready.
+            Free previews. <span className="gradient-text">{TRIAL_DAYS}-day trial</span> for clean
+            exports.
           </h2>
           <p className="section-lede">
-            Creator from $1/mo ({CREATOR_CLEAN_DOWNLOADS_PER_MONTH} clean PNGs/month). Pro unlimited from
-            $9/mo — switch to INR on the pricing page for local rates.
+            Start a {TRIAL_DAYS}-day Creator trial (demo, no card yet). Then Creator from $1/mo (
+            {CREATOR_CLEAN_DOWNLOADS_PER_MONTH} clean PNGs/month) or Pro unlimited from $9/mo — INR
+            rates on the pricing page.
           </p>
         </div>
         <Link className="btn-gradient pricing-teaser-cta" to="/pricing">
-          View plans &amp; subscribe
+          View plans &amp; start trial
         </Link>
       </div>
     </section>

@@ -1,6 +1,7 @@
-import { Link } from 'react-router-dom'
+import { type MouseEvent } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { PRODUCT_NAME_FULL } from './brand'
-import { NavHashLink, useOnHomePage } from './nav'
+import { NavHashLink, goToHash, useOnHomePage } from './nav'
 
 type SiteHeaderProps = {
   userLabel?: string | null
@@ -9,6 +10,16 @@ type SiteHeaderProps = {
 
 export function SiteHeader({ userLabel, onLoginClick }: SiteHeaderProps) {
   const onHome = useOnHomePage()
+  const navigate = useNavigate()
+
+  function onStartFree(event: MouseEvent<HTMLAnchorElement>) {
+    event.preventDefault()
+    if (onHome) {
+      goToHash('editor')
+      return
+    }
+    navigate({ pathname: '/', hash: '#editor' })
+  }
 
   return (
     <header className="top">
@@ -31,11 +42,15 @@ export function SiteHeader({ userLabel, onLoginClick }: SiteHeaderProps) {
           </button>
         ) : null}
         {onHome ? (
-          <a className="top-cta top-cta-light" href="#editor">
+          <a className="top-cta top-cta-light" href="#editor" onClick={onStartFree}>
             Start free
           </a>
         ) : (
-          <Link className="top-cta top-cta-light" to={{ pathname: '/', hash: '#editor' }}>
+          <Link
+            className="top-cta top-cta-light"
+            to={{ pathname: '/', hash: '#editor' }}
+            onClick={onStartFree}
+          >
             Start free
           </Link>
         )}

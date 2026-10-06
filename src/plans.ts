@@ -1,6 +1,6 @@
-import { CREATOR_CLEAN_DOWNLOADS_PER_MONTH } from './entitlement'
+import { CREATOR_CLEAN_DOWNLOADS_PER_MONTH, TRIAL_DAYS } from './entitlement'
 
-export type PlanId = 'free' | 'creator' | 'pro'
+export type PlanId = 'free' | 'trial' | 'creator' | 'pro'
 export type BillingCurrency = 'USD' | 'INR'
 
 export type PlanPricing = {
@@ -37,6 +37,22 @@ export const PLANS: Plan[] = [
     cta: 'Start free',
   },
   {
+    id: 'trial',
+    name: '7-day Trial',
+    tagline: 'Creator clean exports — no card yet',
+    usd: { amount: 0, compareAt: 1, symbol: '$' },
+    inr: { amount: 0, compareAt: 49, symbol: '₹' },
+    highlight: `${TRIAL_DAYS}-day Creator trial in this browser`,
+    popular: true,
+    features: [
+      'Everything in Free',
+      `${CREATOR_CLEAN_DOWNLOADS_PER_MONTH} clean PNGs (Creator quota) during the trial`,
+      'Demo unlock stored locally — payments come later',
+      'Then continue on Creator or Pro when you are ready',
+    ],
+    cta: 'Start 7-day free trial',
+  },
+  {
     id: 'creator',
     name: 'Creator',
     tagline: 'For weekly uploads',
@@ -48,6 +64,7 @@ export const PLANS: Plan[] = [
       `${CREATOR_CLEAN_DOWNLOADS_PER_MONTH} clean exports per month (no watermark)`,
       'Email support',
       'Early access to new moods',
+      `Includes a ${TRIAL_DAYS}-day free trial unlock (demo)`,
     ],
     cta: 'Get Creator',
   },
@@ -57,13 +74,13 @@ export const PLANS: Plan[] = [
     tagline: 'Daily publishers & teams',
     usd: { amount: 9, compareAt: 29, symbol: '$' },
     inr: { amount: 499, compareAt: 999, symbol: '₹' },
-    popular: true,
     highlight: 'Unlimited clean downloads',
     features: [
       'Everything in Creator',
       'Unlimited clean exports',
       'Priority when we add AI assists',
       'Team-friendly — one price, many uploads',
+      `Includes a ${TRIAL_DAYS}-day free trial unlock (demo)`,
     ],
     cta: 'Go Pro',
   },
@@ -89,5 +106,6 @@ export function planPriceLabel(planId: PlanId, currency: BillingCurrency = 'USD'
   const plan = PLANS.find((item) => item.id === planId)
   if (!plan) return ''
   const formatted = formatPlanPrice(plan, currency)
-  return planId === 'free' ? formatted : `${formatted} / month`
+  if (planId === 'free' || planId === 'trial') return formatted
+  return `${formatted} / month`
 }

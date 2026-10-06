@@ -69,6 +69,13 @@ import {
   type SimpleUser,
 } from './simpleAuth'
 import { DOWNLOAD_PREFIX, PRODUCT_NAME_FULL, UI_BUILD } from './brand'
+import {
+  HASH_NAV_EVENT,
+  focusHashTarget,
+  normalizeHash,
+  scrollToElementId,
+  type HashNavDetail,
+} from './nav'
 import './App.css'
 
 const POPULAR: NicheId[] = ['tech', 'finance', 'gaming', 'cooking', 'travel', 'fitness', 'education', 'vlog']
@@ -169,18 +176,35 @@ export default function HomePage() {
   }, [photoUrl])
 
   useEffect(() => {
-    const openFromHash = () => {
-      const hash = window.location.hash.replace(/^#/, '')
+    const openFromHash = (rawHash?: string) => {
+      const hash = normalizeHash(rawHash ?? window.location.hash)
+      if (!hash) return
+
       if (hash === 'editor-ai' || hash === 'editor-title') {
         setEditorTab('title')
-        window.setTimeout(() => {
-          document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-        }, 80)
+      } else if (hash === 'editor') {
+        setEditorTab('setup')
       }
+
+      void (async () => {
+        const el = await scrollToElementId(hash)
+        if (el) focusHashTarget(hash)
+      })()
     }
+
+    const onHashChange = () => openFromHash()
+    const onHashNav = (event: Event) => {
+      const detail = (event as CustomEvent<HashNavDetail>).detail
+      openFromHash(detail?.hash)
+    }
+
     openFromHash()
-    window.addEventListener('hashchange', openFromHash)
-    return () => window.removeEventListener('hashchange', openFromHash)
+    window.addEventListener('hashchange', onHashChange)
+    window.addEventListener(HASH_NAV_EVENT, onHashNav)
+    return () => {
+      window.removeEventListener('hashchange', onHashChange)
+      window.removeEventListener(HASH_NAV_EVENT, onHashNav)
+    }
   }, [])
 
   useEffect(() => {
@@ -565,6 +589,7 @@ export default function HomePage() {
           >
             <div className="editor-tabs" role="tablist" aria-label="Editor steps">
               <button
+                id="editor-tab-setup"
                 type="button"
                 role="tab"
                 aria-selected={editorTab === 'setup'}
@@ -575,6 +600,7 @@ export default function HomePage() {
                 1 · Setup
               </button>
               <button
+                id="editor-tab-title"
                 type="button"
                 role="tab"
                 aria-selected={editorTab === 'title'}
@@ -585,6 +611,7 @@ export default function HomePage() {
                 2 · Title
               </button>
               <button
+                id="editor-tab-polish"
                 type="button"
                 role="tab"
                 aria-selected={editorTab === 'polish'}
@@ -739,6 +766,7 @@ export default function HomePage() {
               <label>
                 Video title
                 <textarea
+                  id="title-input"
                   value={title}
                   maxLength={70}
                   rows={3}
@@ -851,6 +879,7 @@ export default function HomePage() {
                 <label className="ai-hint-field">
                   Describe the scene for your thumbnail
                   <input
+                    id="ai-scene-hint"
                     type="text"
                     value={aiHint}
                     onChange={(event) => setAiHint(event.target.value)}
