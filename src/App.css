@@ -462,11 +462,68 @@ a {
 .ai-style-chip {
   font-size: 0.78rem !important;
   padding: 0.4rem 0.7rem !important;
+  display: inline-flex !important;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.12rem;
+  line-height: 1.2;
+}
+
+.ai-style-chip-label {
+  font-weight: 700;
+}
+
+.ai-style-chip-blurb {
+  font-size: 0.68rem;
+  font-weight: 600;
+  opacity: 0.72;
 }
 
 .ai-style-chip.is-selected,
 .chip.solid.ai-style-chip.is-selected {
   box-shadow: inset 0 0 0 1px rgba(192, 132, 252, 0.55);
+}
+
+.ai-style-suggest {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.65rem;
+  margin: 0;
+  padding: 0.55rem 0.7rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 127, 138, 0.4);
+  background: rgba(240, 93, 106, 0.12);
+  color: #ffd4d8;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.ai-style-suggest-btn {
+  appearance: none;
+  border: 1px solid rgba(255, 127, 138, 0.55);
+  background: rgba(255, 127, 138, 0.18);
+  color: #fff;
+  border-radius: 999px;
+  padding: 0.28rem 0.7rem;
+  font: 700 0.75rem/1 Plus Jakarta Sans, sans-serif;
+  cursor: pointer;
+}
+
+.ai-style-suggest-btn:hover {
+  background: rgba(255, 127, 138, 0.3);
+}
+
+.ai-picker-block {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.ai-picker-label {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.82rem;
+  font-weight: 700;
 }
 
 .ai-variant-picker {
@@ -489,12 +546,46 @@ a {
   gap: 0.35rem;
 }
 
-.ai-variant-card img {
+.ai-variant-card img,
+.ai-variant-placeholder {
   width: 100%;
   aspect-ratio: 16 / 9;
   object-fit: cover;
   border-radius: 8px;
   display: block;
+}
+
+.ai-variant-placeholder {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.35rem;
+  background:
+    linear-gradient(135deg, rgba(255, 127, 138, 0.12), rgba(192, 132, 252, 0.1)),
+    #111;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.ai-variant-card.is-empty {
+  cursor: default;
+  opacity: 0.72;
+}
+
+.ai-variant-card.is-loading {
+  cursor: wait;
+  border-color: rgba(255, 127, 138, 0.45);
+  color: #ffc2c8;
+}
+
+.ai-variant-card.is-error {
+  cursor: default;
+  border-color: rgba(230, 90, 90, 0.55);
+  color: #ffc9c9;
+}
+
+.ai-variant-card.is-error .ai-variant-placeholder {
+  background: rgba(90, 20, 20, 0.55);
 }
 
 .ai-variant-card.is-selected {

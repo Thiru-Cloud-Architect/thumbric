@@ -14,7 +14,9 @@ export type AiStyleId =
 export type AiStyle = {
   id: AiStyleId
   label: string
-  /** Extra prompt clauses for this look. */
+  /** Short chip subtitle so the look is obvious before generating. */
+  blurb: string
+  /** Extra prompt clauses for this look (atmosphere / grade — must not replace the scene subject). */
   boost: string
 }
 
@@ -22,41 +24,48 @@ export const AI_STYLES: AiStyle[] = [
   {
     id: 'auto',
     label: 'Auto',
-    boost: 'match the scene description as closely as possible',
+    blurb: 'Follow the scene',
+    boost: 'match the scene description as closely as possible; lighting and color only',
   },
   {
     id: 'face-reaction',
     label: 'Face reaction',
+    blurb: 'Human emotion close-up',
     boost:
-      'close-up expressive human face looking at camera, strong emotion (shock, joy, or intensity), shallow depth of field, studio key light',
+      'close-up expressive human face looking at camera, strong emotion (shock, joy, or intensity), shallow depth of field, studio key light — ONLY when the scene asks for a person; never invent a human if the scene is animals/objects',
   },
   {
     id: 'kids-fun',
     label: 'Kids / fun',
+    blurb: 'Animals & playful',
     boost:
       'bright colorful kids content energy, cute animals or playful characters, cheerful high-key lighting, family-friendly, cartoon-friendly photoreal mix — NOT a random adult stock family portrait unless the scene asks for people',
   },
   {
     id: 'music-stage',
     label: 'Music stage',
+    blurb: 'Concert lights & glow',
     boost:
-      'live music or cover-song mood, warm stage spotlights, bokeh, singer or instrument as clear hero subject',
+      'live music atmosphere only: warm stage spotlights, concert bokeh, haze, rim light on whatever subject the scene describes — do NOT replace animals/objects with a singer, idol, or face unless the scene explicitly asks for a person or performer',
   },
   {
     id: 'product-hero',
     label: 'Product hero',
+    blurb: 'Clean object shot',
     boost:
       'clean product or object hero shot on simple dramatic background, soft studio lighting, lots of negative space for title',
   },
   {
     id: 'dark-moody',
     label: 'Dark moody',
+    blurb: 'Cinematic shadows',
     boost:
-      'dark cinematic thriller grade, rim light, high contrast, mysterious atmosphere, deep shadows',
+      'dark cinematic thriller grade, rim light, high contrast, mysterious atmosphere, deep shadows applied to the described scene',
   },
   {
     id: 'cartoon',
     label: 'Cartoon',
+    blurb: 'Illustrated look',
     boost:
       'stylized illustrated cartoon / 3D animated look, bold shapes, saturated colors, clear silhouette, YouTube kids-friendly illustration — not photoreal stock photo',
   },
@@ -64,6 +73,51 @@ export const AI_STYLES: AiStyle[] = [
 
 export function getAiStyle(id: AiStyleId | string | undefined): AiStyle {
   return AI_STYLES.find((item) => item.id === id) ?? AI_STYLES[0]!
+}
+
+/** Lightweight scene cues used for style tips + prompt guards. */
+export type SceneCues = {
+  animals: boolean
+  kids: boolean
+  cartoon: boolean
+  /** User explicitly asked for a person / face / singer / etc. */
+  wantsHuman: boolean
+  /** Animals/kids/cartoon without an explicit human ask. */
+  nonHumanSubject: boolean
+}
+
+const ANIMAL_RE =
+  /\b(animal|animals|puppy|puppies|dog|dogs|kitten|kittens|cat|cats|bunny|bunnies|rabbit|fox|bear|panda|lion|tiger|zoo|farm|woods?|forest|jungle|pet|pets|creature|creatures|bird|birds|duck|ducks|owl|squirrel|raccoon|wolf|deer|horse|pony|dinosaur|dino)\b/i
+const KIDS_RE = /\b(kid|kids|child|children|toddler|baby|babies|nursery|preschool|family.?friendly|for kids)\b/i
+const CARTOON_RE = /\b(cartoon|cartoony|animated|animation|anime.?style|illustrated|mascot|pixar.?like|3d.?render)\b/i
+const HUMAN_RE =
+  /\b(person|people|human|humans|man|woman|girl|boy|face|faces|singer|vocalist|artist|performer|idol|selfie|portrait|me |my face|creator|youtuber|vlogger|influencer|model)\b/i
+
+export function analyzeScene(hint: string): SceneCues {
+  const scene = sanitizeSceneText(hint)
+  const animals = ANIMAL_RE.test(scene)
+  const kids = KIDS_RE.test(scene)
+  const cartoon = CARTOON_RE.test(scene)
+  const wantsHuman = HUMAN_RE.test(scene)
+  const nonHumanSubject = (animals || kids || cartoon) && !wantsHuman
+  return { animals, kids, cartoon, wantsHuman, nonHumanSubject }
+}
+
+/**
+ * Suggest Kids/fun or Cartoon when the scene text clearly points that way
+ * and the current chip is a mismatch (e.g. Music stage + animals).
+ */
+export function suggestAiStyle(hint: string, currentId?: AiStyleId): AiStyleId | null {
+  const cues = analyzeScene(hint)
+  if (!cues.animals && !cues.kids && !cues.cartoon) return null
+
+  const current = getAiStyle(currentId).id
+  const goodFits: AiStyleId[] = ['kids-fun', 'cartoon', 'auto']
+  if (goodFits.includes(current)) return null
+
+  if (cues.cartoon && !cues.animals && !cues.kids) return 'cartoon'
+  if (cues.animals || cues.kids) return cues.cartoon ? 'cartoon' : 'kids-fun'
+  return 'cartoon'
 }
 
 export type AiThumbOptions = {
@@ -86,6 +140,9 @@ export type AiGeneratedImage = {
 
 /** Soft ceiling so hung Pollinations requests still surface an error in the UI. */
 export const AI_IMAGE_TIMEOUT_MS = 45_000
+
+/** Pause between sequential free-tier variants (ms). */
+export const AI_VARIANT_GAP_MS = 650
 
 /** Strip junk punctuation that models treat as collage / split cues. */
 export function sanitizeSceneText(raw: string) {
@@ -125,6 +182,40 @@ function aspectFraming(platform: Platform) {
   return 'widescreen cinematic YouTube thumbnail still, exact 16:9 landscape, single full-bleed scene filling the entire frame'
 }
 
+function subjectGuard(cues: SceneCues) {
+  if (!cues.nonHumanSubject) return ''
+  return [
+    'CRITICAL subject lock: depict ONLY the described non-human scene',
+    'real or cartoon animals / playful creatures / woodland setting as written',
+    'absolutely NO human face',
+    'NO anime girl',
+    'NO kemonomimi',
+    'NO catgirl',
+    'NO foxgirl',
+    'NO person with animal ears',
+    'NO furry humanoid',
+    'NO anthro character',
+    'NO singer portrait',
+    'NO idol close-up',
+    'NO stock model face layered onto animals',
+  ].join(', ')
+}
+
+function styleBoostForScene(style: AiStyle, cues: SceneCues) {
+  if (!cues.nonHumanSubject) return style.boost
+  // Atmosphere recipes must never override animals into a face-reaction / singer shot.
+  if (style.id === 'music-stage') {
+    return 'warm concert stage lighting and bokeh on cute animals or the described woodland scene — animals remain the only subjects, no human performer'
+  }
+  if (style.id === 'face-reaction') {
+    return 'expressive animal faces / reactions only (wide eyes, playful energy) — zero humans'
+  }
+  if (style.id === 'dark-moody') {
+    return 'moody forest rim light and deep shadows on the animal scene — no human face'
+  }
+  return style.boost
+}
+
 /**
  * Build a free Pollinations prompt from the user's scene description.
  * Falls back to title + niche when the scene field is empty.
@@ -134,6 +225,7 @@ export function buildAiThumbnailPrompt(options: AiThumbOptions) {
   const title = options.title.trim()
   const scene = sanitizeSceneText(options.hint ?? '')
   const style = getAiStyle(options.styleId)
+  const cues = analyzeScene(scene)
   const subject =
     scene ||
     sanitizeSceneText(title) ||
@@ -166,24 +258,42 @@ export function buildAiThumbnailPrompt(options: AiThumbOptions) {
     'no montage grid',
     'no unrelated stock family portraits',
     'no watermark corner badges',
+    ...(cues.nonHumanSubject
+      ? [
+          'no human',
+          'no person',
+          'no face close-up',
+          'no anime girl',
+          'no kemonomimi',
+          'no furry humanoid',
+          'no singer',
+          'no idol',
+        ]
+      : []),
   ].join(', ')
 
   const medium =
-    style.id === 'cartoon' || style.id === 'kids-fun'
+    style.id === 'cartoon' || style.id === 'kids-fun' || cues.cartoon
       ? 'Bold YouTube thumbnail illustration / stylized still'
       : 'Cinematic YouTube thumbnail photograph'
+
+  const focal =
+    cues.nonHumanSubject
+      ? 'clear animal or scene focal point with readable silhouette at phone-tile size — follow the scene literally'
+      : 'expressive face or clear focal object when the scene includes a character — follow the scene literally'
 
   const parts = [
     medium,
     aspectFraming(options.platform),
     `one coherent scene only: ${subject}`,
-    `style recipe (${style.label}): ${style.boost}`,
+    subjectGuard(cues),
+    `style recipe (${style.label}): ${styleBoostForScene(style, cues)}`,
     `niche mood: ${options.niche.label} — ${options.niche.hint}`,
     titleClause,
     // CTR-style composition (leaders optimize for phone tile readability, not "pretty art").
     'single subject focus, subject on one third, clear negative space on the opposite side for a large title overlay',
     'high contrast, bold readable composition at phone-tile size (~320px wide), saturated cinematic color grade, sharp focus',
-    'expressive face or clear focal object when the scene includes a character — follow the scene literally',
+    focal,
     `avoid: ${negative}`,
   ].filter(Boolean)
 
@@ -230,6 +340,35 @@ export function buildPollinationsCandidateUrls(
   }))
 }
 
+export class AiHttpError extends Error {
+  readonly status: number
+  readonly retryable: boolean
+
+  constructor(status: number, message: string, retryable = true) {
+    super(message)
+    this.name = 'AiHttpError'
+    this.status = status
+    this.retryable = retryable
+  }
+}
+
+/** Friendlier copy for Pollinations / free-tier HTTP failures. */
+export function friendlyAiHttpMessage(status: number) {
+  if (status === 402) {
+    return 'Free AI is rate-limited or needs payment right now (402). Wait a minute, then try again — we’ll fetch 1 look first so we don’t burn the free tier.'
+  }
+  if (status === 429) {
+    return 'Free AI is busy (too many requests). Wait ~30–60s, then try again.'
+  }
+  if (status === 503 || status === 502) {
+    return 'Free AI service is temporarily unavailable. Try again in a moment.'
+  }
+  if (status >= 500) {
+    return `AI image service error (${status}). Try again shortly.`
+  }
+  return `AI image request failed (${status}). Try again in a moment.`
+}
+
 function isAbortError(error: unknown) {
   return (
     (error instanceof DOMException && error.name === 'AbortError') ||
@@ -237,8 +376,13 @@ function isAbortError(error: unknown) {
   )
 }
 
+function isRateLimitedError(error: unknown) {
+  return error instanceof AiHttpError && (error.status === 402 || error.status === 429)
+}
+
 function friendlyNetworkError(error: unknown): Error {
   if (isAbortError(error)) return error instanceof Error ? error : new DOMException('Aborted', 'AbortError')
+  if (error instanceof AiHttpError) return error
   const message = error instanceof Error ? error.message : String(error)
   if (/failed to fetch|networkerror|load failed|network request failed/i.test(message)) {
     return new Error(
@@ -284,10 +428,28 @@ function fallbackAnySignal(signals: AbortSignal[]) {
   return controller.signal
 }
 
+function sleep(ms: number, signal?: AbortSignal) {
+  return new Promise<void>((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(new DOMException('Aborted', 'AbortError'))
+      return
+    }
+    const timer = globalThis.setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort)
+      resolve()
+    }, ms)
+    const onAbort = () => {
+      globalThis.clearTimeout(timer)
+      reject(new DOMException('Aborted', 'AbortError'))
+    }
+    signal?.addEventListener('abort', onAbort, { once: true })
+  })
+}
+
 async function fetchImageBlob(url: string, signal: AbortSignal) {
   const response = await fetch(url, { signal, mode: 'cors' })
   if (!response.ok) {
-    throw new Error(`AI image request failed (${response.status}). Try again in a moment.`)
+    throw new AiHttpError(response.status, friendlyAiHttpMessage(response.status), response.status !== 402)
   }
   const blob = await response.blob()
   if (!blob.type.startsWith('image/')) {
@@ -322,6 +484,10 @@ export async function generateAiThumbnailImage(
         if (isAbortError(error) || (error instanceof DOMException && error.name === 'TimeoutError')) {
           throw error
         }
+        // 402/429: do not fan out to other Pollinations models — same free tier.
+        if (isRateLimitedError(error)) {
+          throw error
+        }
         lastError = friendlyNetworkError(error)
         // Try the next fallback host/variant.
       }
@@ -351,22 +517,40 @@ export async function generateAiThumbnailImage(
   }
 }
 
+export type AiVariantBatch = {
+  results: AiGeneratedImage[]
+  /** True when we stopped early because free tier returned 402/429. */
+  rateLimited: boolean
+  /** How many looks were requested vs returned. */
+  requested: number
+}
+
 /**
  * Generate up to `count` different seeds so the user can pick the best backdrop.
- * Runs sequentially to respect free Pollinations rate limits; stops early on abort.
+ * Runs sequentially with a short gap; stops immediately on 402/429 so we don't spam
+ * the free tier. Prefer `count=1` first, then call again for more options.
  */
 export async function generateAiThumbnailVariants(
   options: AiThumbOptions,
   count = 3,
   signal?: AbortSignal,
   onProgress?: (done: number, total: number) => void,
-): Promise<AiGeneratedImage[]> {
+): Promise<AiVariantBatch> {
   const total = Math.max(1, Math.min(4, count))
   const results: AiGeneratedImage[] = []
   const base = Math.floor(Math.random() * 1_000_000)
+  let rateLimited = false
 
   for (let i = 0; i < total; i++) {
     if (signal?.aborted) break
+    if (i > 0) {
+      try {
+        await sleep(AI_VARIANT_GAP_MS, signal)
+      } catch (error) {
+        if (isAbortError(error)) break
+        throw error
+      }
+    }
     onProgress?.(i, total)
     try {
       const item = await generateAiThumbnailImage(options, signal, base + i * 9973)
@@ -374,11 +558,16 @@ export async function generateAiThumbnailVariants(
       onProgress?.(i + 1, total)
     } catch (error) {
       if (isAbortError(error) || (error instanceof DOMException && error.name === 'TimeoutError')) {
-        // Keep any earlier successes if the user already got options.
         if (results.length > 0 && !(signal?.aborted)) {
           break
         }
         throw error
+      }
+      if (isRateLimitedError(error)) {
+        rateLimited = true
+        // Do not burn more sequential calls after 402/429.
+        if (results.length === 0) throw friendlyNetworkError(error)
+        break
       }
       // Soft-fail one seed; continue so the picker still gets something.
       if (i === total - 1 && results.length === 0) {
@@ -390,7 +579,7 @@ export async function generateAiThumbnailVariants(
   if (results.length === 0) {
     throw new Error('AI scene generation failed. Try again in a moment.')
   }
-  return results
+  return { results, rateLimited, requested: total }
 }
 
 function loadImage(src: string, signal?: AbortSignal) {

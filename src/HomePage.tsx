@@ -66,6 +66,8 @@ import {
 import {
   AI_STYLES,
   generateAiThumbnailVariants,
+  getAiStyle,
+  suggestAiStyle,
   titleFromScene,
   type AiGeneratedImage,
   type AiStyleId,
@@ -124,6 +126,11 @@ export default function HomePage() {
   const [aiStyleId, setAiStyleId] = useState<AiStyleId>('auto')
   const [aiVariants, setAiVariants] = useState<AiGeneratedImage[]>([])
   const [aiPick, setAiPick] = useState(0)
+  /** How many picker slots to show while generating / after a partial batch. */
+  const [aiSlotCount, setAiSlotCount] = useState(3)
+  const [aiProgressDone, setAiProgressDone] = useState(0)
+  const [aiCanFetchMore, setAiCanFetchMore] = useState(false)
+  const [aiStyleTip, setAiStyleTip] = useState<AiStyleId | null>(null)
   /** Local feedback beside Generate — Download status alone is easy to miss. */
   const [aiStatus, setAiStatus] = useState<{ kind: 'idle' | 'busy' | 'ok' | 'err'; text: string }>({
     kind: 'idle',
@@ -444,22 +451,23 @@ export default function HomePage() {
     setPhotoUrl('')
     setPhotoName('')
     setAiPick(0)
+    setAiCanFetchMore(false)
+    setAiProgressDone(0)
+    setAiSlotCount(3)
     if (fileRef.current) fileRef.current.value = ''
     setStatus('Photo removed.')
   }
 
-  function applyAiBackdrop(result: AiGeneratedImage, pickIndex = 0) {
-    // Variants own their object URLs until the next generate / clearPhoto.
-    setPhoto(result.image)
-    setPhotoUrl(result.objectUrl)
-    setPhotoName(`AI scene · option ${pickIndex + 1}`)
-    setLayout('photo-full')
-    setPhotoShape('square')
-    setStickers([])
-    setActiveStickerIndex(null)
-    if (!title.trim()) {
-      setTitle(titleFromScene(aiHint, title))
-    }
+  function onAiHintChange(value: string) {
+    setAiHint(value)
+    const tip = suggestAiStyle(value, aiStyleId)
+    setAiStyleTip(tip)
+  }
+
+  function applySuggestedStyle() {
+    if (!aiStyleTip) return
+    setAiStyleId(aiStyleTip)
+    setAiStyleTip(null)
   }
 
   function revokeAiVariants(extraUrl?: string) {
@@ -471,50 +479,101 @@ export default function HomePage() {
     })
   }
 
-  async function runAiThumbnail() {
+  async function runAiThumbnail(mode: 'fresh' | 'more' = 'fresh') {
     if (aiBusy) return
+
+    // Auto-apply a better style when the scene clearly wants kids/animals/cartoon.
+    let styleId = aiStyleId
+    const tip = suggestAiStyle(aiHint, aiStyleId)
+    if (tip && mode === 'fresh') {
+      styleId = tip
+      setAiStyleId(tip)
+      setAiStyleTip(null)
+    }
+
+    const prior = mode === 'more' ? aiVariants : []
+    const wantCount = mode === 'more' ? Math.min(2, Math.max(1, 3 - prior.length)) : 1
+    const showSlots = 3
+
     aiAbortRef.current?.abort()
     const controller = new AbortController()
     const runId = ++aiRunIdRef.current
     aiAbortRef.current = controller
     setAiBusy(true)
-    revokeAiVariants(photoUrl)
-    setPhoto(null)
-    setPhotoUrl('')
-    setPhotoName('')
-    setAiPick(0)
-    const busyMsg = 'Generating 3 free AI options… usually 15–45s total.'
+    setAiCanFetchMore(false)
+    setAiSlotCount(showSlots)
+    setAiProgressDone(prior.length)
+
+    if (mode === 'fresh') {
+      revokeAiVariants(photoUrl)
+      setPhoto(null)
+      setPhotoUrl('')
+      setPhotoName('')
+      setAiPick(0)
+    }
+
+    const busyMsg =
+      mode === 'more'
+        ? `Fetching ${wantCount} more look${wantCount === 1 ? '' : 's'}…`
+        : 'Creating your first AI look… then you can pick or ask for more.'
     setAiStatus({ kind: 'busy', text: busyMsg })
     setStatus(busyMsg)
+
     try {
-      const results = await generateAiThumbnailVariants(
+      const batch = await generateAiThumbnailVariants(
         {
           title,
           niche,
           platform,
           hint: aiHint,
-          styleId: aiStyleId,
+          styleId,
         },
-        3,
+        wantCount,
         controller.signal,
         (done, total) => {
           if (runId !== aiRunIdRef.current) return
+          setAiProgressDone(prior.length + done)
           const text =
             done >= total
-              ? `Generated ${total} options — pick one below.`
-              : `Generating free AI option ${done + 1} of ${total}…`
+              ? `Got ${total} look${total === 1 ? '' : 's'} — pick one below.`
+              : `Painting look ${prior.length + done + 1} of ${showSlots}…`
           setAiStatus({ kind: 'busy', text })
           setStatus(text)
         },
       )
       if (runId !== aiRunIdRef.current) return
-      setAiVariants(results)
-      setAiPick(0)
-      applyAiBackdrop(results[0]!, 0)
-      const okMsg =
-        results.length > 1
-          ? `${results.length} AI options ready — tap a thumbnail below to switch.`
-          : 'AI backdrop applied full-bleed — tweak the title, then download.'
+
+      const merged = [...prior, ...batch.results].slice(0, 3)
+      setAiVariants(merged)
+      setAiSlotCount(3)
+      setAiProgressDone(merged.length)
+      const pickIndex = mode === 'more' ? Math.min(aiPick, merged.length - 1) : 0
+      setAiPick(pickIndex)
+      const chosen = merged[pickIndex] ?? merged[0]!
+      setPhoto(chosen.image)
+      setPhotoUrl(chosen.objectUrl)
+      setPhotoName(`AI scene · pick ${pickIndex + 1} of ${merged.length}`)
+      setLayout('photo-full')
+      setPhotoShape('square')
+      setStickers([])
+      setActiveStickerIndex(null)
+      if (!title.trim()) {
+        setTitle(titleFromScene(aiHint, title))
+      }
+
+      const canMore = merged.length < 3 && !batch.rateLimited
+      setAiCanFetchMore(canMore)
+
+      let okMsg =
+        merged.length > 1
+          ? `Pick 1 of ${merged.length} below — tap a thumbnail to put it on the canvas.`
+          : 'Your AI look is ready — shown in the picker below. Get more looks if you want variety.'
+      if (batch.rateLimited) {
+        okMsg = `Got ${merged.length} look${merged.length === 1 ? '' : 's'} before free AI rate-limited us. Use what you have, or wait a minute for more.`
+        setAiCanFetchMore(false)
+      } else if (canMore) {
+        okMsg += ' Tap “Get more looks” for up to 3 total.'
+      }
       setAiStatus({ kind: 'ok', text: okMsg })
       setStatus(okMsg)
       setEditorTab('title')
@@ -528,6 +587,10 @@ export default function HomePage() {
       const message = error instanceof Error ? error.message : 'AI scene generation failed.'
       setAiStatus({ kind: 'err', text: message })
       setStatus(message)
+      if (mode === 'fresh') {
+        setAiProgressDone(0)
+      }
+      setAiCanFetchMore(prior.length > 0 && prior.length < 3)
     } finally {
       if (runId === aiRunIdRef.current) {
         setAiBusy(false)
@@ -542,7 +605,7 @@ export default function HomePage() {
     setAiPick(index)
     setPhoto(item.image)
     setPhotoUrl(item.objectUrl)
-    setPhotoName(`AI scene · option ${index + 1}`)
+    setPhotoName(`AI scene · pick ${index + 1} of ${aiVariants.length}`)
     setLayout('photo-full')
     setPhotoShape('square')
   }
@@ -965,12 +1028,13 @@ export default function HomePage() {
                   <p className="photo-title">AI scene image</p>
                   <p className="photo-help">
                     Fill the YouTube title above, pick a style, describe the scene, then generate.
-                    Free AI paints a full-bleed backdrop — you get up to 3 options to choose from.
+                    Free AI paints a full-bleed backdrop — you always pick from a clear strip of up
+                    to 3 looks.
                   </p>
                   {photoName ? <p className="photo-name">Selected: {photoName}</p> : null}
                 </div>
                 <fieldset className="ai-style-field">
-                  <legend>Style</legend>
+                  <legend>Style (lighting &amp; look — scene text still wins)</legend>
                   <div className="ai-style-row" role="list">
                     {AI_STYLES.map((style) => (
                       <button
@@ -981,9 +1045,14 @@ export default function HomePage() {
                           style.id === aiStyleId ? 'chip solid ai-style-chip is-selected' : 'chip ai-style-chip'
                         }
                         aria-pressed={style.id === aiStyleId}
-                        onClick={() => setAiStyleId(style.id)}
+                        title={style.blurb}
+                        onClick={() => {
+                          setAiStyleId(style.id)
+                          setAiStyleTip(suggestAiStyle(aiHint, style.id))
+                        }}
                       >
-                        {style.label}
+                        <span className="ai-style-chip-label">{style.label}</span>
+                        <span className="ai-style-chip-blurb">{style.blurb}</span>
                       </button>
                     ))}
                   </div>
@@ -994,24 +1063,44 @@ export default function HomePage() {
                     id="ai-scene-hint"
                     type="text"
                     value={aiHint}
-                    onChange={(event) => setAiHint(event.target.value)}
+                    onChange={(event) => onAiHintChange(event.target.value)}
                     placeholder="e.g. cute cartoon animals playing in a sunny jungle for kids"
                   />
                 </label>
-                <p className="ai-honesty-note">
-                  Tip: for kids/animals use the <strong>Kids / fun</strong> or <strong>Cartoon</strong> style.
-                  Free Pollinations Flux (no API key) — Gemini / video-URL backends can come later when you budget for them.
-                </p>
+                {aiStyleTip ? (
+                  <p className="ai-style-suggest" role="status">
+                    This scene fits <strong>{getAiStyle(aiStyleTip).label}</strong> better than{' '}
+                    {getAiStyle(aiStyleId).label}.
+                    <button type="button" className="ai-style-suggest-btn" onClick={applySuggestedStyle}>
+                      Switch style
+                    </button>
+                  </p>
+                ) : (
+                  <p className="ai-honesty-note">
+                    Tip: animals / kids / cartoon scenes work best with <strong>Kids / fun</strong> or{' '}
+                    <strong>Cartoon</strong>. Music stage only adds concert lighting — it will not
+                    replace animals with a singer. Free Pollinations (no API key).
+                  </p>
+                )}
                 <div className="photo-actions">
                   <button
                     type="button"
                     className="chip solid ai-generate"
                     disabled={aiBusy}
                     aria-busy={aiBusy}
-                    onClick={() => void runAiThumbnail()}
+                    onClick={() => void runAiThumbnail('fresh')}
                   >
-                    {aiBusy ? 'Generating…' : 'Generate 3 AI options'}
+                    {aiBusy ? 'Creating look…' : 'Create AI backdrop'}
                   </button>
+                  {aiCanFetchMore && !aiBusy ? (
+                    <button
+                      type="button"
+                      className="chip"
+                      onClick={() => void runAiThumbnail('more')}
+                    >
+                      Get more looks
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     className="chip solid"
@@ -1025,23 +1114,71 @@ export default function HomePage() {
                     </button>
                   ) : null}
                 </div>
-                {aiVariants.length > 1 ? (
-                  <div className="ai-variant-picker" role="listbox" aria-label="AI scene options">
-                    {aiVariants.map((item, index) => (
-                      <button
-                        key={`${item.seed}-${index}`}
-                        type="button"
-                        role="option"
-                        aria-selected={index === aiPick}
-                        className={index === aiPick ? 'ai-variant-card is-selected' : 'ai-variant-card'}
-                        onClick={() => pickAiVariant(index)}
-                      >
-                        <img src={item.objectUrl} alt={`AI option ${index + 1}`} />
-                        <span>Option {index + 1}</span>
-                      </button>
-                    ))}
+                <div className="ai-picker-block">
+                  <p className="ai-picker-label">
+                    {aiBusy
+                      ? `Painting looks… ${aiProgressDone}/${aiSlotCount}`
+                      : aiVariants.length > 0
+                        ? `Pick 1 of ${aiVariants.length}`
+                        : aiStatus.kind === 'err'
+                          ? 'No looks yet — try again after the free tier cools down'
+                          : 'Your 3 AI looks will appear here'}
+                  </p>
+                  <div className="ai-variant-picker" role="listbox" aria-label="Pick one of up to 3 AI looks">
+                    {Array.from({ length: aiSlotCount }, (_, index) => {
+                      const item = aiVariants[index]
+                      if (item) {
+                        return (
+                          <button
+                            key={`${item.seed}-${index}`}
+                            type="button"
+                            role="option"
+                            aria-selected={index === aiPick}
+                            className={index === aiPick ? 'ai-variant-card is-selected' : 'ai-variant-card'}
+                            onClick={() => pickAiVariant(index)}
+                          >
+                            <img src={item.objectUrl} alt={`AI look ${index + 1}`} />
+                            <span>Look {index + 1}{index === aiPick ? ' · selected' : ''}</span>
+                          </button>
+                        )
+                      }
+                      const loadingThis = aiBusy && index === aiProgressDone
+                      const waiting = aiBusy && index > aiProgressDone
+                      const failedEmpty = !aiBusy && aiStatus.kind === 'err' && aiVariants.length === 0
+                      return (
+                        <div
+                          key={`slot-${index}`}
+                          className={
+                            loadingThis
+                              ? 'ai-variant-card is-loading'
+                              : failedEmpty
+                                ? 'ai-variant-card is-error'
+                                : 'ai-variant-card is-empty'
+                          }
+                          aria-hidden={waiting || (!aiBusy && !failedEmpty)}
+                        >
+                          <div className="ai-variant-placeholder">
+                            {loadingThis ? (
+                              <>
+                                <span className="ai-inline-spinner" aria-hidden />
+                                <span>Painting…</span>
+                              </>
+                            ) : failedEmpty ? (
+                              <span>Failed</span>
+                            ) : waiting ? (
+                              <span>Queued</span>
+                            ) : (
+                              <span>Look {index + 1}</span>
+                            )}
+                          </div>
+                          <span>
+                            {loadingThis ? 'Working' : failedEmpty ? 'Error' : `Slot ${index + 1}`}
+                          </span>
+                        </div>
+                      )
+                    })}
                   </div>
-                ) : null}
+                </div>
                 {aiStatus.text ? (
                   <p
                     className={`ai-inline-status is-${aiStatus.kind}`}

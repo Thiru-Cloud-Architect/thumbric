@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
+  analyzeScene,
   buildAiThumbnailPrompt,
   buildPollinationsCandidateUrls,
+  friendlyAiHttpMessage,
   sanitizeSceneText,
+  suggestAiStyle,
   titleFromScene,
 } from './aiThumbnail'
 import { getNiche } from './niches'
@@ -30,6 +33,26 @@ describe('titleFromScene', () => {
 
   it('falls back when scene is empty', () => {
     expect(titleFromScene('', '')).toBe('My Thumbnail')
+  })
+})
+
+describe('analyzeScene / suggestAiStyle', () => {
+  it('detects animals in woods without a human ask', () => {
+    const cues = analyzeScene('cute cartoon animals playing in the woods')
+    expect(cues.animals).toBe(true)
+    expect(cues.cartoon).toBe(true)
+    expect(cues.wantsHuman).toBe(false)
+    expect(cues.nonHumanSubject).toBe(true)
+  })
+
+  it('suggests Kids/fun or Cartoon when Music stage is selected for animals', () => {
+    expect(suggestAiStyle('cute cartoon animals playing in the woods', 'music-stage')).toBe(
+      'cartoon',
+    )
+    expect(suggestAiStyle('puppy playing in a sunny park for kids', 'face-reaction')).toBe(
+      'kids-fun',
+    )
+    expect(suggestAiStyle('cute cartoon animals playing in the woods', 'kids-fun')).toBeNull()
   })
 })
 
@@ -68,6 +91,30 @@ describe('buildAiThumbnailPrompt', () => {
     })
     expect(prompt).toMatch(/Kids \/ fun|kids content|cartoon/i)
     expect(prompt).toMatch(/cute cartoon animals/)
+  })
+
+  it('hard-bans human / kemonomimi faces when Music stage + animals woods', () => {
+    const prompt = buildAiThumbnailPrompt({
+      title: 'Cute animals',
+      niche,
+      platform,
+      hint: 'cute cartoon animals playing in the woods',
+      styleId: 'music-stage',
+    })
+    expect(prompt).toMatch(/cute cartoon animals playing in the woods/)
+    expect(prompt).toMatch(/NO human face|no human/i)
+    expect(prompt).toMatch(/kemonomimi/i)
+    expect(prompt).toMatch(/furry humanoid/i)
+    expect(prompt).toMatch(/animals remain the only subjects|ONLY the described non-human/i)
+    expect(prompt).not.toMatch(/singer or instrument as clear hero subject/)
+  })
+})
+
+describe('friendlyAiHttpMessage', () => {
+  it('explains Pollinations 402 without raw jargon alone', () => {
+    const msg = friendlyAiHttpMessage(402)
+    expect(msg).toMatch(/rate-limited|payment|402/i)
+    expect(msg).toMatch(/wait|try again/i)
   })
 })
 
