@@ -2,7 +2,12 @@ import { Link } from 'react-router-dom'
 import { PRODUCT_NAME_FULL } from './brand'
 import { NavHashLink, useOnHomePage } from './nav'
 
-export function SiteHeader() {
+type SiteHeaderProps = {
+  userLabel?: string | null
+  onLoginClick?: () => void
+}
+
+export function SiteHeader({ userLabel, onLoginClick }: SiteHeaderProps) {
   const onHome = useOnHomePage()
 
   return (
@@ -19,15 +24,22 @@ export function SiteHeader() {
         <NavHashLink hash="how">How it works</NavHashLink>
         <NavHashLink hash="editor">Editor</NavHashLink>
       </nav>
-      {onHome ? (
-        <a className="top-cta top-cta-light" href="#editor">
-          Start free
-        </a>
-      ) : (
-        <Link className="top-cta top-cta-light" to={{ pathname: '/', hash: '#editor' }}>
-          Start free
-        </Link>
-      )}
+      <div className="top-actions">
+        {onLoginClick ? (
+          <button type="button" className="top-login" onClick={onLoginClick}>
+            {userLabel ? userLabel : 'Sign in'}
+          </button>
+        ) : null}
+        {onHome ? (
+          <a className="top-cta top-cta-light" href="#editor">
+            Start free
+          </a>
+        ) : (
+          <Link className="top-cta top-cta-light" to={{ pathname: '/', hash: '#editor' }}>
+            Start free
+          </Link>
+        )}
+      </div>
     </header>
   )
 }

@@ -62,6 +62,12 @@ import {
   type PlacedSticker,
   type StickerId,
 } from './stickers'
+import { generateAiThumbnailImage } from './aiThumbnail'
+import {
+  loadSimpleUser,
+  registerSimpleUser,
+  type SimpleUser,
+} from './simpleAuth'
 import { DOWNLOAD_PREFIX, PRODUCT_NAME_FULL, UI_BUILD } from './brand'
 import './App.css'
 
@@ -95,9 +101,14 @@ export default function HomePage() {
   const [photoUrl, setPhotoUrl] = useState('')
   const [status, setStatus] = useState('Start with platform and look — preview starts clean with no stickers.')
   const [entitlement, setEntitlement] = useState<Entitlement>(() => loadEntitlement())
-  const [modal, setModal] = useState<'none' | 'register' | 'pay'>('none')
+  const [modal, setModal] = useState<'none' | 'register' | 'pay' | 'login'>('none')
   const [emailDraft, setEmailDraft] = useState('')
+  const [nameDraft, setNameDraft] = useState('')
+  const [simpleUser, setSimpleUser] = useState<SimpleUser | null>(() => loadSimpleUser())
+  const [aiHint, setAiHint] = useState('')
+  const [aiBusy, setAiBusy] = useState(false)
   const [editorTab, setEditorTab] = useState<EditorTab>('setup')
+  const aiAbortRef = useRef<AbortController | null>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const dragIndexRef = useRef<number | null>(null)
@@ -365,6 +376,54 @@ export default function HomePage() {
     setStatus('Photo removed.')
   }
 
+  async function runAiThumbnail() {
+    if (aiBusy) return
+    aiAbortRef.current?.abort()
+    const controller = new AbortController()
+    aiAbortRef.current = controller
+    setAiBusy(true)
+    setStatus('Generating AI thumbnail… this can take a few seconds.')
+    try {
+      const result = await generateAiThumbnailImage(
+        {
+          title,
+          niche,
+          platform,
+          hint: aiHint,
+        },
+        controller.signal,
+      )
+      if (photoUrl) URL.revokeObjectURL(photoUrl)
+      setPhoto(result.image)
+      setPhotoUrl(result.objectUrl)
+      setPhotoName('AI generated')
+      setLayout((current) =>
+        platform.orientation === 'vertical' || platform.orientation === 'square'
+          ? current
+          : 'photo-left',
+      )
+      setStatus('AI image applied — drag title to fit, then download.')
+      setEditorTab('title')
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return
+      setStatus(error instanceof Error ? error.message : 'AI generation failed.')
+    } finally {
+      setAiBusy(false)
+    }
+  }
+
+  async function onSimpleLogin(event: FormEvent) {
+    event.preventDefault()
+    try {
+      const user = await registerSimpleUser(nameDraft, emailDraft)
+      setSimpleUser(user)
+      setModal('none')
+      setStatus(`Signed in as ${user.name} (${user.email}).`)
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Could not sign in.')
+    }
+  }
+
   function saveMarked() {
     try {
       downloadThumbnail({ ...previewInput, watermark: true })
@@ -433,7 +492,14 @@ export default function HomePage() {
 
   return (
     <div className="page">
-      <SiteHeader />
+      <SiteHeader
+        userLabel={simpleUser ? simpleUser.name : null}
+        onLoginClick={() => {
+          setNameDraft(simpleUser?.name || '')
+          setEmailDraft(simpleUser?.email || '')
+          setModal('login')
+        }}
+      />
 
       <main id="top" className="page-main">
         <HeroFlashy
@@ -760,13 +826,31 @@ export default function HomePage() {
 
               <div className="photo-box">
                 <div>
-                  <p className="photo-title">Your photo (optional)</p>
+                  <p className="photo-title">Photo or AI face</p>
                   <p className="photo-help">
-                    Clear face or object photos work best. JPG or PNG. Stays on your device.
+                    Upload your own JPG/PNG, or generate an AI face/backdrop from your title &amp; mood
+                    (free via Pollinations — no API key).
                   </p>
                   {photoName ? <p className="photo-name">Selected: {photoName}</p> : null}
                 </div>
+                <label className="ai-hint-field">
+                  AI hint (optional)
+                  <input
+                    type="text"
+                    value={aiHint}
+                    onChange={(event) => setAiHint(event.target.value)}
+                    placeholder="e.g. woman with laptop, shocked look"
+                  />
+                </label>
                 <div className="photo-actions">
+                  <button
+                    type="button"
+                    className="chip solid ai-generate"
+                    disabled={aiBusy}
+                    onClick={() => void runAiThumbnail()}
+                  >
+                    {aiBusy ? 'Generating…' : 'Generate AI image'}
+                  </button>
                   <button
                     type="button"
                     className="chip solid"
@@ -978,7 +1062,45 @@ export default function HomePage() {
             aria-labelledby="modal-title"
             onClick={(event) => event.stopPropagation()}
           >
-            {modal === 'register' ? (
+            {modal === 'login' ? (
+              <form onSubmit={onSimpleLogin}>
+                <h2 id="modal-title">Sign in</h2>
+                <p>
+                  Light account only — we store your name and email on this device
+                  {import.meta.env.VITE_API_BASE ? ' and sync to the Thumbric backend JSON.' : '.'} No
+                  password. Full auth comes later when traffic grows.
+                </p>
+                <label>
+                  Name
+                  <input
+                    type="text"
+                    value={nameDraft}
+                    onChange={(event) => setNameDraft(event.target.value)}
+                    placeholder="Your name"
+                    required
+                    autoFocus
+                  />
+                </label>
+                <label>
+                  Email
+                  <input
+                    type="email"
+                    value={emailDraft}
+                    onChange={(event) => setEmailDraft(event.target.value)}
+                    placeholder="you@email.com"
+                    required
+                  />
+                </label>
+                <div className="actions">
+                  <button type="submit" className="primary">
+                    Save &amp; continue
+                  </button>
+                  <button type="button" className="chip" onClick={() => setModal('none')}>
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            ) : modal === 'register' ? (
               <form onSubmit={onRegister}>
                 <h2 id="modal-title">Register to remove the mark</h2>
                 <p>

@@ -59,9 +59,9 @@ export const FEATURES: FeatureItem[] = [
   },
   {
     id: 'ai-url',
-    title: 'Paste URL → AI thumbnail',
-    description: 'Planned: we focus on fast manual control first; AI from video links may come later.',
-    href: '#roadmap',
-    available: false,
+    title: 'AI thumbnail image',
+    description: 'Generate a face/backdrop from your title & mood, then fine-tune on the live canvas.',
+    href: '#editor',
+    available: true,
   },
 ]

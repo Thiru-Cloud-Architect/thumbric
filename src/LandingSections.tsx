@@ -320,8 +320,8 @@ export function FeaturesSection() {
         ))}
       </div>
       <p id="roadmap" className="features-roadmap">
-        <strong>On the roadmap:</strong> paste a YouTube link and get AI-assisted layouts — after we nail
-        the manual editor you see here.
+        <strong>Live now:</strong> AI face/backdrop from your title in the editor. Next up: payments and
+        full accounts when traffic grows — paste-a-YouTube-URL assist can follow.
       </p>
     </section>
   )

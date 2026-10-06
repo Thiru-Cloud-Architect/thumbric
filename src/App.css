@@ -364,6 +364,31 @@ a {
   box-shadow: 0 8px 28px rgba(255, 255, 255, 0.12);
 }
 
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.top-login {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ink);
+  font: 600 0.85rem/1 'Plus Jakarta Sans', sans-serif;
+  padding: 0.5rem 0.85rem;
+  border-radius: 999px;
+  cursor: pointer;
+  max-width: 9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.top-login:hover {
+  border-color: rgba(224, 122, 107, 0.45);
+}
+
 .top-cta-light:hover {
   filter: brightness(0.96);
 }
@@ -967,6 +992,35 @@ textarea {
   border-radius: 16px;
   background: var(--bg-soft);
   border: 1px dashed rgba(224, 122, 107, 0.35);
+}
+
+.ai-hint-field {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.ai-hint-field input {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--ink);
+  padding: 0.65rem 0.75rem;
+  font: 500 0.9rem/1.3 'Plus Jakarta Sans', sans-serif;
+}
+
+.chip.solid.ai-generate {
+  background: linear-gradient(105deg, #c45c4a, #e8b86d);
+  color: #1a0c0a;
+  border: 0;
+}
+
+.chip.solid.ai-generate:disabled {
+  opacity: 0.65;
+  cursor: wait;
 }
 
 .photo-title {

@@ -1,38 +1,47 @@
 # Thumbric.ai
 
-Free browser thumbnail maker for **YouTube**, Shorts/Reels, Instagram, LinkedIn, and Facebook.
+Free browser thumbnail maker for **YouTube**, Shorts/Reels, Instagram, LinkedIn, and Facebook — plus **AI image** generation in the editor.
 
 **Live site:** https://thiru-cloud-architect.github.io/thumbforge/
 
-## Brand vs GitHub repo
+## Brand vs URL
 
 | What | Name |
 |------|------|
 | **Product** | **Thumbric.ai** |
-| **GitHub repo / Pages URL** | still `thumbforge` → `…github.io/thumbforge/` until you rename the repo or attach **thumbric.ai** |
+| **GitHub Pages path** | `/thumbforge/` (repo name) until you attach a custom domain |
 
-The product name is **Thumbric.ai**. The address bar still says `thumbforge` because GitHub Pages uses the **repository name** in the URL. To change that:
+### Connect `thumbric.ai` on Cloudflare (recommended)
 
-1. **Best:** buy/connect **thumbric.ai** → GitHub Pages → Settings → Pages → Custom domain.
-2. **Or** rename the GitHub repo to `thumbric` (Settings → Rename). Then update Vite `base` to `/thumbric/` and redeploy.
+1. Buy **thumbric.ai** (Cloudflare Registrar or any registrar).
+2. Add the domain to **Cloudflare DNS** (orange-cloud proxy optional).
+3. In GitHub → repo **Settings → Pages → Custom domain** → enter `thumbric.ai` (and `www` if you want).
+4. Add DNS records GitHub shows (usually `A` / `AAAA` or `CNAME` for `www`).
+5. Wait for HTTPS. Optionally set Vite `base: '/'` once the site is only served from the apex domain (not `/thumbforge/`).
 
-## For anyone (no tech skill needed)
+Worker API (optional user JSON sync) can live on `api.thumbric.ai` — see `worker/`.
 
-1. Open the site and tap **Start free** (opens the editor).
-2. Choose platform & mood, or **Quick idea** for a random combo.
-3. Add your title (and optional photo). Use the live preview — drag text and stickers.
-4. **Save free preview** or **Save clean** after choosing a plan on the [pricing page](https://thiru-cloud-architect.github.io/thumbforge/pricing).
+## Features today
 
-## Free vs clean
+- Platform sizes, moods, drag title/stickers, templates
+- **Generate AI image** (Pollinations — no API key; uses your title + mood + optional hint)
+- Light **Sign in** (name + email on device; optional sync to Cloudflare Worker JSON)
+- Pricing page (demo unlock until Stripe/Razorpay)
 
-- **Free preview:** unlimited downloads with a small on-image watermark (`Thumbric.ai · free preview`).
-- **Clean export:** register email, then **Creator** (9 clean PNGs/month) or **Pro** (unlimited). See `/pricing`.
+## Simple login (no Auth0 / Supabase yet)
 
-## Share & SEO
+- Header **Sign in** → name + email → `localStorage`
+- When you deploy the Worker and set `VITE_API_BASE`, the same form also `POST`s to `/api/register` and appends to a **JSON list in Cloudflare KV** (`users.json`)
 
-- [Google Search Console](https://search.google.com/search-console): `https://thiru-cloud-architect.github.io/thumbforge/`
-- Sitemap: https://thiru-cloud-architect.github.io/thumbforge/sitemap.xml
-- Repo **About**: “Thumbric.ai — free YouTube thumbnail maker” + website link
+```bash
+cd worker
+npm install
+npx wrangler login
+npx wrangler kv namespace create THUMBRIC_USERS
+# paste id into wrangler.toml [[kv_namespaces]]
+npx wrangler deploy
+# then build the site with: VITE_API_BASE=https://thumbric-api.<your-subdomain>.workers.dev
+```
 
 ## Run locally
 
@@ -46,4 +55,4 @@ Open http://127.0.0.1:43201/thumbforge/
 
 ## Stack
 
-React 19, TypeScript, Vite, client-side canvas (`src/render.ts`).
+React 19, TypeScript, Vite, canvas renderer (`src/render.ts`). Optional Cloudflare Worker for user JSON.
