@@ -22,7 +22,7 @@ export async function scrollToElementId(
   {
     behavior = 'smooth',
     block = 'start',
-    attempts = 30,
+    attempts = 60,
   }: {
     behavior?: ScrollBehavior
     block?: ScrollLogicalPosition
@@ -36,7 +36,12 @@ export async function scrollToElementId(
       el.scrollIntoView({ behavior, block })
       return el
     }
-    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+    // Mix rAF + short timeouts so tab-switched mounts are found reliably.
+    if (i % 2 === 0) {
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+    } else {
+      await new Promise<void>((resolve) => window.setTimeout(() => resolve(), 16))
+    }
   }
   return null
 }

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent, type PointerEvent as ReactPointerEvent } from 'react'
+import { flushSync } from 'react-dom'
 import { Link } from 'react-router-dom'
 import {
   CREATOR_CLEAN_DOWNLOADS_PER_MONTH,
@@ -180,14 +181,15 @@ export default function HomePage() {
       const hash = normalizeHash(rawHash ?? window.location.hash)
       if (!hash) return
 
+      // Commit the Title tab before scrolling — #editor-ai only mounts on that tab.
       if (hash === 'editor-ai' || hash === 'editor-title') {
-        setEditorTab('title')
+        flushSync(() => setEditorTab('title'))
       } else if (hash === 'editor') {
-        setEditorTab('setup')
+        flushSync(() => setEditorTab('setup'))
       }
 
       void (async () => {
-        const el = await scrollToElementId(hash)
+        const el = await scrollToElementId(hash, { attempts: 60 })
         if (el) focusHashTarget(hash)
       })()
     }
@@ -785,6 +787,61 @@ export default function HomePage() {
               >
                 Reset title position on preview
               </button>
+
+              <div id="editor-ai" className="photo-box ai-scene-box">
+                <div>
+                  <p className="photo-title">AI scene image</p>
+                  <p className="photo-help">
+                    Describe the thumbnail idea / scene. Free AI draws a backdrop from your words,
+                    title, niche, and platform — then you finish the title on the live canvas.
+                  </p>
+                  {photoName ? <p className="photo-name">Selected: {photoName}</p> : null}
+                </div>
+                <label className="ai-hint-field">
+                  Describe the scene for your thumbnail
+                  <input
+                    id="ai-scene-hint"
+                    type="text"
+                    value={aiHint}
+                    onChange={(event) => setAiHint(event.target.value)}
+                    placeholder="e.g. shocked creator at a neon desk, city night behind them"
+                  />
+                </label>
+                <p className="ai-honesty-note">
+                  Free AI scene image — not full video analysis. Paste-a-YouTube-URL thumbs come later
+                  when we can fund a paid model. Uses Pollinations (no API key). Empty scene field
+                  falls back to your title + niche.
+                </p>
+                <div className="photo-actions">
+                  <button
+                    type="button"
+                    className="chip solid ai-generate"
+                    disabled={aiBusy}
+                    onClick={() => void runAiThumbnail()}
+                  >
+                    {aiBusy ? 'Generating…' : 'Generate AI scene'}
+                  </button>
+                  <button
+                    type="button"
+                    className="chip solid"
+                    onClick={() => fileRef.current?.click()}
+                  >
+                    {photo ? 'Change photo' : 'Upload your photo'}
+                  </button>
+                  {photo ? (
+                    <button type="button" className="chip" onClick={clearPhoto}>
+                      Remove
+                    </button>
+                  ) : null}
+                </div>
+                <input
+                  ref={fileRef}
+                  className="file-input"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={(event) => onPickPhoto(event.target.files?.[0])}
+                />
+              </div>
             </section>
             ) : null}
 
@@ -866,61 +923,6 @@ export default function HomePage() {
                 Range {TITLE_FONT_SIZE_MIN}–{TITLE_FONT_SIZE_MAX}. Try 96–120 for YouTube titles; go
                 bigger for Shorts.
               </p>
-
-              <div id="editor-ai" className="photo-box ai-scene-box">
-                <div>
-                  <p className="photo-title">AI scene image</p>
-                  <p className="photo-help">
-                    Describe the thumbnail idea / scene. Free AI draws a backdrop from your words,
-                    title, niche, and platform — then you finish the title on the live canvas.
-                  </p>
-                  {photoName ? <p className="photo-name">Selected: {photoName}</p> : null}
-                </div>
-                <label className="ai-hint-field">
-                  Describe the scene for your thumbnail
-                  <input
-                    id="ai-scene-hint"
-                    type="text"
-                    value={aiHint}
-                    onChange={(event) => setAiHint(event.target.value)}
-                    placeholder="e.g. shocked creator at a neon desk, city night behind them"
-                  />
-                </label>
-                <p className="ai-honesty-note">
-                  Free AI scene image — not full video analysis. Paste-a-YouTube-URL thumbs come later
-                  when we can fund a paid model. Uses Pollinations (no API key). Empty scene field
-                  falls back to your title + niche.
-                </p>
-                <div className="photo-actions">
-                  <button
-                    type="button"
-                    className="chip solid ai-generate"
-                    disabled={aiBusy}
-                    onClick={() => void runAiThumbnail()}
-                  >
-                    {aiBusy ? 'Generating…' : 'Generate AI scene'}
-                  </button>
-                  <button
-                    type="button"
-                    className="chip solid"
-                    onClick={() => fileRef.current?.click()}
-                  >
-                    {photo ? 'Change photo' : 'Upload your photo'}
-                  </button>
-                  {photo ? (
-                    <button type="button" className="chip" onClick={clearPhoto}>
-                      Remove
-                    </button>
-                  ) : null}
-                </div>
-                <input
-                  ref={fileRef}
-                  className="file-input"
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  onChange={(event) => onPickPhoto(event.target.files?.[0])}
-                />
-              </div>
 
               <details className="fold-panel">
                 <summary>Advanced layout &amp; extras</summary>
