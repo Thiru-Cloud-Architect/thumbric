@@ -64,6 +64,46 @@ Availability checked via DNS NS lookup (Status NXDOMAIN ≈ likely free to regis
 | **thumbric.io** | Yes | **$32 → $50** / **₹3,085 → ₹4,820** | OK name; renewals sting |
 | **thumbric.com** | **No — taken** | — | Skip |
 | **thumbric.online** | Yes | Promo ~$2–5 / renew ~$25–30 | Cheap bait; avoid unless temporary |
+| **thumbric.in** | Yes (GoDaddy IN) | See **`.in` / India promo** below | Cheap parked/redirect only — not the product brand |
+
+## `.in` / India promo (GoDaddy en-in, Oct 2026)
+
+Screenshot check (`godaddy.com/en-in`): **`thumbric.in` at ₹1** first year, **“1st yr only with 3 yr term”**, list price **₹899** struck through. Restrictions apply; decline hosting/email/protection upsells.
+
+### What you actually pay (estimate)
+
+| Item | Amount |
+|------|--------|
+| Year 1 (promo) | **₹1** |
+| Years 2–3 (list / renewal) | **~₹899/yr each** (screenshot list; GoDaddy renewals = non-sale list at purchase) |
+| **Likely 3-year checkout** | **~₹1 + ₹899×2 ≈ ₹1,799** (+ GST if charged; + add-ons if you accept them) |
+| After year 3 | Budget **~₹899–₹1,500/yr** on GoDaddy IN (verify “Renewal Price” column before buy) |
+
+Registry wholesale for `.in` is only **₹500/yr** (NIXI); retail is registrar markup. Confirm the cart total for the full 3-year term — the ₹1 teaser is not the full cost.
+
+### Other registrars (`.in`, Oct 2026)
+
+| Registrar | Register → renew | ~3-year total (FX ₹96.40) | Notes |
+|-----------|------------------|---------------------------|-------|
+| **GoDaddy IN** | ₹1 → ~₹899 (3-yr lock) | **~₹1,800** prepaid | Cheapest entry; renewal trap + upsells |
+| **Spaceship** | **$5.03 → $5.97** (~₹485 → ₹576) | **~$17 / ~₹1,640** | Best honest long-term `.in` price |
+| **Namecheap** | $9.98 → $11.98 (~₹962 → ₹1,155) | **~$34 / ~₹3,270** | Fine; WHOIS privacy often **unavailable** on `.in` |
+| **Cloudflare** | — | — | **Does not sell `.in`** (unsupported TLD) |
+
+### Honest compare vs product TLDs (India-facing product named **Thumbric.ai**)
+
+| Domain | ~Annual after intro | Role |
+|--------|---------------------|------|
+| **thumbric.in** | ~₹500–₹1,500 | Local SEO/trust + brand-defense park/redirect |
+| **thumbric.app** | ~**₹1,370** (CF renew) | Affordable canonical product URL |
+| **thumbric.ai** | ~**₹7,700** (CF/Spaceship; often 2-yr min) | Exact brand match; expensive |
+
+**.in pros:** dirt-cheap vs `.ai`; India ccTLD trust/SEO for local search; stops squatters on the `.in` spelling.  
+**.in cons:** brand mismatch with “Thumbric.ai”; weaker international perception; GoDaddy 3-year lock-in + upsell/renewal trap; not a substitute for `.ai`/`.app` as the product name.
+
+### Recommendation
+
+**Buy `.in` now as cheap parked brand protection** (GoDaddy ₹1/3-yr if cart ≈ ₹1.8k, or Spaceship if you want honest renewals) **and redirect later** — **do not** make `thumbric.in` the public product name. Still buy **`thumbric.app`** soon (budget primary) and/or **`thumbric.ai`** when ready (~₹7.7k/yr). Skip treating the ₹1 offer as “the domain strategy.”
 
 ## Alternative brand names (same idea as Thumbric)
 
@@ -97,9 +137,10 @@ Availability checked via DNS NS lookup (Status NXDOMAIN ≈ likely free to regis
 
 1. **Want exact brand + AI signal** → buy **`thumbric.ai`** on **Cloudflare** or **Spaceship** (~**$80 / ₹7,700**/yr; budget **2 years** up front).
 2. **Want cheap + clean** → buy **`thumbric.app`** (or `.dev`) on Cloudflare (~**$14 / ₹1,370** renew for `.app`).
-3. **`.ai` already gone when you check** → try **`thumbrix.ai`** or **`thumbora.ai`**, or keep **`thumbric.app`**.
-4. **$0 for now** → keep https://thiru-cloud-architect.github.io/thumbric/ (already live).
-5. **Comparing registrars from India** → force USD view or convert at one FX rate; don’t mix CF `$` with GoDaddy/Namecheap `₹` pages.
+3. **India promo on GoDaddy** → **`thumbric.in` at ₹1 / 3-yr** is fine as a **parked redirect** (~**₹1,800** for 3 years) — not the product brand. See **`.in` / India promo** above.
+4. **`.ai` already gone when you check** → try **`thumbrix.ai`** or **`thumbora.ai`**, or keep **`thumbric.app`**.
+5. **$0 for now** → keep https://thiru-cloud-architect.github.io/thumbric/ (already live).
+6. **Comparing registrars from India** → force USD view or convert at one FX rate; don’t mix CF `$` with GoDaddy/Namecheap `₹` pages.
 
 ## After purchase (registrar DNS → GitHub Pages)
 
