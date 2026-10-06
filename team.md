@@ -43,7 +43,7 @@ Details: `DEPLOY.md`.
 curl -sL https://thiru-cloud-architect.github.io/thumbric/ \
   | rg -o '/thumbric/assets/index-[^"]+\.js'
 # Expect UI_BUILD string inside that bundle:
-# 2026.10.06-ak  and  "Describe the scene"
+# 2026.10.06-aq  and  "Describe the scene"
 ```
 
 Wrong path: `…/thumbforge/` is a redirect stub — use `…/thumbric/`.
