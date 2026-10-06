@@ -9,10 +9,12 @@ Free browser thumbnail maker for **YouTube**, Shorts/Reels, Instagram, LinkedIn,
 | What | Name |
 |------|------|
 | **Product** | **Thumbric.ai** |
-| **GitHub repo / Pages URL** | `thumbforge` → `/thumbforge/` (kept so existing links work) |
-| **npm package** | `thumbric` |
+| **GitHub repo / Pages URL** | still `thumbforge` → `…github.io/thumbforge/` until you rename the repo or attach **thumbric.ai** |
 
-Point a custom domain (e.g. **thumbric.ai**) at GitHub Pages when the domain is registered.
+The product name is **Thumbric.ai**. The address bar still says `thumbforge` because GitHub Pages uses the **repository name** in the URL. To change that:
+
+1. **Best:** buy/connect **thumbric.ai** → GitHub Pages → Settings → Pages → Custom domain.
+2. **Or** rename the GitHub repo to `thumbric` (Settings → Rename). Then update Vite `base` to `/thumbric/` and redeploy.
 
 ## For anyone (no tech skill needed)
 
