@@ -81,8 +81,8 @@ export const AI_FEATURE = {
   nowLabel: 'Works now',
   nowItems: [
     'Tap Try AI Thumbnail creator, then type a short scene (person, setting, mood)',
-    'Generate up to 3 looks sequentially — free via Pollinations, no API key',
-    'First look lands full-bleed on the canvas; pick a favorite, then style the title',
+    'Generate up to 3 looks — first one lands on the canvas, then we fill the rest',
+    'Pick a favorite look, then style the title on the live canvas',
   ],
   notYetLabel: 'Not yet',
   notYetItems: [

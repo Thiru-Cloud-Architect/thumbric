@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   AI_PROMPT_MAX_CHARS,
+  AI_RETRY_LEAD_MS,
+  AI_VARIANT_GAP_MS,
+  AI_VARIANT_GAP_STEP_MS,
   analyzeScene,
   buildAiThumbnailPrompt,
   buildPollinationsCandidateUrls,
@@ -9,6 +12,7 @@ import {
   sanitizeSceneText,
   suggestAiStyle,
   titleFromScene,
+  waitMsBeforeLook,
 } from './aiThumbnail'
 import { getNiche } from './niches'
 import { getPlatform } from './platforms'
@@ -140,10 +144,22 @@ describe('buildAiThumbnailPrompt', () => {
 })
 
 describe('friendlyAiHttpMessage', () => {
-  it('explains Pollinations 402 without raw jargon alone', () => {
-    const msg = friendlyAiHttpMessage(402)
-    expect(msg).toMatch(/rate limit|402/i)
-    expect(msg).toMatch(/wait|generate again/i)
+  it('keeps 402/429 copy free of provider jargon', () => {
+    const msg402 = friendlyAiHttpMessage(402)
+    const msg429 = friendlyAiHttpMessage(429)
+    expect(msg402).toMatch(/busy/i)
+    expect(msg402).toMatch(/minute|try again/i)
+    expect(msg402).not.toMatch(/402|Pollinations|API key|sequentially/i)
+    expect(msg429).not.toMatch(/429|Pollinations/i)
+  })
+})
+
+describe('waitMsBeforeLook', () => {
+  it('waits longer before looks 2 and 3, short lead-in on retry batches', () => {
+    expect(waitMsBeforeLook(0)).toBe(0)
+    expect(waitMsBeforeLook(1)).toBe(AI_VARIANT_GAP_MS)
+    expect(waitMsBeforeLook(2)).toBe(AI_VARIANT_GAP_MS + AI_VARIANT_GAP_STEP_MS)
+    expect(waitMsBeforeLook(1, { firstOfRetryBatch: true })).toBe(AI_RETRY_LEAD_MS)
   })
 })
 

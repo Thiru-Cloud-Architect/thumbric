@@ -573,6 +573,35 @@ a {
   opacity: 0.72;
 }
 
+.ai-variant-card.is-paused {
+  cursor: default;
+  opacity: 0.9;
+  border-color: rgba(255, 211, 106, 0.4);
+  color: #ffe7b8;
+}
+
+.ai-variant-card.is-paused .ai-variant-placeholder {
+  background:
+    linear-gradient(135deg, rgba(255, 211, 106, 0.16), rgba(192, 132, 252, 0.1)),
+    #16120a;
+}
+
+.ai-variant-card.is-retry {
+  border-color: rgba(255, 127, 138, 0.55);
+  color: #ffd4d8;
+}
+
+.ai-variant-card.is-retry .ai-variant-placeholder {
+  background:
+    linear-gradient(135deg, rgba(255, 127, 138, 0.2), rgba(192, 132, 252, 0.14)),
+    #140c10;
+}
+
+.ai-retry-remaining:disabled {
+  opacity: 0.72;
+  cursor: wait;
+}
+
 .ai-variant-card.is-loading {
   cursor: wait;
   border-color: rgba(255, 127, 138, 0.45);
@@ -3147,20 +3176,10 @@ footer {
     display: none;
   }
 
-  .top-cta-ai {
-    display: inline-flex;
-    padding: 0.5rem 0.85rem;
-    font-size: 0.78rem;
-  }
-
   .top-cta-light {
     display: inline-flex;
     padding: 0.5rem 0.85rem;
     font-size: 0.82rem;
-  }
-
-  .top-cta-secondary {
-    display: none;
   }
 
   .features-grid,
@@ -3566,11 +3585,9 @@ footer {
   color: #1a0c0e;
 }
 
-@media (min-width: 981px) {
-  /* Desktop: AI lives in the nav pill; keep the far-right action as Start free. */
-  .top-cta-ai {
-    display: none;
-  }
+.hero-cta-trial {
+  border-color: rgba(255, 211, 106, 0.45);
+  color: #ffe7b8;
 }
 
 .hero-cta-ai {

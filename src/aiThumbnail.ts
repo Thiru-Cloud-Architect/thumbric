@@ -146,8 +146,14 @@ export type AiGeneratedImage = {
 /** Soft ceiling so hung Pollinations requests still surface an error in the UI. */
 export const AI_IMAGE_TIMEOUT_MS = 45_000
 
-/** Pause between sequential free-tier variants (ms). Longer gap = fewer 402s. */
-export const AI_VARIANT_GAP_MS = 2_200
+/** Pause before look 2 on a fresh batch (ms). Short gaps 402 the free tier. */
+export const AI_VARIANT_GAP_MS = 7_000
+
+/** Extra wait added before each later look (look 3 = gap + step). */
+export const AI_VARIANT_GAP_STEP_MS = 4_000
+
+/** Short lead-in when retrying remaining looks after a cooldown. */
+export const AI_RETRY_LEAD_MS = 1_800
 
 /** How many looks we try to fill in the picker. Sequential, not parallel. */
 export const AI_LOOK_TARGET = 3
@@ -155,8 +161,18 @@ export const AI_LOOK_TARGET = 3
 /** Pollinations URL prompt slice — keep subject at the front so this never chops the scene. */
 export const AI_PROMPT_MAX_CHARS = 880
 
-/** Seconds to wait after a 402 before enabling Generate again. */
+/** Seconds to wait after a 402 before retrying remaining looks. */
 export const AI_RATE_LIMIT_COOLDOWN_SEC = 45
+
+/** Milliseconds to wait before requesting this 0-based look index. */
+export function waitMsBeforeLook(
+  lookIndex: number,
+  options: { firstOfRetryBatch?: boolean } = {},
+) {
+  if (lookIndex <= 0) return 0
+  if (options.firstOfRetryBatch) return AI_RETRY_LEAD_MS
+  return AI_VARIANT_GAP_MS + (lookIndex - 1) * AI_VARIANT_GAP_STEP_MS
+}
 
 /** One-tap scene starters so the AI path is not a blank box. */
 export const AI_SCENE_PRESETS = [
@@ -375,21 +391,18 @@ export class AiHttpError extends Error {
   }
 }
 
-/** Friendlier copy for Pollinations / free-tier HTTP failures. */
+/** Friendlier copy for free-tier HTTP failures — no provider codes in the UI. */
 export function friendlyAiHttpMessage(status: number) {
-  if (status === 402) {
-    return 'Free AI hit its rate limit (402). We stopped extra looks so we do not burn the quota. Use what you have, wait about a minute, then generate again.'
-  }
-  if (status === 429) {
-    return 'Free AI is busy (too many requests). Wait ~30–60s, then try again.'
+  if (status === 402 || status === 429) {
+    return 'Free AI is busy — try again in a minute.'
   }
   if (status === 503 || status === 502) {
-    return 'Free AI service is temporarily unavailable. Try again in a moment.'
+    return 'Free AI is taking a break. Try again in a moment.'
   }
   if (status >= 500) {
-    return `AI image service error (${status}). Try again shortly.`
+    return 'Free AI had a hiccup. Try again shortly.'
   }
-  return `AI image request failed (${status}). Try again in a moment.`
+  return 'Could not create that look. Try again in a moment.'
 }
 
 function isAbortError(error: unknown) {
@@ -399,7 +412,7 @@ function isAbortError(error: unknown) {
   )
 }
 
-function isRateLimitedError(error: unknown) {
+export function isAiRateLimitedError(error: unknown) {
   return error instanceof AiHttpError && (error.status === 402 || error.status === 429)
 }
 
@@ -508,7 +521,7 @@ export async function generateAiThumbnailImage(
           throw error
         }
         // 402/429: do not fan out to other Pollinations models — same free tier.
-        if (isRateLimitedError(error)) {
+        if (isAiRateLimitedError(error)) {
           throw error
         }
         lastError = friendlyNetworkError(error)
@@ -544,8 +557,20 @@ export type AiVariantBatch = {
   results: AiGeneratedImage[]
   /** True when we stopped early because free tier returned 402/429. */
   rateLimited: boolean
-  /** How many looks were requested vs returned. */
+  /** How many looks this call tried to create. */
   requested: number
+  /** Absolute 0-based index of the first look in this batch. */
+  startIndex: number
+}
+
+export type GenerateAiVariantsHooks = {
+  count?: number
+  signal?: AbortSignal
+  /** Continue compositions from this look index (1 when retrying looks 2–3). */
+  startIndex?: number
+  onProgress?: (done: number, total: number) => void
+  onItem?: (item: AiGeneratedImage, index: number) => void
+  onWait?: (lookIndex: number, waitMs: number) => void
 }
 
 /**
@@ -556,21 +581,30 @@ export type AiVariantBatch = {
  */
 export async function generateAiThumbnailVariants(
   options: AiThumbOptions,
-  count = AI_LOOK_TARGET,
-  signal?: AbortSignal,
-  onProgress?: (done: number, total: number) => void,
-  onItem?: (item: AiGeneratedImage, index: number) => void,
+  {
+    count = AI_LOOK_TARGET,
+    signal,
+    startIndex = 0,
+    onProgress,
+    onItem,
+    onWait,
+  }: GenerateAiVariantsHooks = {},
 ): Promise<AiVariantBatch> {
-  const total = Math.max(1, Math.min(AI_LOOK_TARGET, count))
+  const total = Math.max(1, Math.min(AI_LOOK_TARGET - startIndex, count))
   const results: AiGeneratedImage[] = []
   const base = Math.floor(Math.random() * 1_000_000)
   let rateLimited = false
 
   for (let i = 0; i < total; i++) {
     if (signal?.aborted) break
-    if (i > 0) {
+    const lookIndex = startIndex + i
+    const waitMs = waitMsBeforeLook(lookIndex, {
+      firstOfRetryBatch: i === 0 && startIndex > 0,
+    })
+    if (waitMs > 0) {
+      onWait?.(lookIndex, waitMs)
       try {
-        await sleep(AI_VARIANT_GAP_MS, signal)
+        await sleep(waitMs, signal)
       } catch (error) {
         if (isAbortError(error)) break
         throw error
@@ -579,9 +613,9 @@ export async function generateAiThumbnailVariants(
     onProgress?.(i, total)
     try {
       const item = await generateAiThumbnailImage(
-        { ...options, variantIndex: i },
+        { ...options, variantIndex: lookIndex },
         signal,
-        base + i * 9973,
+        base + lookIndex * 9973,
       )
       results.push(item)
       onItem?.(item, results.length - 1)
@@ -593,7 +627,7 @@ export async function generateAiThumbnailVariants(
         }
         throw error
       }
-      if (isRateLimitedError(error)) {
+      if (isAiRateLimitedError(error)) {
         rateLimited = true
         if (results.length === 0) throw friendlyNetworkError(error)
         break
@@ -605,9 +639,9 @@ export async function generateAiThumbnailVariants(
   }
 
   if (results.length === 0) {
-    throw new Error('AI scene generation failed. Try again in a moment.')
+    throw new Error('Could not create those looks. Try again in a moment.')
   }
-  return { results, rateLimited, requested: total }
+  return { results, rateLimited, requested: total, startIndex }
 }
 
 function loadImage(src: string, signal?: AbortSignal) {

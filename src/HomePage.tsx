@@ -11,11 +11,14 @@ import { flushSync } from 'react-dom'
 import { Link } from 'react-router-dom'
 import {
   CREATOR_CLEAN_DOWNLOADS_PER_MONTH,
+  TRIAL_DAYS,
   activateDemoPlan,
+  activateDemoTrial,
   canDownloadClean,
   cleanDownloadsLeft,
   consumeCleanDownload,
   entitlementStatusLabel,
+  isPaid,
   isValidEmail,
   loadEntitlement,
   registerEmail,
@@ -78,6 +81,7 @@ import {
   AI_STYLES,
   generateAiThumbnailVariants,
   getAiStyle,
+  isAiRateLimitedError,
   suggestAiStyle,
   titleFromScene,
   type AiGeneratedImage,
@@ -86,12 +90,14 @@ import {
 import {
   loadSimpleUser,
   registerSimpleUser,
+  simpleAuthIsDeviceOnly,
   type SimpleUser,
 } from './simpleAuth'
 import { DOWNLOAD_PREFIX, PRODUCT_NAME_FULL, UI_BUILD } from './brand'
 import {
   HASH_NAV_EVENT,
   focusHashTarget,
+  goToHash,
   normalizeHash,
   scrollToElementId,
   type HashNavDetail,
@@ -129,7 +135,7 @@ export default function HomePage() {
   const [photoUrl, setPhotoUrl] = useState('')
   const [status, setStatus] = useState('Start with platform and look — preview starts clean with no stickers.')
   const [entitlement, setEntitlement] = useState<Entitlement>(() => loadEntitlement())
-  const [modal, setModal] = useState<'none' | 'register' | 'pay' | 'login'>('none')
+  const [modal, setModal] = useState<'none' | 'register' | 'pay' | 'login' | 'trial'>('none')
   const [emailDraft, setEmailDraft] = useState('')
   const [nameDraft, setNameDraft] = useState('')
   const [simpleUser, setSimpleUser] = useState<SimpleUser | null>(() => loadSimpleUser())
@@ -142,6 +148,7 @@ export default function HomePage() {
   const [aiSlotCount, setAiSlotCount] = useState(3)
   const [aiProgressDone, setAiProgressDone] = useState(0)
   const [aiCanFetchMore, setAiCanFetchMore] = useState(false)
+  const [aiAwaitingRetry, setAiAwaitingRetry] = useState(false)
   const [aiStyleTip, setAiStyleTip] = useState<AiStyleId | null>(null)
   /** Local feedback beside Generate — Download status alone is easy to miss. */
   const [aiStatus, setAiStatus] = useState<{ kind: 'idle' | 'busy' | 'ok' | 'err'; text: string }>({
@@ -306,6 +313,20 @@ export default function HomePage() {
     const timer = window.setTimeout(() => setAiCooldownSec((value) => Math.max(0, value - 1)), 1000)
     return () => window.clearTimeout(timer)
   }, [aiCooldownSec])
+
+  const prevCooldownRef = useRef(0)
+  useEffect(() => {
+    const wasCooling = prevCooldownRef.current > 0
+    prevCooldownRef.current = aiCooldownSec
+    if (!wasCooling || aiCooldownSec !== 0 || aiBusy) return
+    if (!aiAwaitingRetry || aiVariants.length === 0 || aiVariants.length >= AI_LOOK_TARGET) return
+    setAiCanFetchMore(true)
+    setAiStatus({
+      kind: 'ok',
+      text: 'Ready — retry remaining looks to fill the empty slots.',
+    })
+    setStatus('Ready — retry remaining looks to fill the empty slots.')
+  }, [aiCooldownSec, aiBusy, aiAwaitingRetry, aiVariants.length])
 
   function applyTemplate(id: TemplateId) {
     const template = THUMB_TEMPLATES.find((item) => item.id === id)
@@ -560,6 +581,7 @@ export default function HomePage() {
     aiAbortRef.current = controller
     setAiBusy(true)
     setAiCanFetchMore(false)
+    setAiAwaitingRetry(false)
     setAiSlotCount(AI_LOOK_TARGET)
     setAiProgressDone(prior.length)
     setEditorMode('ai')
@@ -574,8 +596,8 @@ export default function HomePage() {
 
     const busyMsg =
       mode === 'more'
-        ? `Painting more looks… ${prior.length + 1}–${AI_LOOK_TARGET}`
-        : 'Painting look 1 of 3 — first one lands on the canvas, then we fill the rest.'
+        ? `Creating look ${prior.length + 1} of ${AI_LOOK_TARGET}…`
+        : 'Creating look 1 of 3 — it will land on the canvas first.'
     setAiStatus({ kind: 'busy', text: busyMsg })
     setStatus(busyMsg)
 
@@ -588,31 +610,41 @@ export default function HomePage() {
           hint: aiHint,
           styleId,
         },
-        wantCount,
-        controller.signal,
-        (done, total) => {
-          if (runId !== aiRunIdRef.current) return
-          setAiProgressDone(prior.length + done)
-          const nextIndex = prior.length + Math.min(done + 1, total)
-          const text =
-            done >= total
-              ? `Got ${prior.length + total} look${prior.length + total === 1 ? '' : 's'} — pick one below.`
-              : `Painting look ${nextIndex} of ${AI_LOOK_TARGET}…`
-          setAiStatus({ kind: 'busy', text })
-          setStatus(text)
-        },
-        (item, index) => {
-          if (runId !== aiRunIdRef.current) return
-          const slot = prior.length + index
-          setAiVariants((current) => {
-            const next = [...current]
-            next[slot] = item
-            return next.slice(0, AI_LOOK_TARGET)
-          })
-          if (mode === 'fresh' && index === 0) {
-            applyAiLook(item, 0, AI_LOOK_TARGET)
-            if (!title.trim()) setTitle(titleFromScene(aiHint, title))
-          }
+        {
+          count: wantCount,
+          signal: controller.signal,
+          startIndex: prior.length,
+          onProgress: (done, total) => {
+            if (runId !== aiRunIdRef.current) return
+            setAiProgressDone(prior.length + done)
+            const nextIndex = prior.length + Math.min(done + 1, total)
+            const text =
+              done >= total
+                ? `Got ${prior.length + total} look${prior.length + total === 1 ? '' : 's'} — pick one below.`
+                : `Creating look ${nextIndex} of ${AI_LOOK_TARGET}…`
+            setAiStatus({ kind: 'busy', text })
+            setStatus(text)
+          },
+          onWait: (lookIndex) => {
+            if (runId !== aiRunIdRef.current) return
+            setAiProgressDone(lookIndex)
+            const text = `Look ${lookIndex} is ready. Getting look ${lookIndex + 1} of ${AI_LOOK_TARGET}…`
+            setAiStatus({ kind: 'busy', text })
+            setStatus(text)
+          },
+          onItem: (item, index) => {
+            if (runId !== aiRunIdRef.current) return
+            const slot = prior.length + index
+            setAiVariants((current) => {
+              const next = [...current]
+              next[slot] = item
+              return next.slice(0, AI_LOOK_TARGET)
+            })
+            if (mode === 'fresh' && index === 0) {
+              applyAiLook(item, 0, AI_LOOK_TARGET)
+              if (!title.trim()) setTitle(titleFromScene(aiHint, title))
+            }
+          },
         },
       )
       if (runId !== aiRunIdRef.current) return
@@ -625,19 +657,21 @@ export default function HomePage() {
       const chosen = merged[pickIndex] ?? merged[0]
       if (chosen) applyAiLook(chosen, pickIndex, merged.length)
 
-      const canMore = merged.length < AI_LOOK_TARGET && !batch.rateLimited
+      const missing = AI_LOOK_TARGET - merged.length
+      const canMore = missing > 0 && !batch.rateLimited
       setAiCanFetchMore(canMore)
+      setAiAwaitingRetry(batch.rateLimited && missing > 0)
 
       let okMsg =
         merged.length > 1
           ? `Pick 1 of ${merged.length} — tap a look to put it on the canvas.`
-          : 'Look 1 is on the canvas. Get more looks if you want variety.'
-      if (batch.rateLimited) {
-        okMsg = `Got ${merged.length} look${merged.length === 1 ? '' : 's'} before free AI rate-limited us. Use what you have, then wait about a minute.`
+          : 'Look 1 is on the canvas.'
+      if (batch.rateLimited && missing > 0) {
+        okMsg = `Got ${merged.length} look${merged.length === 1 ? '' : 's'}. Free AI is busy — retry remaining looks in about a minute.`
         setAiCanFetchMore(false)
         setAiCooldownSec(AI_RATE_LIMIT_COOLDOWN_SEC)
       } else if (canMore) {
-        okMsg += ' Tap “Get more looks” for up to 3 total.'
+        okMsg += ' Retry remaining looks for up to 3 total.'
       }
       setAiStatus({ kind: 'ok', text: okMsg })
       setStatus(okMsg)
@@ -647,16 +681,18 @@ export default function HomePage() {
         setAiStatus({ kind: 'idle', text: '' })
         return
       }
-      const message = error instanceof Error ? error.message : 'AI scene generation failed.'
+      const message = error instanceof Error ? error.message : 'Could not create those looks.'
+      const rateLimited = isAiRateLimitedError(error) || /busy|try again in a minute/i.test(message)
       setAiStatus({ kind: 'err', text: message })
       setStatus(message)
-      if (/402|rate limit/i.test(message)) {
+      if (rateLimited) {
         setAiCooldownSec(AI_RATE_LIMIT_COOLDOWN_SEC)
+        setAiAwaitingRetry(prior.length > 0 && prior.length < AI_LOOK_TARGET)
       }
-      if (mode === 'fresh') {
+      if (mode === 'fresh' && prior.length === 0) {
         setAiProgressDone(0)
       }
-      setAiCanFetchMore(prior.length > 0 && prior.length < AI_LOOK_TARGET)
+      setAiCanFetchMore(prior.length > 0 && prior.length < AI_LOOK_TARGET && !rateLimited)
     } finally {
       if (runId === aiRunIdRef.current) {
         setAiBusy(false)
@@ -759,6 +795,39 @@ export default function HomePage() {
     )
   }
 
+  function openEditorAi() {
+    goToHash('editor-ai')
+  }
+
+  function startTrialFlow() {
+    if (isPaid(entitlement)) {
+      const label = entitlement.trial
+        ? `Your ${TRIAL_DAYS}-day trial is already active in this browser.`
+        : 'Clean exports are already unlocked in this browser.'
+      setStatus(label)
+      openEditorAi()
+      return
+    }
+    setEmailDraft(entitlement.email || simpleUser?.email || '')
+    setModal('trial')
+  }
+
+  function onStartTrial(event: FormEvent) {
+    event.preventDefault()
+    if (!isValidEmail(emailDraft)) {
+      setStatus('Enter a valid email to start the trial on this device.')
+      return
+    }
+    const registered = entitlement.email ? entitlement : registerEmail(emailDraft)
+    const next = activateDemoTrial(registered)
+    setEntitlement(next)
+    setModal('none')
+    setStatus(
+      `${TRIAL_DAYS}-day trial started on this device. Clean exports are unlocked — create a thumbnail.`,
+    )
+    openEditorAi()
+  }
+
   return (
     <div className="page">
       <SiteHeader
@@ -771,12 +840,7 @@ export default function HomePage() {
       />
 
       <main id="top" className="page-main">
-        <HeroFlashy
-          onQuickIdea={() => {
-            applyQuickIdea()
-            document.getElementById('editor')?.scrollIntoView({ behavior: 'smooth' })
-          }}
-        />
+        <HeroFlashy onStartTrial={startTrialFlow} />
         <PlushInfoSection />
         <LazyReveal staggerMs={75} variant="soft-rise">
           <StatsStrip />
@@ -927,9 +991,8 @@ export default function HomePage() {
                 <div>
                   <p className="photo-title">AI Thumbnail creator</p>
                   <p className="photo-help">
-                    Describe the visual scene. Free Pollinations paints a full-bleed backdrop — we
-                    start look 1 immediately, then fill up to 3 one at a time so we do not burn the
-                    free tier.
+                    Describe the visual scene. Free AI paints a full-bleed backdrop — look 1 lands
+                    first, then we fill looks 2 and 3 with a short pause so free AI stays happy.
                   </p>
                   {photoName ? <p className="photo-name">Selected: {photoName}</p> : null}
                 </div>
@@ -990,9 +1053,9 @@ export default function HomePage() {
                   </p>
                 ) : (
                   <p className="ai-honesty-note">
-                    Free Pollinations has no API key and will rate-limit (402) if we fire looks in
-                    parallel — so we paint sequentially. Animals / kids work best with{' '}
-                    <strong>Kids / fun</strong> or <strong>Cartoon</strong>.
+                    Free AI is shared and sometimes busy. If extra looks pause, wait a minute and tap
+                    retry remaining — animals and kids work best with <strong>Kids / fun</strong> or{' '}
+                    <strong>Cartoon</strong>.
                   </p>
                 )}
                 <div className="photo-actions">
@@ -1005,17 +1068,24 @@ export default function HomePage() {
                   >
                     {aiBusy
                       ? 'Creating looks…'
-                      : aiCooldownSec > 0
-                        ? `Wait ${aiCooldownSec}s`
+                      : aiCooldownSec > 0 && aiVariants.length === 0
+                        ? `Try again in ${aiCooldownSec}s`
                         : 'Generate 3 AI looks'}
                   </button>
-                  {aiCanFetchMore && !aiBusy && aiCooldownSec === 0 ? (
+                  {aiAwaitingRetry && aiCooldownSec > 0 && !aiBusy ? (
+                    <button type="button" className="chip solid ai-retry-remaining" disabled>
+                      Retry remaining in {aiCooldownSec}s
+                    </button>
+                  ) : null}
+                  {(aiCanFetchMore || (aiAwaitingRetry && aiCooldownSec === 0)) &&
+                  !aiBusy &&
+                  aiCooldownSec === 0 ? (
                     <button
                       type="button"
-                      className="chip"
+                      className="chip solid ai-retry-remaining"
                       onClick={() => void runAiThumbnail('more')}
                     >
-                      Get remaining looks
+                      Retry remaining looks
                     </button>
                   ) : null}
                   {aiBusy ? (
@@ -1035,11 +1105,19 @@ export default function HomePage() {
                 <div className="ai-picker-block">
                   <p className="ai-picker-label">
                     {aiBusy
-                      ? `Painting looks… ${aiProgressDone}/${aiSlotCount}`
+                      ? `Creating looks… ${aiProgressDone}/${aiSlotCount}`
                       : aiVariants.length > 0
-                        ? `Pick 1 of ${aiVariants.length}${aiVariants.length < AI_LOOK_TARGET ? ` · ${AI_LOOK_TARGET - aiVariants.length} still open` : ''}`
+                        ? `Pick 1 of ${aiVariants.length}${
+                            aiVariants.length < AI_LOOK_TARGET
+                              ? aiCooldownSec > 0
+                                ? ` · remaining in ${aiCooldownSec}s`
+                                : ' · remaining looks can retry'
+                              : ''
+                          }`
                         : aiStatus.kind === 'err'
-                          ? 'No looks yet — wait out the cooldown, then try again'
+                          ? aiCooldownSec > 0
+                            ? `Free AI is busy — try again in ${aiCooldownSec}s`
+                            : 'No looks yet — try again in a minute'
                           : 'Your 3 AI looks appear here — look 1 first, then 2 and 3'}
                   </p>
                   <div className="ai-variant-picker" role="listbox" aria-label="Pick one of up to 3 AI looks">
@@ -1063,6 +1141,31 @@ export default function HomePage() {
                       const loadingThis = aiBusy && index === aiProgressDone
                       const waiting = aiBusy && index > aiProgressDone
                       const failedEmpty = !aiBusy && aiStatus.kind === 'err' && aiVariants.length === 0
+                      const paused =
+                        !aiBusy &&
+                        aiAwaitingRetry &&
+                        aiCooldownSec > 0 &&
+                        index >= aiVariants.length
+                      const retryReady =
+                        !aiBusy &&
+                        aiCooldownSec === 0 &&
+                        (aiCanFetchMore || aiAwaitingRetry) &&
+                        index >= aiVariants.length
+                      if (retryReady) {
+                        return (
+                          <button
+                            key={`slot-${index}`}
+                            type="button"
+                            className="ai-variant-card is-retry"
+                            onClick={() => void runAiThumbnail('more')}
+                          >
+                            <div className="ai-variant-placeholder">
+                              <span>Tap to retry</span>
+                            </div>
+                            <span>Look {index + 1}</span>
+                          </button>
+                        )
+                      }
                       return (
                         <div
                           key={`slot-${index}`}
@@ -1071,26 +1174,35 @@ export default function HomePage() {
                               ? 'ai-variant-card is-loading'
                               : failedEmpty
                                 ? 'ai-variant-card is-error'
-                                : 'ai-variant-card is-empty'
+                                : paused
+                                  ? 'ai-variant-card is-paused'
+                                  : 'ai-variant-card is-empty'
                           }
-                          aria-hidden={waiting || (!aiBusy && !failedEmpty)}
                         >
                           <div className="ai-variant-placeholder">
                             {loadingThis ? (
                               <>
                                 <span className="ai-inline-spinner" aria-hidden />
-                                <span>Painting…</span>
+                                <span>Creating…</span>
                               </>
                             ) : failedEmpty ? (
-                              <span>Failed</span>
+                              <span>Try again</span>
+                            ) : paused ? (
+                              <span>Retry in {aiCooldownSec}s</span>
                             ) : waiting ? (
-                              <span>Queued</span>
+                              <span>Next</span>
                             ) : (
                               <span>Look {index + 1}</span>
                             )}
                           </div>
                           <span>
-                            {loadingThis ? 'Working' : failedEmpty ? 'Error' : `Slot ${index + 1}`}
+                            {loadingThis
+                              ? 'Working'
+                              : failedEmpty
+                                ? 'Paused'
+                                : paused
+                                  ? 'Paused'
+                                  : `Look ${index + 1}`}
                           </span>
                         </div>
                       )
@@ -1579,7 +1691,7 @@ export default function HomePage() {
             </div>
             <p className="preview-hint">
               {aiBusy
-                ? 'AI is painting — look 1 will snap onto this canvas first.'
+                ? 'Creating looks — the first one lands on this canvas.'
                 : 'Drag the title or stickers. Drop a JPG/PNG onto the canvas to replace the photo.'}
             </p>
           </div>
@@ -1614,13 +1726,42 @@ export default function HomePage() {
             aria-labelledby="modal-title"
             onClick={(event) => event.stopPropagation()}
           >
-            {modal === 'login' ? (
+            {modal === 'trial' ? (
+              <form onSubmit={onStartTrial}>
+                <h2 id="modal-title">Start {TRIAL_DAYS}-day trial</h2>
+                <p>
+                  Unlock Creator clean exports in this browser for {TRIAL_DAYS} days. No card and no
+                  password — we remember your email on this device. Payments come later.
+                </p>
+                <label>
+                  Email
+                  <input
+                    type="email"
+                    value={emailDraft}
+                    onChange={(event) => setEmailDraft(event.target.value)}
+                    placeholder="you@email.com"
+                    required
+                    autoFocus
+                  />
+                </label>
+                <div className="actions">
+                  <button type="submit" className="primary">
+                    Start {TRIAL_DAYS}-day trial
+                  </button>
+                  <button type="button" className="chip" onClick={() => setModal('none')}>
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            ) : modal === 'login' ? (
               <form onSubmit={onSimpleLogin}>
                 <h2 id="modal-title">Sign in</h2>
                 <p>
-                  Light account only — we store your name and email on this device
-                  {import.meta.env.VITE_API_BASE ? ' and sync to the Thumbric backend JSON.' : '.'} No
-                  password. Full auth comes later when traffic grows.
+                  Not a full account yet. We only save your name and email on this device
+                  {simpleAuthIsDeviceOnly()
+                    ? ' — nothing is sent to a Thumbric server.'
+                    : ', and optionally sync the same details to our backend when it is connected.'}{' '}
+                  No password. You can keep using the editor without this.
                 </p>
                 <label>
                   Name

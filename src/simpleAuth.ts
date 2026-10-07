@@ -1,4 +1,5 @@
-const LOCAL_KEY = 'thumbric-simple-user-v1'
+export const SIMPLE_USER_STORAGE_KEY = 'thumbric-simple-user-v1'
+const LOCAL_KEY = SIMPLE_USER_STORAGE_KEY
 
 export type SimpleUser = {
   name: string
@@ -9,6 +10,11 @@ export type SimpleUser = {
 function apiBase() {
   const fromEnv = import.meta.env.VITE_API_BASE as string | undefined
   return (fromEnv || '').replace(/\/$/, '')
+}
+
+/** Pages deploys usually omit VITE_API_BASE — Sign in is localStorage only. */
+export function simpleAuthIsDeviceOnly() {
+  return !apiBase()
 }
 
 export function loadSimpleUser(): SimpleUser | null {

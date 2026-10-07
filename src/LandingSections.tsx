@@ -24,7 +24,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'How does the AI thumbnail work?',
-    a: 'Tap “Try AI Thumbnail creator” in the nav or hero. Describe the visual scene, pick a style, and generate — we paint up to 3 looks one after another (free Pollinations). Pick a favorite, then finish the title on the live canvas. It does not paste a YouTube URL or analyze your video file.',
+    a: 'Tap “Try AI Thumbnail creator” in the hero. Describe the visual scene, pick a style, and generate up to 3 looks. Pick a favorite, then finish the title on the live canvas. It does not paste a YouTube URL or analyze your video file.',
   },
   {
     q: 'How long does it take?',
@@ -36,7 +36,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'Do I need an account?',
-    a: 'No signup for unlimited preview downloads. Register with email, then pick Creator or Pro when you need clean PNGs without the on-photo mark.',
+    a: 'No signup for unlimited preview downloads. Header Sign in only remembers your name and email on this device — it is not a server account yet. Start the 7-day trial when you want clean PNGs without the on-photo mark.',
   },
   {
     q: 'Can I use my face in the thumbnail?',
@@ -44,8 +44,8 @@ const FAQ_ITEMS = [
   },
 ]
 
-type LandingProps = {
-  onQuickIdea: () => void
+type HeroFlashyProps = {
+  onStartTrial: () => void
 }
 
 function HeroThumbTile({ thumb, eager }: { thumb: HeroThumb; eager?: boolean }) {
@@ -96,7 +96,7 @@ function ThumbStrip({
   )
 }
 
-export function HeroFlashy({ onQuickIdea }: LandingProps) {
+export function HeroFlashy({ onStartTrial }: HeroFlashyProps) {
   return (
     <section className="hero-flashy" aria-labelledby="hero-title">
       <div className="hero-mosaic-wrap" aria-hidden>
@@ -138,8 +138,8 @@ export function HeroFlashy({ onQuickIdea }: LandingProps) {
           >
             Open photo editor
           </a>
-          <button type="button" className="btn-outline hero-cta-tertiary" onClick={onQuickIdea}>
-            Shuffle Quick idea
+          <button type="button" className="btn-outline hero-cta-tertiary hero-cta-trial" onClick={onStartTrial}>
+            Start 7-day trial
           </button>
         </div>
         <p className="hero-fine">

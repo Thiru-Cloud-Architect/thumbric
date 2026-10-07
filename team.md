@@ -16,9 +16,9 @@ When someone says `@team.md can you help here`, treat these as the open threads:
 
 | Thread | State |
 |--------|--------|
-| Features AI-first section | **Live** — stamp `UI_BUILD=2026.10.07-bb`. Banner: “Describe the scene…”, Works now / Not yet, `#editor-ai` deep link. |
-| Selling-point CTA | **Live** — nav pill + sticky header button + hero primary: “Try AI Thumbnail creator” → `#editor-ai`. Careers is footer-only. |
-| Editor AI + classic | **Live** — dual path (AI vs Templates/upload), Create / Title / Finish tabs, 3 sequential looks with composition variants, 402 cooldown, premium canvas chrome. |
+| Features AI-first section | **Live** — stamp `UI_BUILD=2026.10.07-cc`. Banner: “Describe the scene…”, Works now / Not yet, `#editor-ai` deep link. |
+| Selling-point CTA | **Live** — hero primary “Try AI Thumbnail creator” → `#editor-ai`; header **Start free** opens AI editor; hero **Start 7-day trial** replaces Shuffle. Careers is footer-only. Nav pill removed. |
+| Editor AI + classic | **Live** — dual path (AI vs Templates/upload), Create / Title / Finish tabs, sequential looks with backoff + retry remaining after busy cooldown. No 402/Pollinations jargon in the main UI. |
 | Title drag | **Fixed** — `clampTextPosition` no longer locks Y to the layout text column (~55% on photo-full); titles can sit in the upper third. |
 | Title font & size | **Restored on Title tab** — font picker + px size (was only on Export/polish after AI UX refactor). |
 | Accents | **Live** — coral→soft magenta (`#ff7f8a` / `#d4a6f0`); purple peeks in gradients, coral stays primary. |
