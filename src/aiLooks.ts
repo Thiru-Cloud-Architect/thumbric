@@ -30,26 +30,26 @@ export const LOCAL_LOOK_RECIPES: LocalLookRecipe[] = [
   {
     id: 'hero',
     label: 'Hero',
-    blurb: 'Tight center crop',
-    crop: { sx: 0.1, sy: 0.06, sw: 0.8, sh: 0.88 },
-    grade: { contrast: 1.08, brightness: 1.02, saturate: 1.12 },
-    vignette: 0.22,
+    blurb: 'Mid-frame subject',
+    crop: { sx: 0.06, sy: 0.22, sw: 0.88, sh: 0.52 },
+    grade: { contrast: 1.1, brightness: 1.03, saturate: 1.14 },
+    vignette: 0.2,
   },
   {
     id: 'warm',
     label: 'Warm',
-    blurb: 'Left frame, golden grade',
-    crop: { sx: 0, sy: 0.08, sw: 0.62, sh: 0.86 },
+    blurb: 'Top frame, golden grade',
+    crop: { sx: 0, sy: 0, sw: 0.78, sh: 0.48 },
     grade: { contrast: 1.14, brightness: 1.06, saturate: 1.28, sepia: 0.22 },
-    vignette: 0.18,
+    vignette: 0.16,
   },
   {
     id: 'cinematic',
     label: 'Cinematic',
-    blurb: 'Right frame, cool contrast',
-    crop: { sx: 0.38, sy: 0.04, sw: 0.62, sh: 0.9 },
+    blurb: 'Lower frame, cool contrast',
+    crop: { sx: 0.18, sy: 0.5, sw: 0.82, sh: 0.5 },
     grade: { contrast: 1.28, brightness: 0.9, saturate: 0.88, hueRotate: 196 },
-    vignette: 0.38,
+    vignette: 0.36,
   },
 ]
 
@@ -161,8 +161,9 @@ export async function fillLooksToTarget(
   const source = results[0]
   if (!source) return results
 
-  const filled = [...results]
-  const startRecipe = options.keepOriginal === false ? 0 : 1
+  const keepOriginal = options.keepOriginal === true
+  const filled: AiGeneratedImage[] = keepOriginal ? [...results] : []
+  const startRecipe = keepOriginal ? 1 : 0
   for (let i = startRecipe; filled.length < target && i < LOCAL_LOOK_RECIPES.length; i++) {
     const recipe = LOCAL_LOOK_RECIPES[i]!
     try {
@@ -175,9 +176,18 @@ export async function fillLooksToTarget(
         styleId: options.styleId,
         lookLabel: recipe.label,
         derived: true,
+        source: 'grade',
       })
     } catch {
       // Canvas/toBlob can fail in tests — skip rather than empty the picker.
+    }
+  }
+  if (filled.length === 0) return results
+  if (!keepOriginal && source.objectUrl && filled.every((item) => item.objectUrl !== source.objectUrl)) {
+    try {
+      URL.revokeObjectURL(source.objectUrl)
+    } catch {
+      /* ignore */
     }
   }
   return filled

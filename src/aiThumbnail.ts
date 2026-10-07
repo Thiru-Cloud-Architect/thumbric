@@ -1,5 +1,6 @@
 import { apiBaseUrl, apiLookBudget, clientFalKey, resolveAiBackend } from './aiConfig'
 import { fillLooksToTarget } from './aiLooks'
+import { composeStudioLooks } from './studioLooks'
 import type { Niche } from './niches'
 import type { Platform } from './platforms'
 
@@ -147,6 +148,8 @@ export type AiGeneratedImage = {
   lookLabel?: string
   /** True when this look is a crop/grade of another look, not a new model call. */
   derived?: boolean
+  /** Where the pixels came from — never dump provider names in the UI. */
+  source?: 'model' | 'grade' | 'studio'
 }
 
 /** Soft ceiling so hung Pollinations requests still surface an error in the UI. */
@@ -448,16 +451,25 @@ export function isAiRateLimitedError(error: unknown) {
   return error instanceof AiHttpError && (error.status === 402 || error.status === 429)
 }
 
-function friendlyNetworkError(error: unknown): Error {
+/** Friendlier copy for thrown errors — no provider names, HTTP codes, or CORS jargon. */
+export function userFacingAiError(error: unknown): Error {
   if (isAbortError(error)) return error instanceof Error ? error : new DOMException('Aborted', 'AbortError')
   if (error instanceof AiHttpError) return error
   const message = error instanceof Error ? error.message : String(error)
-  if (/failed to fetch|networkerror|load failed|network request failed/i.test(message)) {
-    return new Error(
-      'Could not reach the free AI image service (network/CORS/ad-block). Disable blockers for this site or try again.',
-    )
+  if (/failed to fetch|networkerror|load failed|network request failed|cors|ad-?block/i.test(message)) {
+    return new Error('Could not reach free AI right now. Studio looks are ready to edit.')
   }
-  return error instanceof Error ? error : new Error(message || 'AI scene generation failed.')
+  if (/not configured|no premium/i.test(message)) {
+    return new Error('Could not create those looks. Try again in a moment.')
+  }
+  if (/decode|taint|blob/i.test(message)) {
+    return new Error('Could not open that look. Try Generate again.')
+  }
+  return error instanceof Error ? error : new Error(message || 'Could not create those looks. Try again in a moment.')
+}
+
+function friendlyNetworkError(error: unknown): Error {
+  return userFacingAiError(error)
 }
 
 function mergeAbortSignals(userSignal: AbortSignal | undefined, timeoutMs: number) {
@@ -515,7 +527,11 @@ function sleep(ms: number, signal?: AbortSignal) {
 }
 
 async function fetchImageBlob(url: string, signal: AbortSignal) {
-  const response = await fetch(url, { signal, mode: 'cors' })
+  const response = await fetch(url, {
+    signal,
+    mode: 'cors',
+    headers: { Accept: 'image/*' },
+  })
   if (!response.ok) {
     throw new AiHttpError(response.status, friendlyAiHttpMessage(response.status), response.status !== 402)
   }
@@ -558,7 +574,7 @@ async function generateViaWorker(
     body: JSON.stringify({ prompt, width, height, seed, model: FAL_MODEL }),
   })
   if (response.status === 501 || response.status === 404) {
-    throw new Error('Studio AI is not configured on the Worker yet.')
+    throw new Error('premium-unconfigured')
   }
   if (!response.ok) {
     throw new AiHttpError(response.status, friendlyAiHttpMessage(response.status), true)
@@ -627,7 +643,7 @@ async function generatePremiumBlob(
   if (backend.kind === 'fal-client') {
     return generateViaFalClient(prompt, width, height, seed, signal)
   }
-  throw new Error('No premium AI backend configured.')
+  throw new Error('premium-unconfigured')
 }
 
 export async function generateAiThumbnailImage(
@@ -651,7 +667,7 @@ export async function generateAiThumbnailImage(
         const blob = await generatePremiumBlob(prompt, width, height, seed, gate.signal)
         const objectUrl = URL.createObjectURL(blob)
         const image = await loadImage(objectUrl, gate.signal)
-        return { image, objectUrl, prompt, seed, styleId, lookLabel: 'Studio' }
+        return { image, objectUrl, prompt, seed, styleId, lookLabel: 'Hero', source: 'model' }
       } catch (error) {
         if (isAbortError(error) || (error instanceof DOMException && error.name === 'TimeoutError')) {
           throw error
@@ -667,7 +683,7 @@ export async function generateAiThumbnailImage(
         const blob = await fetchImageBlob(candidate.url, gate.signal)
         const objectUrl = URL.createObjectURL(blob)
         const image = await loadImage(objectUrl, gate.signal)
-        return { image, objectUrl, prompt, seed, styleId, lookLabel: 'Hero' }
+        return { image, objectUrl, prompt, seed, styleId, lookLabel: 'Hero', source: 'model' }
       } catch (error) {
         if (isAbortError(error) || (error instanceof DOMException && error.name === 'TimeoutError')) {
           throw error
@@ -713,6 +729,8 @@ export type AiVariantBatch = {
   requested: number
   /** Absolute 0-based index of the first look in this batch. */
   startIndex: number
+  /** True when pixels came from local studio stills, not a model. */
+  usedStudioFallback: boolean
 }
 
 export type GenerateAiVariantsHooks = {
@@ -804,13 +822,14 @@ export async function generateAiThumbnailVariants(
     prompt: results[0]!.prompt,
     seed: results[0]!.seed,
     styleId: results[0]!.styleId,
+    // One model image (typical free path) is restyled into 3 framed looks so a
+    // collage/grid never sits on the canvas as "Look 1".
+    keepOriginal: results.length >= AI_LOOK_TARGET,
   })
-  if (filled.length > results.length) {
-    for (let i = results.length; i < filled.length; i++) {
-      onItem?.(filled[i]!, i)
-    }
-    onProgress?.(filled.length, AI_LOOK_TARGET)
+  for (let i = 0; i < filled.length; i++) {
+    onItem?.(filled[i]!, i)
   }
+  onProgress?.(filled.length, AI_LOOK_TARGET)
 
   return { results: filled, rateLimited, requested: total, startIndex }
 }
