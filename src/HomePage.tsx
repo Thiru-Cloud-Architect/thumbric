@@ -87,6 +87,16 @@ import {
   type AiGeneratedImage,
   type AiStyleId,
 } from './aiThumbnail'
+import { resolveAiBackend } from './aiConfig'
+import {
+  TITLE_FILL_PRESETS,
+  TITLE_OUTLINE_AUTO,
+  TITLE_OUTLINE_MAX,
+  TITLE_OUTLINE_MIN,
+  TITLE_POSITION_PRESETS,
+  clampOutlineWidth,
+  type TitleAlign,
+} from './titleKit'
 import {
   loadSimpleUser,
   registerSimpleUser,
@@ -122,6 +132,12 @@ export default function HomePage() {
   const [textPos, setTextPos] = useState(() =>
     defaultTextPosition(getPlatform('youtube'), 'photo-left'),
   )
+  const [titleAlign, setTitleAlign] = useState<TitleAlign>('left')
+  const [titleLine2, setTitleLine2] = useState('')
+  const [titleFill, setTitleFill] = useState('')
+  const [titleOutlineWidth, setTitleOutlineWidth] = useState(TITLE_OUTLINE_AUTO)
+  const [titleOutlineColor, setTitleOutlineColor] = useState('#000000')
+  const [titleShadow, setTitleShadow] = useState(true)
   const [title, setTitle] = useState('')
   const [tag, setTag] = useState('')
   const [query, setQuery] = useState('')
@@ -198,6 +214,12 @@ export default function HomePage() {
       titleFontSizePx,
       textStyleId,
       textPos,
+      titleAlign,
+      titleLine2,
+      titleFill,
+      titleOutlineWidth,
+      titleOutlineColor,
+      titleShadow,
       showSafeZones: false,
       activeStickerIndex: activeStickerIndex ?? undefined,
       highlightText: textSelected,
@@ -216,6 +238,12 @@ export default function HomePage() {
       titleFontSizePx,
       textStyleId,
       textPos,
+      titleAlign,
+      titleLine2,
+      titleFill,
+      titleOutlineWidth,
+      titleOutlineColor,
+      titleShadow,
       activeStickerIndex,
       textSelected,
       dragging,
@@ -337,6 +365,8 @@ export default function HomePage() {
     setTextStyleId(template.textStyleId)
     setTitleFontSizePx(template.titleFontSizePx)
     setStickers([])
+    setTitleAlign(template.titleAlign ?? 'left')
+    if (template.sampleLine2 !== undefined) setTitleLine2(template.sampleLine2)
     setTextPos(defaultTextPosition(getPlatform(template.platform), template.layout))
     setActiveStickerIndex(null)
     setTextSelected(false)
@@ -346,6 +376,18 @@ export default function HomePage() {
     if (!title.trim()) setTitle(template.sampleTitle)
     if (!tag.trim()) setTag(template.sampleTag)
     setStatus(`Template “${template.label}” applied. Drop a photo or drag the title on the preview.`)
+  }
+
+  function applyTitlePreset(id: string) {
+    const preset = TITLE_POSITION_PRESETS.find((item) => item.id === id)
+    if (!preset) return
+    setTitleAlign(preset.align)
+    setTextPos({ x: preset.x, y: preset.y })
+    if (layout !== 'photo-full' && platform.orientation === 'horizontal') {
+      setLayout('photo-full')
+    }
+    setTextSelected(true)
+    setStatus(`Title ${preset.label.toLowerCase()} — drag to fine-tune.`)
   }
 
   function applyQuickIdea() {
@@ -558,7 +600,7 @@ export default function HomePage() {
   }
 
   async function runAiThumbnail(mode: 'fresh' | 'more' = 'fresh') {
-    if (aiBusy || aiCooldownSec > 0) return
+    if (aiBusy) return
 
     let styleId = aiStyleId
     const tip = suggestAiStyle(aiHint, aiStyleId)
@@ -597,7 +639,7 @@ export default function HomePage() {
     const busyMsg =
       mode === 'more'
         ? `Creating look ${prior.length + 1} of ${AI_LOOK_TARGET}…`
-        : 'Creating look 1 of 3 — it will land on the canvas first.'
+        : 'Creating 3 looks — the first lands on the canvas.'
     setAiStatus({ kind: 'busy', text: busyMsg })
     setStatus(busyMsg)
 
@@ -620,7 +662,7 @@ export default function HomePage() {
             const nextIndex = prior.length + Math.min(done + 1, total)
             const text =
               done >= total
-                ? `Got ${prior.length + total} look${prior.length + total === 1 ? '' : 's'} — pick one below.`
+                ? 'Looks are ready — pick one below.'
                 : `Creating look ${nextIndex} of ${AI_LOOK_TARGET}…`
             setAiStatus({ kind: 'busy', text })
             setStatus(text)
@@ -658,21 +700,14 @@ export default function HomePage() {
       if (chosen) applyAiLook(chosen, pickIndex, merged.length)
 
       const missing = AI_LOOK_TARGET - merged.length
-      const canMore = missing > 0 && !batch.rateLimited
+      const canMore = missing > 0 && !batch.rateLimited && resolveAiBackend().premium
       setAiCanFetchMore(canMore)
-      setAiAwaitingRetry(batch.rateLimited && missing > 0)
+      setAiAwaitingRetry(false)
 
-      let okMsg =
-        merged.length > 1
-          ? `Pick 1 of ${merged.length} — tap a look to put it on the canvas.`
-          : 'Look 1 is on the canvas.'
-      if (batch.rateLimited && missing > 0) {
-        okMsg = `Got ${merged.length} look${merged.length === 1 ? '' : 's'}. Free AI is busy — retry remaining looks in about a minute.`
-        setAiCanFetchMore(false)
-        setAiCooldownSec(AI_RATE_LIMIT_COOLDOWN_SEC)
-      } else if (canMore) {
-        okMsg += ' Retry remaining looks for up to 3 total.'
-      }
+      const okMsg =
+        merged.length >= AI_LOOK_TARGET
+          ? '3 looks ready — tap one to put it on the canvas.'
+          : `Pick 1 of ${merged.length} — tap a look to put it on the canvas.`
       setAiStatus({ kind: 'ok', text: okMsg })
       setStatus(okMsg)
     } catch (error) {
@@ -687,7 +722,7 @@ export default function HomePage() {
       setStatus(message)
       if (rateLimited) {
         setAiCooldownSec(AI_RATE_LIMIT_COOLDOWN_SEC)
-        setAiAwaitingRetry(prior.length > 0 && prior.length < AI_LOOK_TARGET)
+        setAiAwaitingRetry(false)
       }
       if (mode === 'fresh' && prior.length === 0) {
         setAiProgressDone(0)
@@ -869,7 +904,7 @@ export default function HomePage() {
               live. Both paths use the same {PRODUCT_NAME_FULL} canvas.
             </p>
           </div>
-        <section className="workbench editor-workbench" aria-label="Thumbnail maker">
+        <section className="workbench editor-workbench studio-grid" aria-label="Thumbnail studio">
           <div className="editor-path" role="tablist" aria-label="How to start">
             <button
               id="editor-ai"
@@ -884,7 +919,7 @@ export default function HomePage() {
             >
               <span className="editor-path-kicker">✦ AI</span>
               <strong>AI Thumbnail creator</strong>
-              <small>Describe a scene · pick from up to 3 looks</small>
+              <small>Describe a scene · always get 3 looks</small>
             </button>
             <button
               type="button"
@@ -910,7 +945,7 @@ export default function HomePage() {
             {photoName ? ` · ${photoName}` : ''}
           </p>
           <form
-            className="controls"
+            className="controls studio-tools"
             onSubmit={(event) => {
               event.preventDefault()
               saveMarked()
@@ -956,8 +991,8 @@ export default function HomePage() {
             <section className="step step-clean">
               <p className="step-lede">
                 {editorMode === 'ai'
-                  ? 'Pick a platform, describe the scene, generate up to 3 looks. First look lands on the canvas; the rest fill in.'
-                  : 'Pick a platform, tap a template, drop a photo. Title styling is one tab away — same canvas as AI.'}
+                  ? 'Describe the scene. You always get 3 looks — pick one, then style the title on the canvas.'
+                  : 'Pick a platform, tap a YouTube-style template, drop a photo. Title tools sit on the right.'}
               </p>
               <div className="choice-row platform-row" role="radiogroup" aria-label="Platform">
                 {PLATFORMS.map((item) => (
@@ -991,8 +1026,9 @@ export default function HomePage() {
                 <div>
                   <p className="photo-title">AI Thumbnail creator</p>
                   <p className="photo-help">
-                    Describe the visual scene. Free AI paints a full-bleed backdrop — look 1 lands
-                    first, then we fill looks 2 and 3 with a short pause so free AI stays happy.
+                    Describe a visual scene (who, where, mood). You always get 3 looks to pick from
+                    — one hero still plus two styled crops. Title text is added on the canvas, not
+                    burned into the photo.
                   </p>
                   {photoName ? <p className="photo-name">Selected: {photoName}</p> : null}
                 </div>
@@ -1053,39 +1089,32 @@ export default function HomePage() {
                   </p>
                 ) : (
                   <p className="ai-honesty-note">
-                    Free AI is shared and sometimes busy. If extra looks pause, wait a minute and tap
-                    retry remaining — animals and kids work best with <strong>Kids / fun</strong> or{' '}
-                    <strong>Cartoon</strong>.
+                    Animals and kids work best with <strong>Kids / fun</strong> or{' '}
+                    <strong>Cartoon</strong>. Keep the scene visual — skip slogans; add those as
+                    title on the canvas.
                   </p>
                 )}
                 <div className="photo-actions">
                   <button
                     type="button"
                     className="chip solid ai-generate"
-                    disabled={aiBusy || aiCooldownSec > 0}
+                    disabled={aiBusy}
                     aria-busy={aiBusy}
                     onClick={() => void runAiThumbnail('fresh')}
                   >
                     {aiBusy
                       ? 'Creating looks…'
                       : aiCooldownSec > 0 && aiVariants.length === 0
-                        ? `Try again in ${aiCooldownSec}s`
-                        : 'Generate 3 AI looks'}
+                        ? 'Try again'
+                        : 'Generate 3 looks'}
                   </button>
-                  {aiAwaitingRetry && aiCooldownSec > 0 && !aiBusy ? (
-                    <button type="button" className="chip solid ai-retry-remaining" disabled>
-                      Retry remaining in {aiCooldownSec}s
-                    </button>
-                  ) : null}
-                  {(aiCanFetchMore || (aiAwaitingRetry && aiCooldownSec === 0)) &&
-                  !aiBusy &&
-                  aiCooldownSec === 0 ? (
+                  {aiCanFetchMore && !aiBusy && aiCooldownSec === 0 ? (
                     <button
                       type="button"
                       className="chip solid ai-retry-remaining"
                       onClick={() => void runAiThumbnail('more')}
                     >
-                      Retry remaining looks
+                      More looks
                     </button>
                   ) : null}
                   {aiBusy ? (
@@ -1105,20 +1134,12 @@ export default function HomePage() {
                 <div className="ai-picker-block">
                   <p className="ai-picker-label">
                     {aiBusy
-                      ? `Creating looks… ${aiProgressDone}/${aiSlotCount}`
+                      ? `Creating looks… ${Math.min(aiProgressDone + 1, AI_LOOK_TARGET)} of ${AI_LOOK_TARGET}`
                       : aiVariants.length > 0
-                        ? `Pick 1 of ${aiVariants.length}${
-                            aiVariants.length < AI_LOOK_TARGET
-                              ? aiCooldownSec > 0
-                                ? ` · remaining in ${aiCooldownSec}s`
-                                : ' · remaining looks can retry'
-                              : ''
-                          }`
+                        ? `Pick a look · ${aiVariants.length} ready`
                         : aiStatus.kind === 'err'
-                          ? aiCooldownSec > 0
-                            ? `Free AI is busy — try again in ${aiCooldownSec}s`
-                            : 'No looks yet — try again in a minute'
-                          : 'Your 3 AI looks appear here — look 1 first, then 2 and 3'}
+                          ? 'No looks yet — try a shorter scene'
+                          : '3 looks will land here after you generate'}
                   </p>
                   <div className="ai-variant-picker" role="listbox" aria-label="Pick one of up to 3 AI looks">
                     {Array.from({ length: aiSlotCount }, (_, index) => {
@@ -1134,38 +1155,15 @@ export default function HomePage() {
                             onClick={() => pickAiVariant(index)}
                           >
                             <img src={item.objectUrl} alt={`AI look ${index + 1}`} />
-                            <span>Look {index + 1}{index === aiPick ? ' · selected' : ''}</span>
+                            <span>
+                              {item.lookLabel || `Look ${index + 1}`}
+                              {index === aiPick ? ' · selected' : ''}
+                            </span>
                           </button>
                         )
                       }
-                      const loadingThis = aiBusy && index === aiProgressDone
-                      const waiting = aiBusy && index > aiProgressDone
+                      const loadingThis = aiBusy && index <= Math.max(aiProgressDone, 0)
                       const failedEmpty = !aiBusy && aiStatus.kind === 'err' && aiVariants.length === 0
-                      const paused =
-                        !aiBusy &&
-                        aiAwaitingRetry &&
-                        aiCooldownSec > 0 &&
-                        index >= aiVariants.length
-                      const retryReady =
-                        !aiBusy &&
-                        aiCooldownSec === 0 &&
-                        (aiCanFetchMore || aiAwaitingRetry) &&
-                        index >= aiVariants.length
-                      if (retryReady) {
-                        return (
-                          <button
-                            key={`slot-${index}`}
-                            type="button"
-                            className="ai-variant-card is-retry"
-                            onClick={() => void runAiThumbnail('more')}
-                          >
-                            <div className="ai-variant-placeholder">
-                              <span>Tap to retry</span>
-                            </div>
-                            <span>Look {index + 1}</span>
-                          </button>
-                        )
-                      }
                       return (
                         <div
                           key={`slot-${index}`}
@@ -1174,9 +1172,7 @@ export default function HomePage() {
                               ? 'ai-variant-card is-loading'
                               : failedEmpty
                                 ? 'ai-variant-card is-error'
-                                : paused
-                                  ? 'ai-variant-card is-paused'
-                                  : 'ai-variant-card is-empty'
+                                : 'ai-variant-card is-empty'
                           }
                         >
                           <div className="ai-variant-placeholder">
@@ -1187,22 +1183,12 @@ export default function HomePage() {
                               </>
                             ) : failedEmpty ? (
                               <span>Try again</span>
-                            ) : paused ? (
-                              <span>Retry in {aiCooldownSec}s</span>
-                            ) : waiting ? (
-                              <span>Next</span>
                             ) : (
-                              <span>Look {index + 1}</span>
+                              <span className="ai-look-skel" aria-hidden />
                             )}
                           </div>
                           <span>
-                            {loadingThis
-                              ? 'Working'
-                              : failedEmpty
-                                ? 'Paused'
-                                : paused
-                                  ? 'Paused'
-                                  : `Look ${index + 1}`}
+                            {loadingThis ? 'Working' : failedEmpty ? 'Empty' : `Look ${index + 1}`}
                           </span>
                         </div>
                       )
@@ -1363,15 +1349,15 @@ export default function HomePage() {
             {editorTab === 'title' ? (
             <section id="editor-title" className="step step-clean">
               <p className="step-lede">
-                Headline, font, and size — drag the title on the canvas. Same tools for AI and photo
-                paths.
+                Two-line YouTube hook, font, and size — drag the title or use Left / Center / Right.
               </p>
               <p className="drag-affordance" aria-hidden>
-                Grab the title on the preview and drag it. Click a style chip to change the look.
+                Grab the title on the preview and drag it. Inspector on the right has color, outline,
+                and shadow.
               </p>
 
               <label>
-                Short tag (top line)
+                Short tag (optional)
                 <input
                   value={tag}
                   maxLength={18}
@@ -1381,21 +1367,50 @@ export default function HomePage() {
               </label>
 
               <label>
-                Video title
+                Title line 1
                 <textarea
                   id="title-input"
                   value={title}
-                  maxLength={70}
-                  rows={3}
+                  maxLength={42}
+                  rows={2}
                   onChange={(event) => setTitle(event.target.value)}
-                  placeholder="Write the title people should notice"
+                  placeholder="I SPENT $1"
                 />
               </label>
+              <label>
+                Title line 2
+                <input
+                  value={titleLine2}
+                  maxLength={42}
+                  onChange={(event) => setTitleLine2(event.target.value)}
+                  placeholder="AND THIS HAPPENED"
+                />
+              </label>
+
+              <fieldset>
+                <legend>Position</legend>
+                <div className="choice-row" role="radiogroup" aria-label="Title position">
+                  {TITLE_POSITION_PRESETS.map((preset) => (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      className={titleAlign === preset.align ? 'choice is-selected' : 'choice'}
+                      role="radio"
+                      aria-checked={titleAlign === preset.align}
+                      onClick={() => applyTitlePreset(preset.id)}
+                    >
+                      <span>{preset.label}</span>
+                      <small>{preset.blurb}</small>
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
               <button
                 type="button"
                 className="linkish"
                 onClick={() => {
                   setTextPos(defaultTextPosition(platform, layout))
+                  setTitleAlign('left')
                   setTextSelected(false)
                   setStatus('Title position reset for this layout.')
                 }}
@@ -1628,7 +1643,7 @@ export default function HomePage() {
           </form>
 
           <div
-            className={photoDragOver ? 'preview-panel is-drop-target' : 'preview-panel'}
+            className={photoDragOver ? 'preview-panel studio-stage is-drop-target' : 'preview-panel studio-stage'}
             onDragOver={(event) => {
               event.preventDefault()
               setPhotoDragOver(true)
@@ -1695,6 +1710,113 @@ export default function HomePage() {
                 : 'Drag the title or stickers. Drop a JPG/PNG onto the canvas to replace the photo.'}
             </p>
           </div>
+
+          <aside className="studio-inspector" aria-label="Title inspector">
+            <p className="studio-inspector-kicker">Inspector</p>
+            <h3 className="studio-inspector-title">Title</h3>
+            <div className="inspector-row">
+              <span className="inspector-label">Align</span>
+              <div className="inspector-pills">
+                {TITLE_POSITION_PRESETS.map((preset) => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    className={titleAlign === preset.align ? 'inspector-pill is-selected' : 'inspector-pill'}
+                    onClick={() => applyTitlePreset(preset.id)}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <label className="inspector-field">
+              Size {titleFontSizePx}px
+              <input
+                type="range"
+                min={TITLE_FONT_SIZE_MIN}
+                max={TITLE_FONT_SIZE_MAX}
+                value={titleFontSizePx}
+                onChange={(event) =>
+                  setTitleFontSizePx(clampTitleFontSize(Number(event.target.value)))
+                }
+              />
+            </label>
+            <div className="inspector-row">
+              <span className="inspector-label">Fill</span>
+              <div className="inspector-swatches">
+                <button
+                  type="button"
+                  className={!titleFill ? 'inspector-swatch is-selected' : 'inspector-swatch'}
+                  onClick={() => setTitleFill('')}
+                  title="From style"
+                >
+                  Auto
+                </button>
+                {TITLE_FILL_PRESETS.map((swatch) => (
+                  <button
+                    key={swatch.id}
+                    type="button"
+                    className={titleFill === swatch.value ? 'inspector-swatch is-selected' : 'inspector-swatch'}
+                    style={{ background: swatch.value }}
+                    title={swatch.label}
+                    onClick={() => setTitleFill(swatch.value)}
+                  />
+                ))}
+                <input
+                  className="inspector-color"
+                  type="color"
+                  value={titleFill || '#ffffff'}
+                  onChange={(event) => setTitleFill(event.target.value)}
+                  aria-label="Custom title color"
+                />
+              </div>
+            </div>
+            <label className="inspector-field">
+              Outline {titleOutlineWidth < 0 ? 'auto' : `${titleOutlineWidth}px`}
+              <input
+                type="range"
+                min={TITLE_OUTLINE_MIN}
+                max={TITLE_OUTLINE_MAX}
+                value={titleOutlineWidth < 0 ? 12 : titleOutlineWidth}
+                onChange={(event) => setTitleOutlineWidth(clampOutlineWidth(Number(event.target.value)))}
+              />
+            </label>
+            <div className="inspector-row">
+              <span className="inspector-label">Outline color</span>
+              <input
+                className="inspector-color"
+                type="color"
+                value={titleOutlineColor}
+                onChange={(event) => setTitleOutlineColor(event.target.value)}
+              />
+            </div>
+            <label className="inspector-check">
+              <input
+                type="checkbox"
+                checked={titleShadow}
+                onChange={(event) => setTitleShadow(event.target.checked)}
+              />
+              Drop shadow
+            </label>
+            {aiVariants.length > 0 ? (
+              <div className="inspector-looks">
+                <span className="inspector-label">Looks</span>
+                <div className="inspector-look-row">
+                  {aiVariants.map((item, index) => (
+                    <button
+                      key={`${item.seed}-${index}`}
+                      type="button"
+                      className={index === aiPick ? 'inspector-look is-selected' : 'inspector-look'}
+                      onClick={() => pickAiVariant(index)}
+                    >
+                      <img src={item.objectUrl} alt="" />
+                      <span>{item.lookLabel || index + 1}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </aside>
         </section>
         </section>
 

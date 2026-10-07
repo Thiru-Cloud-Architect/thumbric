@@ -1,3 +1,5 @@
+import { apiBaseUrl, apiLookBudget, clientFalKey, resolveAiBackend } from './aiConfig'
+import { fillLooksToTarget } from './aiLooks'
 import type { Niche } from './niches'
 import type { Platform } from './platforms'
 
@@ -141,28 +143,32 @@ export type AiGeneratedImage = {
   prompt: string
   seed: number
   styleId: AiStyleId
+  /** Shown on the picker (Hero / Warm / Cinematic) when locally restyled. */
+  lookLabel?: string
+  /** True when this look is a crop/grade of another look, not a new model call. */
+  derived?: boolean
 }
 
 /** Soft ceiling so hung Pollinations requests still surface an error in the UI. */
 export const AI_IMAGE_TIMEOUT_MS = 45_000
 
-/** Pause before look 2 on a fresh batch (ms). Short gaps 402 the free tier. */
-export const AI_VARIANT_GAP_MS = 7_000
+/** Pause before look 2 on a fresh premium batch (ms). Free path only calls the model once. */
+export const AI_VARIANT_GAP_MS = 400
 
-/** Extra wait added before each later look (look 3 = gap + step). */
-export const AI_VARIANT_GAP_STEP_MS = 4_000
+/** Extra wait added before each later premium look. */
+export const AI_VARIANT_GAP_STEP_MS = 350
 
 /** Short lead-in when retrying remaining looks after a cooldown. */
-export const AI_RETRY_LEAD_MS = 1_800
+export const AI_RETRY_LEAD_MS = 400
 
 /** How many looks we try to fill in the picker. Sequential, not parallel. */
 export const AI_LOOK_TARGET = 3
 
 /** Pollinations URL prompt slice — keep subject at the front so this never chops the scene. */
-export const AI_PROMPT_MAX_CHARS = 880
+export const AI_PROMPT_MAX_CHARS = 1100
 
-/** Seconds to wait after a 402 before retrying remaining looks. */
-export const AI_RATE_LIMIT_COOLDOWN_SEC = 45
+/** Seconds to wait after a hard free-tier failure before Generate is enabled again. */
+export const AI_RATE_LIMIT_COOLDOWN_SEC = 8
 
 /** Milliseconds to wait before requesting this 0-based look index. */
 export function waitMsBeforeLook(
@@ -248,11 +254,41 @@ function aspectFraming(platform: Platform) {
 
 function compositionForVariant(index: number) {
   const variants = [
-    'hero subject on the LEFT third, large empty negative space on the RIGHT for a title overlay',
-    'hero subject on the RIGHT third, large empty negative space on the LEFT for a title overlay',
-    'tight centered hero close-up, keep the LOWER third simpler for a title overlay',
+    'ONE hero subject on the LEFT third, empty negative space on the RIGHT for a later title — one photo, never a split',
+    'ONE hero subject on the RIGHT third, empty negative space on the LEFT for a later title — one photo, never a split',
+    'tight centered hero close-up in ONE photograph, simpler LOWER third for a later title',
   ]
   return variants[((index % variants.length) + variants.length) % variants.length]!
+}
+
+/**
+ * Rewrite user scene text so Flux paints a photograph, not a title card / collage.
+ * "couple goals in tamil" must become a romantic couple still, not burned-in letters.
+ */
+export function visualSceneFromHint(raw: string) {
+  let scene = sanitizeSceneText(raw)
+  if (!scene) return ''
+
+  scene = scene.replace(
+    /\bin\s+(tamil|hindi|telugu|kannada|malayalam|bengali|marathi|punjabi)\b/gi,
+    (_, lang: string) => `${lang} cinema atmosphere`,
+  )
+  if (!/\bcinema atmosphere\b/i.test(scene)) {
+    scene = scene.replace(
+      /\b(tamil|hindi|telugu|kannada|malayalam)\s+(song|album|lyrics|cover|movie)\b/gi,
+      '$1 $2 mood',
+    )
+  }
+  scene = scene.replace(/\bcouple goals?\b/gi, 'romantic couple in a cinematic embrace')
+
+  const hasVisualNoun =
+    /\b(couple|person|people|face|man|woman|girl|boy|singer|dog|cat|animals?|puppy|kitten|stage|forest|woods?|studio|portrait|photo|cinematic|light|city|beach|car|phone|laptop|gamer|creator)\b/i.test(
+      scene,
+    )
+  if (!hasVisualNoun) {
+    scene = `cinematic photograph of ${scene}`
+  }
+  return scene
 }
 
 function subjectGuard(cues: SceneCues) {
@@ -294,45 +330,41 @@ export function clampAiPrompt(parts: string[], maxChars = AI_PROMPT_MAX_CHARS) {
  */
 export function buildAiThumbnailPrompt(options: AiThumbOptions) {
   const title = options.title.trim()
-  const scene = sanitizeSceneText(options.hint ?? '')
+  const scene = visualSceneFromHint(options.hint ?? '')
   const style = getAiStyle(options.styleId)
-  const cues = analyzeScene(scene)
+  const cues = analyzeScene(`${options.hint ?? ''} ${scene}`)
   const variantIndex = options.variantIndex ?? 0
   const subject =
     scene ||
-    sanitizeSceneText(title) ||
+    visualSceneFromHint(title) ||
     'expressive creator looking at camera, dramatic key light, shallow depth of field'
 
-  const titleClause =
-    title && title.toUpperCase() !== 'YOUR TITLE HERE'
-      ? `video topic mood: ${title}`
-      : ''
-
   const negative = cues.nonHumanSubject
-    ? 'no text, no letters, no logos, no watermarks, no collage, no split screen, no frames, no human, no person, no anime girl, no kemonomimi, no singer, no idol'
-    : 'no text, no letters, no logos, no watermarks, no collage, no split screen, no diptych, no frames, no UI chrome'
+    ? 'no text, no letters, no captions, no title cards, no typography, no logos, no watermarks, no collage, no grid, no 2x2, no four panels, no split screen, no frames, no human, no person, no anime girl, no kemonomimi, no singer, no idol'
+    : 'no text, no letters, no title cards, no logos, no watermarks, no collage, no grid, no 2x2, no split screen, no diptych, no frames'
 
   const medium =
     style.id === 'cartoon' || style.id === 'kids-fun' || cues.cartoon
-      ? 'Bold YouTube thumbnail illustration, stylized still'
-      : 'Cinematic YouTube thumbnail photograph'
+      ? 'Bold YouTube thumbnail illustration, ONE stylized still, single frame'
+      : 'Cinematic YouTube thumbnail photograph, ONE camera, ONE moment'
 
   const focal = cues.nonHumanSubject
     ? 'clear animal silhouette, readable at phone-tile size, follow the scene literally'
-    : 'one clear focal subject, readable at phone-tile size, follow the scene literally'
+    : 'one clear focal subject filling the frame, readable at phone-tile size, follow the scene literally'
 
   return clampAiPrompt([
     medium,
     aspectFraming(options.platform),
-    `one coherent scene only: ${subject}`,
+    `SINGLE full-bleed photograph of: ${subject}`,
     subjectGuard(cues),
+    'CRITICAL: one image only — never a collage, grid, 2x2, four-panel, split-screen, or multi-photo layout',
+    'CRITICAL: no text, no letters, no watermarks, do not paint any words or titles on the image',
+    `avoid: ${negative}`,
     `composition: ${compositionForVariant(variantIndex)}`,
     `style (${style.label}): ${styleBoostForScene(style, cues)}`,
     `niche mood: ${options.niche.label} — ${options.niche.hint}`,
-    titleClause,
-    'high contrast, saturated cinematic color, sharp focus, ~320px phone-tile readability',
     focal,
-    `avoid: ${negative}`,
+    'high contrast, saturated cinematic color, sharp focus, phone-tile readability',
   ])
 }
 
@@ -494,6 +526,110 @@ async function fetchImageBlob(url: string, signal: AbortSignal) {
   return blob
 }
 
+const FAL_MODEL = 'fal-ai/flux/schnell'
+
+type FalImageResult = {
+  images?: Array<{ url?: string; content_type?: string }>
+}
+
+async function blobFromFalJson(data: FalImageResult, signal: AbortSignal) {
+  const url = data.images?.[0]?.url
+  if (!url) throw new Error('Studio AI did not return an image.')
+  if (url.startsWith('data:')) {
+    const response = await fetch(url)
+    return response.blob()
+  }
+  return fetchImageBlob(url, signal)
+}
+
+/** Worker proxy — FAL_KEY stays on the server. */
+async function generateViaWorker(
+  prompt: string,
+  width: number,
+  height: number,
+  seed: number,
+  signal: AbortSignal,
+) {
+  const base = apiBaseUrl()
+  const response = await fetch(`${base}/api/ai/image`, {
+    method: 'POST',
+    signal,
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ prompt, width, height, seed, model: FAL_MODEL }),
+  })
+  if (response.status === 501 || response.status === 404) {
+    throw new Error('Studio AI is not configured on the Worker yet.')
+  }
+  if (!response.ok) {
+    throw new AiHttpError(response.status, friendlyAiHttpMessage(response.status), true)
+  }
+  const contentType = response.headers.get('content-type') || ''
+  if (contentType.includes('application/json')) {
+    const data = (await response.json()) as FalImageResult & { error?: string }
+    if (data.error) throw new Error('Studio AI is busy. Trying the free path.')
+    return blobFromFalJson(data, signal)
+  }
+  const blob = await response.blob()
+  if (!blob.type.startsWith('image/')) {
+    throw new Error('Studio AI did not return an image.')
+  }
+  return blob
+}
+
+/**
+ * Direct fal.run — only for local demos. The key is in the client bundle.
+ * Prefer the Worker proxy in production.
+ */
+async function generateViaFalClient(
+  prompt: string,
+  width: number,
+  height: number,
+  seed: number,
+  signal: AbortSignal,
+) {
+  const key = clientFalKey()
+  const response = await fetch(`https://fal.run/${FAL_MODEL}`, {
+    method: 'POST',
+    signal,
+    headers: {
+      Authorization: `Key ${key}`,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      prompt,
+      image_size: { width, height },
+      num_images: 1,
+      seed,
+      sync_mode: true,
+      output_format: 'jpeg',
+      num_inference_steps: 4,
+      enable_safety_checker: true,
+    }),
+  })
+  if (!response.ok) {
+    throw new AiHttpError(response.status, friendlyAiHttpMessage(response.status), true)
+  }
+  const data = (await response.json()) as FalImageResult
+  return blobFromFalJson(data, signal)
+}
+
+async function generatePremiumBlob(
+  prompt: string,
+  width: number,
+  height: number,
+  seed: number,
+  signal: AbortSignal,
+) {
+  const backend = resolveAiBackend()
+  if (backend.kind === 'worker') {
+    return generateViaWorker(prompt, width, height, seed, signal)
+  }
+  if (backend.kind === 'fal-client') {
+    return generateViaFalClient(prompt, width, height, seed, signal)
+  }
+  throw new Error('No premium AI backend configured.')
+}
+
 export async function generateAiThumbnailImage(
   options: AiThumbOptions,
   signal?: AbortSignal,
@@ -506,16 +642,32 @@ export async function generateAiThumbnailImage(
   const seed = seedOverride ?? Math.floor(Math.random() * 1_000_000)
   const candidates = buildPollinationsCandidateUrls(prompt, width, height, seed)
   const gate = mergeAbortSignals(signal, AI_IMAGE_TIMEOUT_MS)
+  const backend = resolveAiBackend()
 
   let lastError: Error | null = null
   try {
+    if (backend.premium) {
+      try {
+        const blob = await generatePremiumBlob(prompt, width, height, seed, gate.signal)
+        const objectUrl = URL.createObjectURL(blob)
+        const image = await loadImage(objectUrl, gate.signal)
+        return { image, objectUrl, prompt, seed, styleId, lookLabel: 'Studio' }
+      } catch (error) {
+        if (isAbortError(error) || (error instanceof DOMException && error.name === 'TimeoutError')) {
+          throw error
+        }
+        lastError = friendlyNetworkError(error)
+        // Fall through to free Pollinations so demos still work without a live key.
+      }
+    }
+
     for (const candidate of candidates) {
       if (gate.signal.aborted) break
       try {
         const blob = await fetchImageBlob(candidate.url, gate.signal)
         const objectUrl = URL.createObjectURL(blob)
         const image = await loadImage(objectUrl, gate.signal)
-        return { image, objectUrl, prompt, seed, styleId }
+        return { image, objectUrl, prompt, seed, styleId, lookLabel: 'Hero' }
       } catch (error) {
         if (isAbortError(error) || (error instanceof DOMException && error.name === 'TimeoutError')) {
           throw error
@@ -574,9 +726,9 @@ export type GenerateAiVariantsHooks = {
 }
 
 /**
- * Generate up to `count` different looks so the user can pick the best backdrop.
- * Sequential with a long gap; each look uses a different composition (left/right/center).
- * Stops immediately on 402/429 so we don't spam the free tier.
+ * Generate looks so the user can pick the best backdrop.
+ * Free Pollinations: one model call, then local crop/grade fills to 3 looks.
+ * Premium (Worker/fal): up to 3 model calls, then local fill if a call fails.
  * `onItem` fires as soon as a look lands so the canvas is not empty until all 3 finish.
  */
 export async function generateAiThumbnailVariants(
@@ -590,7 +742,9 @@ export async function generateAiThumbnailVariants(
     onWait,
   }: GenerateAiVariantsHooks = {},
 ): Promise<AiVariantBatch> {
-  const total = Math.max(1, Math.min(AI_LOOK_TARGET - startIndex, count))
+  const backend = resolveAiBackend()
+  const budget = Math.min(count, apiLookBudget(backend.kind), AI_LOOK_TARGET - startIndex)
+  const total = Math.max(1, budget)
   const results: AiGeneratedImage[] = []
   const base = Math.floor(Math.random() * 1_000_000)
   let rateLimited = false
@@ -598,9 +752,9 @@ export async function generateAiThumbnailVariants(
   for (let i = 0; i < total; i++) {
     if (signal?.aborted) break
     const lookIndex = startIndex + i
-    const waitMs = waitMsBeforeLook(lookIndex, {
-      firstOfRetryBatch: i === 0 && startIndex > 0,
-    })
+    const waitMs = backend.premium
+      ? waitMsBeforeLook(lookIndex, { firstOfRetryBatch: i === 0 && startIndex > 0 })
+      : 0
     if (waitMs > 0) {
       onWait?.(lookIndex, waitMs)
       try {
@@ -641,7 +795,24 @@ export async function generateAiThumbnailVariants(
   if (results.length === 0) {
     throw new Error('Could not create those looks. Try again in a moment.')
   }
-  return { results, rateLimited, requested: total, startIndex }
+
+  const width = Math.min(1280, options.platform.width)
+  const height = Math.round((width * options.platform.height) / options.platform.width)
+  const filled = await fillLooksToTarget(results, AI_LOOK_TARGET, {
+    width,
+    height,
+    prompt: results[0]!.prompt,
+    seed: results[0]!.seed,
+    styleId: results[0]!.styleId,
+  })
+  if (filled.length > results.length) {
+    for (let i = results.length; i < filled.length; i++) {
+      onItem?.(filled[i]!, i)
+    }
+    onProgress?.(filled.length, AI_LOOK_TARGET)
+  }
+
+  return { results: filled, rateLimited, requested: total, startIndex }
 }
 
 function loadImage(src: string, signal?: AbortSignal) {

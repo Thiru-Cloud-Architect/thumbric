@@ -12,8 +12,12 @@ import {
   sanitizeSceneText,
   suggestAiStyle,
   titleFromScene,
+  visualSceneFromHint,
   waitMsBeforeLook,
 } from './aiThumbnail'
+import { LOCAL_LOOK_RECIPES, cssFilterForGrade } from './aiLooks'
+import { apiLookBudget } from './aiConfig'
+import { splitTitleLines, TITLE_POSITION_PRESETS } from './titleKit'
 import { getNiche } from './niches'
 import { getPlatform } from './platforms'
 
@@ -75,16 +79,18 @@ describe('buildAiThumbnailPrompt', () => {
     })
     expect(prompt).toMatch(/16:9/i)
     expect(prompt).toMatch(/YouTube thumbnail/i)
-    expect(prompt).toMatch(/Tamil Song Cover Own Voice/)
+    expect(prompt).toMatch(/Tamil Song/)
     expect(prompt).not.toMatch(/\|/)
     expect(prompt).not.toMatch(/YOUR TITLE HERE/)
     expect(prompt).toMatch(/no text/i)
     expect(prompt).toMatch(/no watermarks/i)
     expect(prompt).toMatch(/no collage/i)
     expect(prompt).toMatch(/no split screen/i)
-    expect(prompt).toMatch(/one coherent scene/i)
+    expect(prompt).toMatch(/SINGLE full-bleed photograph/i)
     expect(prompt).toMatch(/negative space/i)
-    expect(prompt).toMatch(/320px/i)
+    expect(prompt).toMatch(/never a collage/i)
+    expect(prompt).toMatch(/do not paint any words/i)
+    expect(prompt).toMatch(/phone-tile/i)
     expect(prompt.length).toBeLessThanOrEqual(AI_PROMPT_MAX_CHARS)
   })
 
@@ -138,7 +144,7 @@ describe('buildAiThumbnailPrompt', () => {
     expect(prompt).toMatch(/NO human face|no human/i)
     expect(prompt).toMatch(/kemonomimi/i)
     expect(prompt).toMatch(/furry humanoid/i)
-    expect(prompt).toMatch(/animals remain the only subjects|ONLY the described non-human/i)
+    expect(prompt).toMatch(/animals remain the only subjects|ONLY the described animals/i)
     expect(prompt).not.toMatch(/singer or instrument as clear hero subject/)
   })
 })
@@ -155,11 +161,39 @@ describe('friendlyAiHttpMessage', () => {
 })
 
 describe('waitMsBeforeLook', () => {
-  it('waits longer before looks 2 and 3, short lead-in on retry batches', () => {
+  it('waits a short beat before premium looks 2 and 3', () => {
     expect(waitMsBeforeLook(0)).toBe(0)
     expect(waitMsBeforeLook(1)).toBe(AI_VARIANT_GAP_MS)
     expect(waitMsBeforeLook(2)).toBe(AI_VARIANT_GAP_MS + AI_VARIANT_GAP_STEP_MS)
     expect(waitMsBeforeLook(1, { firstOfRetryBatch: true })).toBe(AI_RETRY_LEAD_MS)
+  })
+})
+
+describe('visualSceneFromHint', () => {
+  it('turns slogan + language into a photograph, not a title card', () => {
+    const visual = visualSceneFromHint('couple goals in tamil')
+    expect(visual).toMatch(/romantic couple/i)
+    expect(visual).toMatch(/cinema/i)
+    expect(visual).not.toMatch(/couple goals in tamil/i)
+  })
+})
+
+describe('free path look budget', () => {
+  it('only spends one model call on Pollinations, then local looks fill the rest', () => {
+    expect(apiLookBudget('pollinations')).toBe(1)
+    expect(apiLookBudget('worker')).toBe(3)
+    expect(LOCAL_LOOK_RECIPES).toHaveLength(3)
+    expect(cssFilterForGrade(LOCAL_LOOK_RECIPES[1]!.grade)).toMatch(/sepia/)
+  })
+})
+
+describe('title kit', () => {
+  it('has left/center/right presets and splits 2-line titles', () => {
+    expect(TITLE_POSITION_PRESETS.map((item) => item.id)).toEqual(['left', 'center', 'right'])
+    expect(splitTitleLines('I SPENT $1', 'AND THIS HAPPENED')).toEqual([
+      'I SPENT $1',
+      'AND THIS HAPPENED',
+    ])
   })
 })
 

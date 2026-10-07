@@ -81,7 +81,7 @@ export const AI_FEATURE = {
   nowLabel: 'Works now',
   nowItems: [
     'Tap Try AI Thumbnail creator, then type a short scene (person, setting, mood)',
-    'Generate up to 3 looks — first one lands on the canvas, then we fill the rest',
+    'Generate 3 looks every time — first lands on the canvas, the rest fill even if free AI stalls',
     'Pick a favorite look, then style the title on the live canvas',
   ],
   notYetLabel: 'Not yet',

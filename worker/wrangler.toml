@@ -10,3 +10,8 @@ compatibility_date = "2026-10-01"
 
 [vars]
 # Optional: set ADMIN_TOKEN via `wrangler secret put ADMIN_TOKEN` for GET /api/users
+# Premium AI: `npx wrangler secret put FAL_KEY` then set VITE_API_BASE on the site build.
+
+# Optional Workers AI fallback (used when FAL_KEY is missing):
+# [ai]
+# binding = "AI"

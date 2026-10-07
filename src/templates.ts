@@ -5,10 +5,14 @@ import type { NicheId } from './niches'
 import type { TextStyleId } from './textStyle'
 import type { PlatformId } from './platforms'
 import type { StickerId } from './stickers'
+import type { TitleAlign } from './titleKit'
 
 export type TemplateId =
   | 'youtube-classic'
   | 'youtube-full'
+  | 'yt-beast'
+  | 'yt-reaction'
+  | 'yt-cinematic'
   | 'shorts-bold'
   | 'minimal-clean'
   | 'linkedin-pro'
@@ -27,9 +31,59 @@ export type ThumbTemplate = {
   nicheId?: NicheId
   sampleTitle: string
   sampleTag: string
+  sampleLine2?: string
+  titleAlign?: TitleAlign
 }
 
 export const THUMB_TEMPLATES: ThumbTemplate[] = [
+  {
+    id: 'yt-beast',
+    label: 'Big yellow hook',
+    blurb: 'Huge type, face zone, high contrast',
+    platform: 'youtube',
+    layout: 'photo-full',
+    fontId: 'bebas',
+    titleFontSizePx: 138,
+    textStyleId: 'yellow-pop',
+    stickers: [],
+    nicheId: 'vlog',
+    sampleTitle: 'I SPENT $1',
+    sampleLine2: 'AND THIS HAPPENED',
+    sampleTag: '',
+    titleAlign: 'left',
+  },
+  {
+    id: 'yt-reaction',
+    label: 'Face reaction',
+    blurb: 'Close-up emotion, red punch title',
+    platform: 'youtube',
+    layout: 'photo-full',
+    fontId: 'anton',
+    titleFontSizePx: 132,
+    textStyleId: 'red-alert',
+    stickers: [],
+    nicheId: 'vlog',
+    sampleTitle: 'WAIT WHAT',
+    sampleLine2: 'THEY DID THIS',
+    sampleTag: '',
+    titleAlign: 'left',
+  },
+  {
+    id: 'yt-cinematic',
+    label: 'Cinematic lower-third',
+    blurb: 'Full-bleed still, centered 2-line title',
+    platform: 'youtube',
+    layout: 'photo-full',
+    fontId: 'anton',
+    titleFontSizePx: 118,
+    textStyleId: 'thick',
+    stickers: [],
+    nicheId: 'travel',
+    sampleTitle: 'THE LAST NIGHT',
+    sampleLine2: 'IN THE CITY',
+    sampleTag: '',
+    titleAlign: 'center',
+  },
   {
     id: 'youtube-classic',
     label: 'YouTube split',
@@ -41,8 +95,10 @@ export const THUMB_TEMPLATES: ThumbTemplate[] = [
     textStyleId: 'classic',
     stickers: [],
     nicheId: 'tech',
-    sampleTitle: 'I Tried This For 30 Days',
+    sampleTitle: 'I Tried This',
+    sampleLine2: 'For 30 Days',
     sampleTag: 'NEW',
+    titleAlign: 'left',
   },
   {
     id: 'youtube-full',
@@ -55,8 +111,10 @@ export const THUMB_TEMPLATES: ThumbTemplate[] = [
     textStyleId: 'thick',
     stickers: [],
     nicheId: 'vlog',
-    sampleTitle: 'Do Not Watch This',
+    sampleTitle: 'Do Not Watch',
+    sampleLine2: 'This Tonight',
     sampleTag: 'WATCH',
+    titleAlign: 'left',
   },
   {
     id: 'shorts-bold',
@@ -69,8 +127,10 @@ export const THUMB_TEMPLATES: ThumbTemplate[] = [
     textStyleId: 'thick',
     stickers: [],
     nicheId: 'fitness',
-    sampleTitle: '30 Second Glow Up',
+    sampleTitle: '30 Second',
+    sampleLine2: 'Glow Up',
     sampleTag: 'SHORTS',
+    titleAlign: 'center',
   },
   {
     id: 'gaming-pop',
@@ -83,8 +143,10 @@ export const THUMB_TEMPLATES: ThumbTemplate[] = [
     textStyleId: 'yellow-pop',
     stickers: [],
     nicheId: 'gaming',
-    sampleTitle: 'This Boss Is Broken',
+    sampleTitle: 'This Boss',
+    sampleLine2: 'Is Broken',
     sampleTag: 'LIVE',
+    titleAlign: 'left',
   },
   {
     id: 'minimal-clean',
@@ -97,8 +159,10 @@ export const THUMB_TEMPLATES: ThumbTemplate[] = [
     textStyleId: 'minimal',
     stickers: [],
     nicheId: 'education',
-    sampleTitle: 'The Simple Way To Start',
+    sampleTitle: 'The Simple Way',
+    sampleLine2: 'To Start',
     sampleTag: 'GUIDE',
+    titleAlign: 'left',
   },
   {
     id: 'linkedin-pro',
@@ -111,8 +175,10 @@ export const THUMB_TEMPLATES: ThumbTemplate[] = [
     textStyleId: 'classic',
     stickers: [],
     nicheId: 'finance',
-    sampleTitle: 'What Changed This Quarter',
+    sampleTitle: 'What Changed',
+    sampleLine2: 'This Quarter',
     sampleTag: 'INSIGHT',
+    titleAlign: 'left',
   },
 ]
 

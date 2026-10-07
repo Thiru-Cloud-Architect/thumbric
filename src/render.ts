@@ -7,6 +7,7 @@ import type { PlacedSticker, StickerId } from './stickers'
 import { DOWNLOAD_PREFIX, WATERMARK_LABEL } from './brand'
 import type { TextStyleId } from './textStyle'
 import { getTextStyle } from './textStyle'
+import { splitTitleLines, TITLE_OUTLINE_AUTO, type TitleAlign } from './titleKit'
 
 export type TextPosition = {
   x: number
@@ -28,6 +29,13 @@ export type ThumbInput = {
   titleFontSizePx: number
   textStyleId: TextStyleId
   textPos: TextPosition
+  titleAlign?: TitleAlign
+  titleLine2?: string
+  titleFill?: string
+  /** -1 = follow the style chip; 0 = no outline; 1+ = px at 1280-wide. */
+  titleOutlineWidth?: number
+  titleOutlineColor?: string
+  titleShadow?: boolean
   showSafeZones?: boolean
   activeStickerIndex?: number
   highlightText?: boolean
@@ -415,6 +423,12 @@ function drawPunchText(
   fill: string,
   styleId: TextStyleId,
   accent: string,
+  overrides: {
+    fill?: string
+    outlineWidth?: number
+    outlineColor?: string
+    shadow?: boolean
+  } = {},
 ) {
   const style = getTextStyle(styleId)
   const base = Math.max(14, Math.round(ctx.canvas.height * 0.014))
@@ -457,14 +471,26 @@ function drawPunchText(
       break
   }
 
+  if (overrides.fill) textFill = overrides.fill
+  if (typeof overrides.outlineWidth === 'number' && overrides.outlineWidth !== TITLE_OUTLINE_AUTO) {
+    if (overrides.outlineWidth <= 0) {
+      useStroke = false
+    } else {
+      useStroke = true
+      lineWidth = Math.max(1, Math.round(overrides.outlineWidth * (ctx.canvas.width / 1280)))
+    }
+  }
+  if (overrides.outlineColor) stroke = overrides.outlineColor
+  if (typeof overrides.shadow === 'boolean') useShadow = overrides.shadow
+
   ctx.lineJoin = 'round'
   ctx.miterLimit = 2
   ctx.save()
   if (useShadow) {
     ctx.shadowColor = 'rgba(0,0,0,0.85)'
-    ctx.shadowBlur = Math.round(base * 1.2)
-    ctx.shadowOffsetX = Math.round(base * 0.15)
-    ctx.shadowOffsetY = Math.round(base * 0.15)
+    ctx.shadowBlur = Math.round(base * 1.35)
+    ctx.shadowOffsetX = Math.round(base * 0.18)
+    ctx.shadowOffsetY = Math.round(base * 0.18)
   }
   if (useStroke) {
     ctx.strokeStyle = stroke
@@ -483,7 +509,7 @@ function measureTextBlockBounds(input: ThumbInput, box: Box): Box {
   const titleSize = scaledTitleFontSize(input.titleFontSizePx, input.platform)
   const hasTag = Boolean(input.tag.trim())
   const tagSize = hasTag ? Math.round(titleSize * 0.34) : 0
-  const maxLines = vertical ? 4 : 3
+  const maxLines = vertical ? 4 : 2
 
   const canvas = document.createElement('canvas')
   const ctx = canvas.getContext('2d')
@@ -494,7 +520,11 @@ function measureTextBlockBounds(input: ThumbInput, box: Box): Box {
   const strokePad = Math.round(titleSize * 0.2)
   const innerW = Math.max(40, box.w - strokePad * 2)
   ctx.font = `${font.weight} ${titleSize}px ${font.css}`
-  const lines = wrapLines(ctx, title.toUpperCase(), innerW, maxLines)
+  const authored = splitTitleLines(title, input.titleLine2 ?? '')
+  const lines =
+    authored.length >= 2
+      ? authored.slice(0, maxLines).map((line) => trimToWidth(ctx, line.toUpperCase(), innerW))
+      : wrapLines(ctx, (authored[0] || title).toUpperCase(), innerW, maxLines)
   const tagGap = hasTag ? tagSize + 28 : Math.round(titleSize * 0.15)
   const contentH = tagGap + titleSize + lines.length * (titleSize + 8) + 12
   const totalH = Math.min(box.h, contentH)
@@ -522,14 +552,23 @@ function drawTextBlock(ctx: CanvasRenderingContext2D, input: ThumbInput) {
   const font = getFont(input.fontId)
   const titleSize = scaledTitleFontSize(input.titleFontSizePx, input.platform)
   const tagSize = Math.round(titleSize * 0.34)
-  const maxLines = input.platform.orientation === 'vertical' ? 4 : 3
+  const maxLines = input.platform.orientation === 'vertical' ? 4 : 2
   const styleId = input.textStyleId
+  const align: TitleAlign = input.titleAlign ?? 'left'
+  const punch = {
+    fill: input.titleFill || undefined,
+    outlineWidth: input.titleOutlineWidth,
+    outlineColor: input.titleOutlineColor || undefined,
+    shadow: input.titleShadow,
+  }
 
-  ctx.textAlign = 'left'
+  ctx.textAlign = align
   ctx.textBaseline = 'alphabetic'
   const strokePad = Math.round(titleSize * 0.2)
   const innerX = box.x + strokePad
   const innerW = Math.max(40, box.w - strokePad * 2)
+  const textX =
+    align === 'center' ? box.x + box.w / 2 : align === 'right' ? box.x + box.w - strokePad : innerX
 
   ctx.save()
   ctx.beginPath()
@@ -539,15 +578,19 @@ function drawTextBlock(ctx: CanvasRenderingContext2D, input: ThumbInput) {
   let y = box.y + Math.round(titleSize * 0.15) + titleSize
   if (tag) {
     ctx.font = `800 ${tagSize}px "DM Sans", sans-serif`
-    drawPunchText(ctx, tag, innerX, box.y + tagSize + 8, accent, styleId, accent)
+    drawPunchText(ctx, tag, textX, box.y + tagSize + 8, accent, styleId, accent, punch)
     y = box.y + tagSize + titleSize + 28
   }
 
   ctx.font = `${font.weight} ${titleSize}px ${font.css}`
-  const lines = wrapLines(ctx, title.toUpperCase(), innerW, maxLines)
+  const authored = splitTitleLines(title, input.titleLine2 ?? '')
+  const lines =
+    authored.length >= 2
+      ? authored.slice(0, maxLines).map((line) => trimToWidth(ctx, line.toUpperCase(), innerW))
+      : wrapLines(ctx, (authored[0] || title).toUpperCase(), innerW, maxLines)
 
   for (const line of lines) {
-    drawPunchText(ctx, line, innerX, y, '#FFFFFF', styleId, accent)
+    drawPunchText(ctx, line, textX, y, '#FFFFFF', styleId, accent, punch)
     y += titleSize + 8
   }
   ctx.restore()
