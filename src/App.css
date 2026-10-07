@@ -3566,6 +3566,13 @@ footer {
   color: #1a0c0e;
 }
 
+@media (min-width: 981px) {
+  /* Desktop: AI lives in the nav pill; keep the far-right action as Start free. */
+  .top-cta-ai {
+    display: none;
+  }
+}
+
 .hero-cta-ai {
   display: inline-flex;
   align-items: center;
