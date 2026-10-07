@@ -1,4 +1,12 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent, type PointerEvent as ReactPointerEvent } from 'react'
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type DragEvent as ReactDragEvent,
+  type FormEvent,
+  type PointerEvent as ReactPointerEvent,
+} from 'react'
 import { flushSync } from 'react-dom'
 import { Link } from 'react-router-dom'
 import {
@@ -64,6 +72,9 @@ import {
   type StickerId,
 } from './stickers'
 import {
+  AI_LOOK_TARGET,
+  AI_RATE_LIMIT_COOLDOWN_SEC,
+  AI_SCENE_PRESETS,
   AI_STYLES,
   generateAiThumbnailVariants,
   getAiStyle,
@@ -90,7 +101,8 @@ import './App.css'
 const POPULAR: NicheId[] = ['tech', 'finance', 'gaming', 'cooking', 'travel', 'fitness', 'education', 'vlog']
 
 type DragTarget = 'sticker' | 'text' | null
-type EditorTab = 'setup' | 'title' | 'polish'
+type EditorTab = 'create' | 'title' | 'finish'
+type EditorMode = 'ai' | 'classic'
 
 export default function HomePage() {
   const [platformId, setPlatformId] = useState<PlatformId>('youtube')
@@ -138,8 +150,15 @@ export default function HomePage() {
   })
   const [editorTab, setEditorTab] = useState<EditorTab>(() => {
     const hash = normalizeHash(typeof window !== 'undefined' ? window.location.hash : '')
-    return hash === 'editor-ai' || hash === 'editor-title' ? 'title' : 'setup'
+    return hash === 'editor-title' ? 'title' : 'create'
   })
+  const [editorMode, setEditorMode] = useState<EditorMode>(() => {
+    const hash = normalizeHash(typeof window !== 'undefined' ? window.location.hash : '')
+    return hash === 'editor-ai' ? 'ai' : 'classic'
+  })
+  const [aiCooldownSec, setAiCooldownSec] = useState(0)
+  const [photoDragOver, setPhotoDragOver] = useState(false)
+  const [activeTemplateId, setActiveTemplateId] = useState<TemplateId | null>(null)
   const aiAbortRef = useRef<AbortController | null>(null)
   const aiRunIdRef = useRef(0)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -207,11 +226,18 @@ export default function HomePage() {
       const hash = normalizeHash(rawHash ?? window.location.hash)
       if (!hash) return
 
-      // Commit the Title tab before scrolling — #editor-ai only mounts on that tab.
-      if (hash === 'editor-ai' || hash === 'editor-title') {
+      if (hash === 'editor-ai') {
+        flushSync(() => {
+          setEditorMode('ai')
+          setEditorTab('create')
+        })
+      } else if (hash === 'editor-title') {
         flushSync(() => setEditorTab('title'))
       } else if (hash === 'editor') {
-        flushSync(() => setEditorTab('setup'))
+        flushSync(() => {
+          setEditorMode('classic')
+          setEditorTab('create')
+        })
       }
 
       void (async () => {
@@ -275,6 +301,12 @@ export default function HomePage() {
     )
   }, [])
 
+  useEffect(() => {
+    if (aiCooldownSec <= 0) return
+    const timer = window.setTimeout(() => setAiCooldownSec((value) => Math.max(0, value - 1)), 1000)
+    return () => window.clearTimeout(timer)
+  }, [aiCooldownSec])
+
   function applyTemplate(id: TemplateId) {
     const template = THUMB_TEMPLATES.find((item) => item.id === id)
     if (!template) return
@@ -287,7 +319,12 @@ export default function HomePage() {
     setTextPos(defaultTextPosition(getPlatform(template.platform), template.layout))
     setActiveStickerIndex(null)
     setTextSelected(false)
-    setStatus(`Template “${template.label}” applied. Drag text or stickers on the preview.`)
+    setActiveTemplateId(template.id)
+    setEditorMode('classic')
+    if (template.nicheId) setNicheId(template.nicheId)
+    if (!title.trim()) setTitle(template.sampleTitle)
+    if (!tag.trim()) setTag(template.sampleTag)
+    setStatus(`Template “${template.label}” applied. Drop a photo or drag the title on the preview.`)
   }
 
   function applyQuickIdea() {
@@ -479,10 +516,29 @@ export default function HomePage() {
     })
   }
 
-  async function runAiThumbnail(mode: 'fresh' | 'more' = 'fresh') {
-    if (aiBusy) return
+  function applyAiLook(item: AiGeneratedImage, index: number, total: number) {
+    setAiPick(index)
+    setPhoto(item.image)
+    setPhotoUrl(item.objectUrl)
+    setPhotoName(`AI scene · look ${index + 1} of ${total}`)
+    setLayout('photo-full')
+    setPhotoShape('square')
+    setStickers([])
+    setActiveStickerIndex(null)
+  }
 
-    // Auto-apply a better style when the scene clearly wants kids/animals/cartoon.
+  function applyScenePreset(preset: (typeof AI_SCENE_PRESETS)[number]) {
+    setAiHint(preset.hint)
+    setAiStyleId(preset.styleId)
+    setAiStyleTip(null)
+    setEditorMode('ai')
+    setEditorTab('create')
+    setStatus(`Preset “${preset.label}” loaded. Generate when you are ready.`)
+  }
+
+  async function runAiThumbnail(mode: 'fresh' | 'more' = 'fresh') {
+    if (aiBusy || aiCooldownSec > 0) return
+
     let styleId = aiStyleId
     const tip = suggestAiStyle(aiHint, aiStyleId)
     if (tip && mode === 'fresh') {
@@ -492,8 +548,11 @@ export default function HomePage() {
     }
 
     const prior = mode === 'more' ? aiVariants : []
-    const wantCount = mode === 'more' ? Math.min(2, Math.max(1, 3 - prior.length)) : 1
-    const showSlots = 3
+    const wantCount =
+      mode === 'more'
+        ? Math.min(AI_LOOK_TARGET - prior.length, AI_LOOK_TARGET)
+        : AI_LOOK_TARGET
+    if (wantCount <= 0) return
 
     aiAbortRef.current?.abort()
     const controller = new AbortController()
@@ -501,8 +560,9 @@ export default function HomePage() {
     aiAbortRef.current = controller
     setAiBusy(true)
     setAiCanFetchMore(false)
-    setAiSlotCount(showSlots)
+    setAiSlotCount(AI_LOOK_TARGET)
     setAiProgressDone(prior.length)
+    setEditorMode('ai')
 
     if (mode === 'fresh') {
       revokeAiVariants(photoUrl)
@@ -514,8 +574,8 @@ export default function HomePage() {
 
     const busyMsg =
       mode === 'more'
-        ? `Fetching ${wantCount} more look${wantCount === 1 ? '' : 's'}…`
-        : 'Creating your first AI look… then you can pick or ask for more.'
+        ? `Painting more looks… ${prior.length + 1}–${AI_LOOK_TARGET}`
+        : 'Painting look 1 of 3 — first one lands on the canvas, then we fill the rest.'
     setAiStatus({ kind: 'busy', text: busyMsg })
     setStatus(busyMsg)
 
@@ -533,53 +593,56 @@ export default function HomePage() {
         (done, total) => {
           if (runId !== aiRunIdRef.current) return
           setAiProgressDone(prior.length + done)
+          const nextIndex = prior.length + Math.min(done + 1, total)
           const text =
             done >= total
-              ? `Got ${total} look${total === 1 ? '' : 's'} — pick one below.`
-              : `Painting look ${prior.length + done + 1} of ${showSlots}…`
+              ? `Got ${prior.length + total} look${prior.length + total === 1 ? '' : 's'} — pick one below.`
+              : `Painting look ${nextIndex} of ${AI_LOOK_TARGET}…`
           setAiStatus({ kind: 'busy', text })
           setStatus(text)
+        },
+        (item, index) => {
+          if (runId !== aiRunIdRef.current) return
+          const slot = prior.length + index
+          setAiVariants((current) => {
+            const next = [...current]
+            next[slot] = item
+            return next.slice(0, AI_LOOK_TARGET)
+          })
+          if (mode === 'fresh' && index === 0) {
+            applyAiLook(item, 0, AI_LOOK_TARGET)
+            if (!title.trim()) setTitle(titleFromScene(aiHint, title))
+          }
         },
       )
       if (runId !== aiRunIdRef.current) return
 
-      const merged = [...prior, ...batch.results].slice(0, 3)
+      const merged = [...prior, ...batch.results].slice(0, AI_LOOK_TARGET)
       setAiVariants(merged)
-      setAiSlotCount(3)
+      setAiSlotCount(AI_LOOK_TARGET)
       setAiProgressDone(merged.length)
       const pickIndex = mode === 'more' ? Math.min(aiPick, merged.length - 1) : 0
-      setAiPick(pickIndex)
-      const chosen = merged[pickIndex] ?? merged[0]!
-      setPhoto(chosen.image)
-      setPhotoUrl(chosen.objectUrl)
-      setPhotoName(`AI scene · pick ${pickIndex + 1} of ${merged.length}`)
-      setLayout('photo-full')
-      setPhotoShape('square')
-      setStickers([])
-      setActiveStickerIndex(null)
-      if (!title.trim()) {
-        setTitle(titleFromScene(aiHint, title))
-      }
+      const chosen = merged[pickIndex] ?? merged[0]
+      if (chosen) applyAiLook(chosen, pickIndex, merged.length)
 
-      const canMore = merged.length < 3 && !batch.rateLimited
+      const canMore = merged.length < AI_LOOK_TARGET && !batch.rateLimited
       setAiCanFetchMore(canMore)
 
       let okMsg =
         merged.length > 1
-          ? `Pick 1 of ${merged.length} below — tap a thumbnail to put it on the canvas.`
-          : 'Your AI look is ready — shown in the picker below. Get more looks if you want variety.'
+          ? `Pick 1 of ${merged.length} — tap a look to put it on the canvas.`
+          : 'Look 1 is on the canvas. Get more looks if you want variety.'
       if (batch.rateLimited) {
-        okMsg = `Got ${merged.length} look${merged.length === 1 ? '' : 's'} before free AI rate-limited us. Use what you have, or wait a minute for more.`
+        okMsg = `Got ${merged.length} look${merged.length === 1 ? '' : 's'} before free AI rate-limited us. Use what you have, then wait about a minute.`
         setAiCanFetchMore(false)
+        setAiCooldownSec(AI_RATE_LIMIT_COOLDOWN_SEC)
       } else if (canMore) {
         okMsg += ' Tap “Get more looks” for up to 3 total.'
       }
       setAiStatus({ kind: 'ok', text: okMsg })
       setStatus(okMsg)
-      setEditorTab('title')
     } catch (error) {
       if (runId !== aiRunIdRef.current) return
-      // User-started supersede only — timeouts throw a normal Error with a message.
       if (error instanceof DOMException && error.name === 'AbortError' && controller.signal.aborted) {
         setAiStatus({ kind: 'idle', text: '' })
         return
@@ -587,10 +650,13 @@ export default function HomePage() {
       const message = error instanceof Error ? error.message : 'AI scene generation failed.'
       setAiStatus({ kind: 'err', text: message })
       setStatus(message)
+      if (/402|rate limit/i.test(message)) {
+        setAiCooldownSec(AI_RATE_LIMIT_COOLDOWN_SEC)
+      }
       if (mode === 'fresh') {
         setAiProgressDone(0)
       }
-      setAiCanFetchMore(prior.length > 0 && prior.length < 3)
+      setAiCanFetchMore(prior.length > 0 && prior.length < AI_LOOK_TARGET)
     } finally {
       if (runId === aiRunIdRef.current) {
         setAiBusy(false)
@@ -602,12 +668,17 @@ export default function HomePage() {
   function pickAiVariant(index: number) {
     const item = aiVariants[index]
     if (!item) return
-    setAiPick(index)
-    setPhoto(item.image)
-    setPhotoUrl(item.objectUrl)
-    setPhotoName(`AI scene · pick ${index + 1} of ${aiVariants.length}`)
-    setLayout('photo-full')
-    setPhotoShape('square')
+    applyAiLook(item, index, aiVariants.length)
+  }
+
+  function onPhotoDrop(event: ReactDragEvent) {
+    event.preventDefault()
+    setPhotoDragOver(false)
+    const file = event.dataTransfer.files?.[0]
+    if (file) {
+      setEditorMode('classic')
+      onPickPhoto(file)
+    }
   }
 
   async function onSimpleLogin(event: FormEvent) {
@@ -725,19 +796,54 @@ export default function HomePage() {
 
         <section id="editor" className="editor-section" aria-label="Thumbnail editor">
           <div className="editor-head">
-            <p className="section-kicker">Editor</p>
+            <p className="section-kicker">Studio</p>
             <h2 className="editor-title">
-              Build your thumbnail <span className="gradient-text">live</span>
+              Idea to finished thumbnail <span className="gradient-text">in one canvas</span>
             </h2>
             <p className="editor-lede">
-              Platform-sized canvas, moods, and drag-to-place text — tuned to match the rest of{' '}
-              {PRODUCT_NAME_FULL}.
+              Generate a free AI backdrop or start from a photo and template — then style the title
+              live. Both paths use the same {PRODUCT_NAME_FULL} canvas.
             </p>
           </div>
         <section className="workbench editor-workbench" aria-label="Thumbnail maker">
+          <div className="editor-path" role="tablist" aria-label="How to start">
+            <button
+              id="editor-ai"
+              type="button"
+              role="tab"
+              aria-selected={editorMode === 'ai'}
+              className={editorMode === 'ai' ? 'editor-path-card is-active' : 'editor-path-card'}
+              onClick={() => {
+                setEditorMode('ai')
+                setEditorTab('create')
+              }}
+            >
+              <span className="editor-path-kicker">✦ AI</span>
+              <strong>AI Thumbnail creator</strong>
+              <small>Describe a scene · pick from up to 3 looks</small>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={editorMode === 'classic'}
+              className={
+                editorMode === 'classic' ? 'editor-path-card is-active' : 'editor-path-card'
+              }
+              onClick={() => {
+                setEditorMode('classic')
+                setEditorTab('create')
+              }}
+            >
+              <span className="editor-path-kicker">Photo</span>
+              <strong>Templates &amp; upload</strong>
+              <small>Drop a still · start from a layout</small>
+            </button>
+          </div>
           <p className="picks-bar" aria-live="polite">
-            Your picks: <strong>{platform.label}</strong> · Look: <strong>{niche.label}</strong>
+            {editorMode === 'ai' ? 'AI path' : 'Photo path'} · <strong>{platform.label}</strong> ·{' '}
+            {platform.width}×{platform.height} · Look: <strong>{niche.label}</strong>
             {accentOverride ? ' · Custom accent' : ''}
+            {photoName ? ` · ${photoName}` : ''}
           </p>
           <form
             className="controls"
@@ -748,15 +854,15 @@ export default function HomePage() {
           >
             <div className="editor-tabs" role="tablist" aria-label="Editor steps">
               <button
-                id="editor-tab-setup"
+                id="editor-tab-create"
                 type="button"
                 role="tab"
-                aria-selected={editorTab === 'setup'}
-                className={editorTab === 'setup' ? 'editor-tab is-active' : 'editor-tab'}
-                onClick={() => setEditorTab('setup')}
-                title="Platform and mood"
+                aria-selected={editorTab === 'create'}
+                className={editorTab === 'create' ? 'editor-tab is-active' : 'editor-tab'}
+                onClick={() => setEditorTab('create')}
+                title="Scene, photo, or template"
               >
-                1 · Setup
+                1 · Create
               </button>
               <button
                 id="editor-tab-title"
@@ -770,21 +876,25 @@ export default function HomePage() {
                 2 · Title
               </button>
               <button
-                id="editor-tab-polish"
+                id="editor-tab-finish"
                 type="button"
                 role="tab"
-                aria-selected={editorTab === 'polish'}
-                className={editorTab === 'polish' ? 'editor-tab is-active' : 'editor-tab'}
-                onClick={() => setEditorTab('polish')}
-                title="Layout, stickers, and extras"
+                aria-selected={editorTab === 'finish'}
+                className={editorTab === 'finish' ? 'editor-tab is-active' : 'editor-tab'}
+                onClick={() => setEditorTab('finish')}
+                title="Layout, stickers, and download"
               >
-                3 · Export
+                3 · Finish
               </button>
             </div>
 
-            {editorTab === 'setup' ? (
+            {editorTab === 'create' ? (
             <section className="step step-clean">
-              <p className="step-lede">Pick where you post and the color mood. Preview updates on the right.</p>
+              <p className="step-lede">
+                {editorMode === 'ai'
+                  ? 'Pick a platform, describe the scene, generate up to 3 looks. First look lands on the canvas; the rest fill in.'
+                  : 'Pick a platform, tap a template, drop a photo. Title styling is one tab away — same canvas as AI.'}
+              </p>
               <div className="choice-row platform-row" role="radiogroup" aria-label="Platform">
                 {PLATFORMS.map((item) => (
                   <button
@@ -803,12 +913,270 @@ export default function HomePage() {
                 ))}
               </div>
 
+              {editorMode === 'classic' ? (
               <div className="quick-row">
                 <button type="button" className="chip solid" onClick={applyQuickIdea}>
                   Quick idea
                 </button>
                 <p className="field-help quick-hint">Shuffle mood, layout, font &amp; title style.</p>
               </div>
+              ) : null}
+
+              {editorMode === 'ai' ? (
+              <div className="photo-box ai-scene-box">
+                <div>
+                  <p className="photo-title">AI Thumbnail creator</p>
+                  <p className="photo-help">
+                    Describe the visual scene. Free Pollinations paints a full-bleed backdrop — we
+                    start look 1 immediately, then fill up to 3 one at a time so we do not burn the
+                    free tier.
+                  </p>
+                  {photoName ? <p className="photo-name">Selected: {photoName}</p> : null}
+                </div>
+                <div className="scene-preset-row" role="list">
+                  {AI_SCENE_PRESETS.map((preset) => (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      role="listitem"
+                      className="chip scene-preset"
+                      onClick={() => applyScenePreset(preset)}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+                <fieldset className="ai-style-field">
+                  <legend>Style (lighting &amp; look — scene text still wins)</legend>
+                  <div className="ai-style-row" role="list">
+                    {AI_STYLES.map((style) => (
+                      <button
+                        key={style.id}
+                        type="button"
+                        role="listitem"
+                        className={
+                          style.id === aiStyleId ? 'chip solid ai-style-chip is-selected' : 'chip ai-style-chip'
+                        }
+                        aria-pressed={style.id === aiStyleId}
+                        title={style.blurb}
+                        onClick={() => {
+                          setAiStyleId(style.id)
+                          setAiStyleTip(suggestAiStyle(aiHint, style.id))
+                        }}
+                      >
+                        <span className="ai-style-chip-label">{style.label}</span>
+                        <span className="ai-style-chip-blurb">{style.blurb}</span>
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+                <label className="ai-hint-field">
+                  Describe the scene for your thumbnail
+                  <textarea
+                    id="ai-scene-hint"
+                    rows={3}
+                    value={aiHint}
+                    onChange={(event) => onAiHintChange(event.target.value)}
+                    placeholder="e.g. cute cartoon animals playing in a sunny jungle for kids"
+                  />
+                </label>
+                {aiStyleTip ? (
+                  <p className="ai-style-suggest" role="status">
+                    This scene fits <strong>{getAiStyle(aiStyleTip).label}</strong> better than{' '}
+                    {getAiStyle(aiStyleId).label}.
+                    <button type="button" className="ai-style-suggest-btn" onClick={applySuggestedStyle}>
+                      Switch style
+                    </button>
+                  </p>
+                ) : (
+                  <p className="ai-honesty-note">
+                    Free Pollinations has no API key and will rate-limit (402) if we fire looks in
+                    parallel — so we paint sequentially. Animals / kids work best with{' '}
+                    <strong>Kids / fun</strong> or <strong>Cartoon</strong>.
+                  </p>
+                )}
+                <div className="photo-actions">
+                  <button
+                    type="button"
+                    className="chip solid ai-generate"
+                    disabled={aiBusy || aiCooldownSec > 0}
+                    aria-busy={aiBusy}
+                    onClick={() => void runAiThumbnail('fresh')}
+                  >
+                    {aiBusy
+                      ? 'Creating looks…'
+                      : aiCooldownSec > 0
+                        ? `Wait ${aiCooldownSec}s`
+                        : 'Generate 3 AI looks'}
+                  </button>
+                  {aiCanFetchMore && !aiBusy && aiCooldownSec === 0 ? (
+                    <button
+                      type="button"
+                      className="chip"
+                      onClick={() => void runAiThumbnail('more')}
+                    >
+                      Get remaining looks
+                    </button>
+                  ) : null}
+                  {aiBusy ? (
+                    <button
+                      type="button"
+                      className="chip"
+                      onClick={() => {
+                        aiAbortRef.current?.abort()
+                        setAiBusy(false)
+                        setAiStatus({ kind: 'idle', text: 'Stopped. Keep the looks you have.' })
+                      }}
+                    >
+                      Stop
+                    </button>
+                  ) : null}
+                </div>
+                <div className="ai-picker-block">
+                  <p className="ai-picker-label">
+                    {aiBusy
+                      ? `Painting looks… ${aiProgressDone}/${aiSlotCount}`
+                      : aiVariants.length > 0
+                        ? `Pick 1 of ${aiVariants.length}${aiVariants.length < AI_LOOK_TARGET ? ` · ${AI_LOOK_TARGET - aiVariants.length} still open` : ''}`
+                        : aiStatus.kind === 'err'
+                          ? 'No looks yet — wait out the cooldown, then try again'
+                          : 'Your 3 AI looks appear here — look 1 first, then 2 and 3'}
+                  </p>
+                  <div className="ai-variant-picker" role="listbox" aria-label="Pick one of up to 3 AI looks">
+                    {Array.from({ length: aiSlotCount }, (_, index) => {
+                      const item = aiVariants[index]
+                      if (item) {
+                        return (
+                          <button
+                            key={`${item.seed}-${index}`}
+                            type="button"
+                            role="option"
+                            aria-selected={index === aiPick}
+                            className={index === aiPick ? 'ai-variant-card is-selected' : 'ai-variant-card'}
+                            onClick={() => pickAiVariant(index)}
+                          >
+                            <img src={item.objectUrl} alt={`AI look ${index + 1}`} />
+                            <span>Look {index + 1}{index === aiPick ? ' · selected' : ''}</span>
+                          </button>
+                        )
+                      }
+                      const loadingThis = aiBusy && index === aiProgressDone
+                      const waiting = aiBusy && index > aiProgressDone
+                      const failedEmpty = !aiBusy && aiStatus.kind === 'err' && aiVariants.length === 0
+                      return (
+                        <div
+                          key={`slot-${index}`}
+                          className={
+                            loadingThis
+                              ? 'ai-variant-card is-loading'
+                              : failedEmpty
+                                ? 'ai-variant-card is-error'
+                                : 'ai-variant-card is-empty'
+                          }
+                          aria-hidden={waiting || (!aiBusy && !failedEmpty)}
+                        >
+                          <div className="ai-variant-placeholder">
+                            {loadingThis ? (
+                              <>
+                                <span className="ai-inline-spinner" aria-hidden />
+                                <span>Painting…</span>
+                              </>
+                            ) : failedEmpty ? (
+                              <span>Failed</span>
+                            ) : waiting ? (
+                              <span>Queued</span>
+                            ) : (
+                              <span>Look {index + 1}</span>
+                            )}
+                          </div>
+                          <span>
+                            {loadingThis ? 'Working' : failedEmpty ? 'Error' : `Slot ${index + 1}`}
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+                {aiStatus.text ? (
+                  <p
+                    className={`ai-inline-status is-${aiStatus.kind}`}
+                    role="status"
+                    aria-live="polite"
+                  >
+                    {aiStatus.kind === 'busy' ? <span className="ai-inline-spinner" aria-hidden /> : null}
+                    {aiStatus.text}
+                  </p>
+                ) : null}
+                <div className="editor-next-row">
+                  <button type="button" className="chip solid" onClick={() => setEditorTab('title')}>
+                    Next: style the title →
+                  </button>
+                </div>
+              </div>
+              ) : (
+              <div className="photo-box classic-create-box">
+                <div>
+                  <p className="photo-title">Templates &amp; your photo</p>
+                  <p className="photo-help">
+                    Same live canvas as AI — tap a starter, drop a JPG/PNG, then style the title.
+                    Drag files onto the preview.
+                  </p>
+                  {photoName ? <p className="photo-name">Selected: {photoName}</p> : null}
+                </div>
+                <div className="template-gallery" role="list">
+                  {THUMB_TEMPLATES.map((item) => {
+                    const tplPlatform = getPlatform(item.platform)
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        className={
+                          activeTemplateId === item.id ? 'template-card is-selected' : 'template-card'
+                        }
+                        role="listitem"
+                        onClick={() => applyTemplate(item.id)}
+                      >
+                        <span className={`template-thumb layout-${item.layout}`} aria-hidden />
+                        <span className="template-copy">
+                          <strong>{item.label}</strong>
+                          <small>
+                            {item.blurb} · {tplPlatform.label}
+                          </small>
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+                <div className="photo-actions">
+                  <button
+                    type="button"
+                    className="chip solid"
+                    onClick={() => fileRef.current?.click()}
+                  >
+                    {photo ? 'Change photo' : 'Upload your photo'}
+                  </button>
+                  {photo ? (
+                    <button type="button" className="chip" onClick={clearPhoto}>
+                      Remove
+                    </button>
+                  ) : null}
+                  <button type="button" className="chip solid" onClick={() => setEditorTab('title')}>
+                    Next: style the title →
+                  </button>
+                </div>
+                <p className="field-help">
+                  Drop a photo on the canvas, or generate an AI scene anytime from the AI path.
+                </p>
+              </div>
+              )}
+
+              <input
+                ref={fileRef}
+                className="file-input"
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={(event) => onPickPhoto(event.target.files?.[0])}
+              />
 
               <label className="search">
                 Search looks
@@ -883,36 +1251,12 @@ export default function HomePage() {
             {editorTab === 'title' ? (
             <section id="editor-title" className="step step-clean">
               <p className="step-lede">
-                Headline, font, and size — watch the live preview update as you type.
+                Headline, font, and size — drag the title on the canvas. Same tools for AI and photo
+                paths.
               </p>
-              <fieldset>
-                <legend>Starter templates</legend>
-                <div className="template-gallery" role="list">
-                  {THUMB_TEMPLATES.map((item) => {
-                    const tplPlatform = getPlatform(item.platform)
-                    return (
-                      <button
-                        key={item.id}
-                        type="button"
-                        className="template-card"
-                        role="listitem"
-                        onClick={() => applyTemplate(item.id)}
-                      >
-                        <span
-                          className={`template-thumb layout-${item.layout}`}
-                          aria-hidden
-                        />
-                        <span className="template-copy">
-                          <strong>{item.label}</strong>
-                          <small>
-                            {tplPlatform.label} · {item.layout.replace('photo-', '')}
-                          </small>
-                        </span>
-                      </button>
-                    )
-                  })}
-                </div>
-              </fieldset>
+              <p className="drag-affordance" aria-hidden>
+                Grab the title on the preview and drag it. Click a style chip to change the look.
+              </p>
 
               <label>
                 Short tag (top line)
@@ -1020,196 +1364,25 @@ export default function HomePage() {
               </div>
               <p className="field-help">
                 Range {TITLE_FONT_SIZE_MIN}–{TITLE_FONT_SIZE_MAX}. Try 96–120 for YouTube titles; go
-                bigger for Shorts.
+                bigger for Shorts. Drag the title block on the canvas to place it.
               </p>
 
-              <div id="editor-ai" className="photo-box ai-scene-box">
-                <div>
-                  <p className="photo-title">AI scene image</p>
-                  <p className="photo-help">
-                    Fill the YouTube title above, pick a style, describe the scene, then generate.
-                    Free AI paints a full-bleed backdrop — you always pick from a clear strip of up
-                    to 3 looks.
-                  </p>
-                  {photoName ? <p className="photo-name">Selected: {photoName}</p> : null}
-                </div>
-                <fieldset className="ai-style-field">
-                  <legend>Style (lighting &amp; look — scene text still wins)</legend>
-                  <div className="ai-style-row" role="list">
-                    {AI_STYLES.map((style) => (
-                      <button
-                        key={style.id}
-                        type="button"
-                        role="listitem"
-                        className={
-                          style.id === aiStyleId ? 'chip solid ai-style-chip is-selected' : 'chip ai-style-chip'
-                        }
-                        aria-pressed={style.id === aiStyleId}
-                        title={style.blurb}
-                        onClick={() => {
-                          setAiStyleId(style.id)
-                          setAiStyleTip(suggestAiStyle(aiHint, style.id))
-                        }}
-                      >
-                        <span className="ai-style-chip-label">{style.label}</span>
-                        <span className="ai-style-chip-blurb">{style.blurb}</span>
-                      </button>
-                    ))}
-                  </div>
-                </fieldset>
-                <label className="ai-hint-field">
-                  Describe the scene for your thumbnail
-                  <input
-                    id="ai-scene-hint"
-                    type="text"
-                    value={aiHint}
-                    onChange={(event) => onAiHintChange(event.target.value)}
-                    placeholder="e.g. cute cartoon animals playing in a sunny jungle for kids"
-                  />
-                </label>
-                {aiStyleTip ? (
-                  <p className="ai-style-suggest" role="status">
-                    This scene fits <strong>{getAiStyle(aiStyleTip).label}</strong> better than{' '}
-                    {getAiStyle(aiStyleId).label}.
-                    <button type="button" className="ai-style-suggest-btn" onClick={applySuggestedStyle}>
-                      Switch style
-                    </button>
-                  </p>
-                ) : (
-                  <p className="ai-honesty-note">
-                    Tip: animals / kids / cartoon scenes work best with <strong>Kids / fun</strong> or{' '}
-                    <strong>Cartoon</strong>. Music stage only adds concert lighting — it will not
-                    replace animals with a singer. Free Pollinations (no API key).
-                  </p>
-                )}
-                <div className="photo-actions">
-                  <button
-                    type="button"
-                    className="chip solid ai-generate"
-                    disabled={aiBusy}
-                    aria-busy={aiBusy}
-                    onClick={() => void runAiThumbnail('fresh')}
-                  >
-                    {aiBusy ? 'Creating look…' : 'Create AI backdrop'}
-                  </button>
-                  {aiCanFetchMore && !aiBusy ? (
-                    <button
-                      type="button"
-                      className="chip"
-                      onClick={() => void runAiThumbnail('more')}
-                    >
-                      Get more looks
-                    </button>
-                  ) : null}
-                  <button
-                    type="button"
-                    className="chip solid"
-                    onClick={() => fileRef.current?.click()}
-                  >
-                    {photo ? 'Change photo' : 'Upload your photo'}
-                  </button>
-                  {photo ? (
-                    <button type="button" className="chip" onClick={clearPhoto}>
-                      Remove
-                    </button>
-                  ) : null}
-                </div>
-                <div className="ai-picker-block">
-                  <p className="ai-picker-label">
-                    {aiBusy
-                      ? `Painting looks… ${aiProgressDone}/${aiSlotCount}`
-                      : aiVariants.length > 0
-                        ? `Pick 1 of ${aiVariants.length}`
-                        : aiStatus.kind === 'err'
-                          ? 'No looks yet — try again after the free tier cools down'
-                          : 'Your 3 AI looks will appear here'}
-                  </p>
-                  <div className="ai-variant-picker" role="listbox" aria-label="Pick one of up to 3 AI looks">
-                    {Array.from({ length: aiSlotCount }, (_, index) => {
-                      const item = aiVariants[index]
-                      if (item) {
-                        return (
-                          <button
-                            key={`${item.seed}-${index}`}
-                            type="button"
-                            role="option"
-                            aria-selected={index === aiPick}
-                            className={index === aiPick ? 'ai-variant-card is-selected' : 'ai-variant-card'}
-                            onClick={() => pickAiVariant(index)}
-                          >
-                            <img src={item.objectUrl} alt={`AI look ${index + 1}`} />
-                            <span>Look {index + 1}{index === aiPick ? ' · selected' : ''}</span>
-                          </button>
-                        )
-                      }
-                      const loadingThis = aiBusy && index === aiProgressDone
-                      const waiting = aiBusy && index > aiProgressDone
-                      const failedEmpty = !aiBusy && aiStatus.kind === 'err' && aiVariants.length === 0
-                      return (
-                        <div
-                          key={`slot-${index}`}
-                          className={
-                            loadingThis
-                              ? 'ai-variant-card is-loading'
-                              : failedEmpty
-                                ? 'ai-variant-card is-error'
-                                : 'ai-variant-card is-empty'
-                          }
-                          aria-hidden={waiting || (!aiBusy && !failedEmpty)}
-                        >
-                          <div className="ai-variant-placeholder">
-                            {loadingThis ? (
-                              <>
-                                <span className="ai-inline-spinner" aria-hidden />
-                                <span>Painting…</span>
-                              </>
-                            ) : failedEmpty ? (
-                              <span>Failed</span>
-                            ) : waiting ? (
-                              <span>Queued</span>
-                            ) : (
-                              <span>Look {index + 1}</span>
-                            )}
-                          </div>
-                          <span>
-                            {loadingThis ? 'Working' : failedEmpty ? 'Error' : `Slot ${index + 1}`}
-                          </span>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-                {aiStatus.text ? (
-                  <p
-                    className={`ai-inline-status is-${aiStatus.kind}`}
-                    role="status"
-                    aria-live="polite"
-                  >
-                    {aiStatus.kind === 'busy' ? <span className="ai-inline-spinner" aria-hidden /> : null}
-                    {aiStatus.text}
-                  </p>
-                ) : null}
-                <input
-                  ref={fileRef}
-                  className="file-input"
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  onChange={(event) => onPickPhoto(event.target.files?.[0])}
-                />
+              <div className="editor-next-row">
+                <button type="button" className="chip solid" onClick={() => setEditorTab('finish')}>
+                  Next: layout &amp; download →
+                </button>
               </div>
             </section>
             ) : null}
 
-            {editorTab === 'polish' ? (
+            {editorTab === 'finish' ? (
             <section className="step step-clean">
               <p className="step-lede">
-                Layout, photo shape, accents, and stickers — title font &amp; size live on the Title
-                tab.
+                Layout, photo shape, accents, and stickers — then download. Title font &amp; size
+                stay on the Title tab.
               </p>
 
-              <details className="fold-panel" open>
-                <summary>Advanced layout &amp; extras</summary>
-                <div className="fold-body">
+              <div className="fold-body">
                   <fieldset>
                     <legend>Photo placement</legend>
                     <div className="choice-row">
@@ -1306,7 +1479,6 @@ export default function HomePage() {
                     </div>
                   </fieldset>
                 </div>
-              </details>
             </section>
             ) : null}
 
@@ -1343,11 +1515,25 @@ export default function HomePage() {
             </section>
           </form>
 
-          <div className="preview-panel">
-            <p className="preview-label">Live preview · {platform.label}</p>
+          <div
+            className={photoDragOver ? 'preview-panel is-drop-target' : 'preview-panel'}
+            onDragOver={(event) => {
+              event.preventDefault()
+              setPhotoDragOver(true)
+            }}
+            onDragLeave={() => setPhotoDragOver(false)}
+            onDrop={onPhotoDrop}
+          >
+            <div className="preview-chrome">
+              <p className="preview-label">Live canvas</p>
+              <p className="preview-meta">
+                {platform.label} · {platform.width}×{platform.height}
+                {dragging ? ' · placing…' : textSelected ? ' · title selected' : ''}
+              </p>
+            </div>
             <div className="preview-viewport">
             <div
-              className={`preview-wrap ${platform.orientation}`}
+              className={`preview-wrap ${platform.orientation}${photoDragOver ? ' is-drop' : ''}${!photo ? ' is-empty' : ''}`}
               style={{ aspectRatio: `${platform.width} / ${platform.height}` }}
             >
               <canvas
@@ -1355,15 +1541,47 @@ export default function HomePage() {
                 className="preview interactive"
                 width={platform.width}
                 height={platform.height}
-                aria-label="Thumbnail preview. Drag title and stickers to move them."
+                aria-label="Thumbnail preview. Drag title and stickers to move them. Drop a photo to place it."
                 onPointerDown={onCanvasPointerDown}
                 onPointerMove={onCanvasPointerMove}
                 onPointerUp={onCanvasPointerUp}
                 onPointerCancel={onCanvasPointerUp}
               />
+              {photoDragOver ? (
+                <div className="canvas-drop-overlay">Drop photo to place it</div>
+              ) : !photo && !aiBusy ? (
+                <div className="canvas-empty-hint">
+                  {editorMode === 'ai' ? (
+                    <>
+                      <p>No backdrop yet</p>
+                      <button
+                        type="button"
+                        className="chip solid"
+                        onClick={() => {
+                          setEditorTab('create')
+                          window.setTimeout(() => document.getElementById('ai-scene-hint')?.focus(), 50)
+                        }}
+                      >
+                        Describe an AI scene
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <p>Drop a photo or pick a template</p>
+                      <button type="button" className="chip solid" onClick={() => fileRef.current?.click()}>
+                        Upload photo
+                      </button>
+                    </>
+                  )}
+                </div>
+              ) : null}
             </div>
             </div>
-            <p className="preview-hint">Drag the title block or stickers directly on the canvas.</p>
+            <p className="preview-hint">
+              {aiBusy
+                ? 'AI is painting — look 1 will snap onto this canvas first.'
+                : 'Drag the title or stickers. Drop a JPG/PNG onto the canvas to replace the photo.'}
+            </p>
           </div>
         </section>
         </section>

@@ -80,9 +80,9 @@ export const AI_FEATURE = {
     'Write your YouTube title, then describe the visual scene. Free AI generates a full-bleed backdrop — you finish the title on the live canvas.',
   nowLabel: 'Works now',
   nowItems: [
-    'Fill the YouTube title field, then type a short scene (person, setting, mood)',
-    'Tap Generate AI scene — free via Pollinations, no API key',
-    'Scene lands full-bleed on the canvas; fine-tune fonts and stickers next',
+    'Tap Try AI Thumbnail creator, then type a short scene (person, setting, mood)',
+    'Generate up to 3 looks sequentially — free via Pollinations, no API key',
+    'First look lands full-bleed on the canvas; pick a favorite, then style the title',
   ],
   notYetLabel: 'Not yet',
   notYetItems: [
@@ -90,6 +90,6 @@ export const AI_FEATURE = {
     'AI draws a scene image — it does not watch your video file',
   ],
   href: '#editor-ai',
-  where: 'Editor · 2 Title · AI scene',
-  cta: 'Try AI in the editor',
+  where: 'Editor · AI Thumbnail creator',
+  cta: 'Try AI Thumbnail creator',
 } as const

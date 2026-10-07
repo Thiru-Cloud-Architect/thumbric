@@ -87,7 +87,7 @@ export type SceneCues = {
 }
 
 const ANIMAL_RE =
-  /\b(animal|animals|puppy|puppies|dog|dogs|kitten|kittens|cat|cats|bunny|bunnies|rabbit|fox|bear|panda|lion|tiger|zoo|farm|woods?|forest|jungle|pet|pets|creature|creatures|bird|birds|duck|ducks|owl|squirrel|raccoon|wolf|deer|horse|pony|dinosaur|dino)\b/i
+  /\b(animal|animals|puppy|puppies|dog|dogs|kitten|kittens|cat|cats|bunny|bunnies|rabbit|fox|bear|panda|lion|tiger|zoo|farm|woods?|forest|jungle|pet|pets|creature|creatures|bird|birds|duck|ducks|owl|squirrel|raccoon|wolf|deer|horse|pony|dinosaur|dino|elephant|monkey|penguin|frog|pig|cow|chick|chicken|koala|otter)\b/i
 const KIDS_RE = /\b(kid|kids|child|children|toddler|baby|babies|nursery|preschool|family.?friendly|for kids)\b/i
 const CARTOON_RE = /\b(cartoon|cartoony|animated|animation|anime.?style|illustrated|mascot|pixar.?like|3d.?render)\b/i
 const HUMAN_RE =
@@ -128,6 +128,11 @@ export type AiThumbOptions = {
   hint?: string
   /** Optional style chip. */
   styleId?: AiStyleId
+  /**
+   * 0–2 look index. Each look uses a different composition (left / right / center)
+   * so three seeds are not the same crop with a different noise seed.
+   */
+  variantIndex?: number
 }
 
 export type AiGeneratedImage = {
@@ -141,8 +146,51 @@ export type AiGeneratedImage = {
 /** Soft ceiling so hung Pollinations requests still surface an error in the UI. */
 export const AI_IMAGE_TIMEOUT_MS = 45_000
 
-/** Pause between sequential free-tier variants (ms). */
-export const AI_VARIANT_GAP_MS = 650
+/** Pause between sequential free-tier variants (ms). Longer gap = fewer 402s. */
+export const AI_VARIANT_GAP_MS = 2_200
+
+/** How many looks we try to fill in the picker. Sequential, not parallel. */
+export const AI_LOOK_TARGET = 3
+
+/** Pollinations URL prompt slice — keep subject at the front so this never chops the scene. */
+export const AI_PROMPT_MAX_CHARS = 880
+
+/** Seconds to wait after a 402 before enabling Generate again. */
+export const AI_RATE_LIMIT_COOLDOWN_SEC = 45
+
+/** One-tap scene starters so the AI path is not a blank box. */
+export const AI_SCENE_PRESETS = [
+  {
+    id: 'kids-animals',
+    label: 'Kids animals',
+    hint: 'cute cartoon animals playing in a sunny jungle, big expressive eyes, bright colors',
+    styleId: 'cartoon' as AiStyleId,
+  },
+  {
+    id: 'face-shock',
+    label: 'Face reaction',
+    hint: 'close-up shocked creator looking at camera, neon studio lights, high emotion',
+    styleId: 'face-reaction' as AiStyleId,
+  },
+  {
+    id: 'product',
+    label: 'Product glow',
+    hint: 'premium gadget floating over dark marble, dramatic rim light, luxury still life',
+    styleId: 'product-hero' as AiStyleId,
+  },
+  {
+    id: 'gaming',
+    label: 'Gaming hype',
+    hint: 'intense gamer silhouette in RGB neon room, controller in hand, cinematic fog',
+    styleId: 'dark-moody' as AiStyleId,
+  },
+  {
+    id: 'stage',
+    label: 'Music stage',
+    hint: 'singer on concert stage, warm spotlights, crowd bokeh, dramatic haze',
+    styleId: 'music-stage' as AiStyleId,
+  },
+] as const
 
 /** Strip junk punctuation that models treat as collage / split cues. */
 export function sanitizeSceneText(raw: string) {
@@ -174,58 +222,66 @@ export function titleFromScene(hint: string, fallbackTitle = '') {
 
 function aspectFraming(platform: Platform) {
   if (platform.orientation === 'vertical') {
-    return 'vertical 9:16 mobile Shorts thumbnail, tall frame, single full-bleed scene'
+    return 'vertical 9:16 Shorts thumbnail, tall full-bleed scene'
   }
   if (platform.orientation === 'square') {
-    return 'square 1:1 social thumbnail, single full-bleed scene'
+    return 'square 1:1 social thumbnail, full-bleed scene'
   }
-  return 'widescreen cinematic YouTube thumbnail still, exact 16:9 landscape, single full-bleed scene filling the entire frame'
+  return 'widescreen cinematic YouTube thumbnail still, exact 16:9 landscape, single full-bleed scene'
+}
+
+function compositionForVariant(index: number) {
+  const variants = [
+    'hero subject on the LEFT third, large empty negative space on the RIGHT for a title overlay',
+    'hero subject on the RIGHT third, large empty negative space on the LEFT for a title overlay',
+    'tight centered hero close-up, keep the LOWER third simpler for a title overlay',
+  ]
+  return variants[((index % variants.length) + variants.length) % variants.length]!
 }
 
 function subjectGuard(cues: SceneCues) {
   if (!cues.nonHumanSubject) return ''
-  return [
-    'CRITICAL subject lock: depict ONLY the described non-human scene',
-    'real or cartoon animals / playful creatures / woodland setting as written',
-    'absolutely NO human face',
-    'NO anime girl',
-    'NO kemonomimi',
-    'NO catgirl',
-    'NO foxgirl',
-    'NO person with animal ears',
-    'NO furry humanoid',
-    'NO anthro character',
-    'NO singer portrait',
-    'NO idol close-up',
-    'NO stock model face layered onto animals',
-  ].join(', ')
+  return 'CRITICAL subject lock: ONLY the described animals or creatures, no human face, no anime girl, no kemonomimi, no catgirl, no furry humanoid, no singer, no idol, no stock model'
 }
 
 function styleBoostForScene(style: AiStyle, cues: SceneCues) {
   if (!cues.nonHumanSubject) return style.boost
-  // Atmosphere recipes must never override animals into a face-reaction / singer shot.
   if (style.id === 'music-stage') {
-    return 'warm concert stage lighting and bokeh on cute animals or the described woodland scene — animals remain the only subjects, no human performer'
+    return 'warm concert stage lighting and bokeh on the animal scene — animals remain the only subjects, no human performer'
   }
   if (style.id === 'face-reaction') {
-    return 'expressive animal faces / reactions only (wide eyes, playful energy) — zero humans'
+    return 'expressive animal faces and reactions only, wide eyes, playful energy, zero humans'
   }
   if (style.id === 'dark-moody') {
-    return 'moody forest rim light and deep shadows on the animal scene — no human face'
+    return 'moody forest rim light and deep shadows on the animal scene, no human face'
   }
   return style.boost
+}
+
+/** Join prompt parts, never chopping the scene subject if we hit the URL cap. */
+export function clampAiPrompt(parts: string[], maxChars = AI_PROMPT_MAX_CHARS) {
+  const cleaned = parts.map((part) => part.trim()).filter(Boolean)
+  const joined = cleaned.join('. ')
+  if (joined.length <= maxChars) return joined
+  const head = cleaned.slice(0, 3).join('. ')
+  const rest = cleaned.slice(3).join('. ')
+  const budget = maxChars - head.length - 2
+  if (budget < 24) return head.slice(0, maxChars)
+  return `${head}. ${rest.slice(0, budget)}`
 }
 
 /**
  * Build a free Pollinations prompt from the user's scene description.
  * Falls back to title + niche when the scene field is empty.
  * This is scene-image generation — not video analysis.
+ * Keep it short: Flux follows the first clauses; a 2k-char essay gets sliced.
  */
 export function buildAiThumbnailPrompt(options: AiThumbOptions) {
   const title = options.title.trim()
   const scene = sanitizeSceneText(options.hint ?? '')
   const style = getAiStyle(options.styleId)
   const cues = analyzeScene(scene)
+  const variantIndex = options.variantIndex ?? 0
   const subject =
     scene ||
     sanitizeSceneText(title) ||
@@ -233,71 +289,35 @@ export function buildAiThumbnailPrompt(options: AiThumbOptions) {
 
   const titleClause =
     title && title.toUpperCase() !== 'YOUR TITLE HERE'
-      ? `video topic mood inspired by: ${title}`
+      ? `video topic mood: ${title}`
       : ''
 
-  const negative = [
-    'no text',
-    'no letters',
-    'no typography',
-    'no captions',
-    'no subtitles',
-    'no logos',
-    'no watermarks',
-    'no brand marks',
-    'no UI chrome',
-    'no collage',
-    'no split screen',
-    'no diptych',
-    'no triptych',
-    'no side by side panels',
-    'no picture in picture',
-    'no inset frames',
-    'no borders',
-    'no frames',
-    'no montage grid',
-    'no unrelated stock family portraits',
-    'no watermark corner badges',
-    ...(cues.nonHumanSubject
-      ? [
-          'no human',
-          'no person',
-          'no face close-up',
-          'no anime girl',
-          'no kemonomimi',
-          'no furry humanoid',
-          'no singer',
-          'no idol',
-        ]
-      : []),
-  ].join(', ')
+  const negative = cues.nonHumanSubject
+    ? 'no text, no letters, no logos, no watermarks, no collage, no split screen, no frames, no human, no person, no anime girl, no kemonomimi, no singer, no idol'
+    : 'no text, no letters, no logos, no watermarks, no collage, no split screen, no diptych, no frames, no UI chrome'
 
   const medium =
     style.id === 'cartoon' || style.id === 'kids-fun' || cues.cartoon
-      ? 'Bold YouTube thumbnail illustration / stylized still'
+      ? 'Bold YouTube thumbnail illustration, stylized still'
       : 'Cinematic YouTube thumbnail photograph'
 
-  const focal =
-    cues.nonHumanSubject
-      ? 'clear animal or scene focal point with readable silhouette at phone-tile size — follow the scene literally'
-      : 'expressive face or clear focal object when the scene includes a character — follow the scene literally'
+  const focal = cues.nonHumanSubject
+    ? 'clear animal silhouette, readable at phone-tile size, follow the scene literally'
+    : 'one clear focal subject, readable at phone-tile size, follow the scene literally'
 
-  const parts = [
+  return clampAiPrompt([
     medium,
     aspectFraming(options.platform),
     `one coherent scene only: ${subject}`,
     subjectGuard(cues),
-    `style recipe (${style.label}): ${styleBoostForScene(style, cues)}`,
+    `composition: ${compositionForVariant(variantIndex)}`,
+    `style (${style.label}): ${styleBoostForScene(style, cues)}`,
     `niche mood: ${options.niche.label} — ${options.niche.hint}`,
     titleClause,
-    // CTR-style composition (leaders optimize for phone tile readability, not "pretty art").
-    'single subject focus, subject on one third, clear negative space on the opposite side for a large title overlay',
-    'high contrast, bold readable composition at phone-tile size (~320px wide), saturated cinematic color grade, sharp focus',
+    'high contrast, saturated cinematic color, sharp focus, ~320px phone-tile readability',
     focal,
     `avoid: ${negative}`,
-  ].filter(Boolean)
-
-  return parts.join('. ')
+  ])
 }
 
 type PollinationsVariant = {
@@ -306,12 +326,11 @@ type PollinationsVariant = {
   query: string
 }
 
-/** Ordered retry set: quality first, then leaner / faster free endpoints. */
+/**
+ * Ordered retry set. Flux without enhance first — enhance is slower and 402s more
+ * on the free tier. Turbo is the fast fallback. Enhance is last-ditch quality.
+ */
 const POLLINATIONS_VARIANTS: PollinationsVariant[] = [
-  {
-    label: 'flux+enhance',
-    query: 'model=flux&nologo=true&enhance=true&nofeed=true&private=true',
-  },
   {
     label: 'flux',
     query: 'model=flux&nologo=true&nofeed=true&private=true',
@@ -319,6 +338,10 @@ const POLLINATIONS_VARIANTS: PollinationsVariant[] = [
   {
     label: 'turbo',
     query: 'model=turbo&nologo=true&nofeed=true&private=true',
+  },
+  {
+    label: 'flux+enhance',
+    query: 'model=flux&nologo=true&enhance=true&nofeed=true&private=true',
   },
 ]
 
@@ -333,7 +356,7 @@ export function buildPollinationsCandidateUrls(
   seed: number,
   bust = Date.now().toString(36),
 ) {
-  const encoded = encodeURIComponent(prompt.slice(0, 900))
+  const encoded = encodeURIComponent(prompt.slice(0, AI_PROMPT_MAX_CHARS))
   return POLLINATIONS_VARIANTS.map((variant) => ({
     label: variant.label,
     url: `https://image.pollinations.ai/prompt/${encoded}?width=${width}&height=${height}&seed=${seed}&${variant.query}&t=${bust}`,
@@ -355,7 +378,7 @@ export class AiHttpError extends Error {
 /** Friendlier copy for Pollinations / free-tier HTTP failures. */
 export function friendlyAiHttpMessage(status: number) {
   if (status === 402) {
-    return 'Free AI is rate-limited or needs payment right now (402). Wait a minute, then try again — we’ll fetch 1 look first so we don’t burn the free tier.'
+    return 'Free AI hit its rate limit (402). We stopped extra looks so we do not burn the quota. Use what you have, wait about a minute, then generate again.'
   }
   if (status === 429) {
     return 'Free AI is busy (too many requests). Wait ~30–60s, then try again.'
@@ -526,17 +549,19 @@ export type AiVariantBatch = {
 }
 
 /**
- * Generate up to `count` different seeds so the user can pick the best backdrop.
- * Runs sequentially with a short gap; stops immediately on 402/429 so we don't spam
- * the free tier. Prefer `count=1` first, then call again for more options.
+ * Generate up to `count` different looks so the user can pick the best backdrop.
+ * Sequential with a long gap; each look uses a different composition (left/right/center).
+ * Stops immediately on 402/429 so we don't spam the free tier.
+ * `onItem` fires as soon as a look lands so the canvas is not empty until all 3 finish.
  */
 export async function generateAiThumbnailVariants(
   options: AiThumbOptions,
-  count = 3,
+  count = AI_LOOK_TARGET,
   signal?: AbortSignal,
   onProgress?: (done: number, total: number) => void,
+  onItem?: (item: AiGeneratedImage, index: number) => void,
 ): Promise<AiVariantBatch> {
-  const total = Math.max(1, Math.min(4, count))
+  const total = Math.max(1, Math.min(AI_LOOK_TARGET, count))
   const results: AiGeneratedImage[] = []
   const base = Math.floor(Math.random() * 1_000_000)
   let rateLimited = false
@@ -553,23 +578,26 @@ export async function generateAiThumbnailVariants(
     }
     onProgress?.(i, total)
     try {
-      const item = await generateAiThumbnailImage(options, signal, base + i * 9973)
+      const item = await generateAiThumbnailImage(
+        { ...options, variantIndex: i },
+        signal,
+        base + i * 9973,
+      )
       results.push(item)
+      onItem?.(item, results.length - 1)
       onProgress?.(i + 1, total)
     } catch (error) {
       if (isAbortError(error) || (error instanceof DOMException && error.name === 'TimeoutError')) {
-        if (results.length > 0 && !(signal?.aborted)) {
+        if (results.length > 0 && !signal?.aborted) {
           break
         }
         throw error
       }
       if (isRateLimitedError(error)) {
         rateLimited = true
-        // Do not burn more sequential calls after 402/429.
         if (results.length === 0) throw friendlyNetworkError(error)
         break
       }
-      // Soft-fail one seed; continue so the picker still gets something.
       if (i === total - 1 && results.length === 0) {
         throw friendlyNetworkError(error)
       }

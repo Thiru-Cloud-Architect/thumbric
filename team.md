@@ -12,12 +12,13 @@ When someone says `@team.md can you help here`, treat these as the open threads:
 2. **Custom domain** — Preferred: `thumbric.ai`. **Blocked on paid registration** (see Domain plan).
 3. **Stale UI** — If the user still sees the old Features grid, verify deploy stamp vs cache / wrong URL.
 
-## Status (2026-10-06)
+## Status (2026-10-07)
 
 | Thread | State |
 |--------|--------|
-| Features AI-first section | **Live** — stamp `UI_BUILD=2026.10.06-az`. Banner: “Describe the scene…”, Works now / Not yet, `#editor-ai` deep link. |
-| Editor AI | **Live** — Title step → “Create AI backdrop” + always-visible Pick 1 of 3 strip; style blurbs + auto Kids/Cartoon tip; animal scenes hard-ban faces; 402 stops after first call. |
+| Features AI-first section | **Live** — stamp `UI_BUILD=2026.10.07-bb`. Banner: “Describe the scene…”, Works now / Not yet, `#editor-ai` deep link. |
+| Selling-point CTA | **Live** — nav pill + sticky header button + hero primary: “Try AI Thumbnail creator” → `#editor-ai`. Careers is footer-only. |
+| Editor AI + classic | **Live** — dual path (AI vs Templates/upload), Create / Title / Finish tabs, 3 sequential looks with composition variants, 402 cooldown, premium canvas chrome. |
 | Title drag | **Fixed** — `clampTextPosition` no longer locks Y to the layout text column (~55% on photo-full); titles can sit in the upper third. |
 | Title font & size | **Restored on Title tab** — font picker + px size (was only on Export/polish after AI UX refactor). |
 | Accents | **Live** — coral→soft magenta (`#ff7f8a` / `#d4a6f0`); purple peeks in gradients, coral stays primary. |

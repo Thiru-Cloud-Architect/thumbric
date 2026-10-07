@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
+  AI_PROMPT_MAX_CHARS,
   analyzeScene,
   buildAiThumbnailPrompt,
   buildPollinationsCandidateUrls,
+  clampAiPrompt,
   friendlyAiHttpMessage,
   sanitizeSceneText,
   suggestAiStyle,
@@ -79,6 +81,33 @@ describe('buildAiThumbnailPrompt', () => {
     expect(prompt).toMatch(/one coherent scene/i)
     expect(prompt).toMatch(/negative space/i)
     expect(prompt).toMatch(/320px/i)
+    expect(prompt.length).toBeLessThanOrEqual(AI_PROMPT_MAX_CHARS)
+  })
+
+  it('varies composition across the 3 looks', () => {
+    const left = buildAiThumbnailPrompt({
+      title: 'Hook',
+      niche,
+      platform,
+      hint: 'creator pointing at a laptop',
+      variantIndex: 0,
+    })
+    const right = buildAiThumbnailPrompt({
+      title: 'Hook',
+      niche,
+      platform,
+      hint: 'creator pointing at a laptop',
+      variantIndex: 1,
+    })
+    expect(left).toMatch(/LEFT third/i)
+    expect(right).toMatch(/RIGHT third/i)
+    expect(left).not.toBe(right)
+  })
+
+  it('keeps the scene subject when the prompt is clamped', () => {
+    const kept = clampAiPrompt(['one coherent scene only: cute pandas', 'x'.repeat(2000)], 80)
+    expect(kept).toMatch(/cute pandas/)
+    expect(kept.length).toBeLessThanOrEqual(80)
   })
 
   it('includes style recipe when a chip is selected', () => {
@@ -113,8 +142,8 @@ describe('buildAiThumbnailPrompt', () => {
 describe('friendlyAiHttpMessage', () => {
   it('explains Pollinations 402 without raw jargon alone', () => {
     const msg = friendlyAiHttpMessage(402)
-    expect(msg).toMatch(/rate-limited|payment|402/i)
-    expect(msg).toMatch(/wait|try again/i)
+    expect(msg).toMatch(/rate limit|402/i)
+    expect(msg).toMatch(/wait|generate again/i)
   })
 })
 
@@ -122,9 +151,9 @@ describe('buildPollinationsCandidateUrls', () => {
   it('returns flux primary plus leaner fallbacks on image.pollinations.ai', () => {
     const urls = buildPollinationsCandidateUrls('kids animals scene', 1280, 720, 42, 'bust1')
     expect(urls).toHaveLength(3)
-    expect(urls[0]?.label).toBe('flux+enhance')
-    expect(urls[1]?.label).toBe('flux')
-    expect(urls[2]?.label).toBe('turbo')
+    expect(urls[0]?.label).toBe('flux')
+    expect(urls[1]?.label).toBe('turbo')
+    expect(urls[2]?.label).toBe('flux+enhance')
     for (const item of urls) {
       expect(item.url).toMatch(/^https:\/\/image\.pollinations\.ai\/prompt\//)
       expect(item.url).toMatch(/width=1280/)
@@ -134,9 +163,9 @@ describe('buildPollinationsCandidateUrls', () => {
       expect(item.url).toMatch(/nologo=true/)
     }
     expect(urls[0]?.url).toMatch(/model=flux/)
-    expect(urls[0]?.url).toMatch(/enhance=true/)
-    expect(urls[1]?.url).toMatch(/model=flux/)
-    expect(urls[1]?.url).not.toMatch(/enhance=true/)
-    expect(urls[2]?.url).toMatch(/model=turbo/)
+    expect(urls[0]?.url).not.toMatch(/enhance=true/)
+    expect(urls[1]?.url).toMatch(/model=turbo/)
+    expect(urls[2]?.url).toMatch(/model=flux/)
+    expect(urls[2]?.url).toMatch(/enhance=true/)
   })
 })

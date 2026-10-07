@@ -24,7 +24,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'How does the AI thumbnail work?',
-    a: 'Open the editor → step 2 Title. Fill the YouTube title field, then under “AI scene image” describe the visual scene (person, setting, mood). Tap Generate AI scene — it paints a full-bleed backdrop via a free image model. It does not paste a YouTube URL or analyze your video file.',
+    a: 'Tap “Try AI Thumbnail creator” in the nav or hero. Describe the visual scene, pick a style, and generate — we paint up to 3 looks one after another (free Pollinations). Pick a favorite, then finish the title on the live canvas. It does not paste a YouTube URL or analyze your video file.',
   },
   {
     q: 'How long does it take?',
@@ -121,19 +121,29 @@ export function HeroFlashy({ onQuickIdea }: LandingProps) {
         </p>
         <div className="hero-cta-row">
           <a
-            className="btn-gradient hero-cta btn-pulse"
+            className="btn-gradient hero-cta hero-cta-ai btn-pulse"
+            href="#editor-ai"
+            onClick={(event) => onEditorHashClick(event, 'editor-ai')}
+          >
+            <span className="nav-ai-spark" aria-hidden>
+              ✦
+            </span>
+            Try AI Thumbnail creator
+            <span aria-hidden> →</span>
+          </a>
+          <a
+            className="btn-outline hero-cta-secondary"
             href="#editor"
             onClick={(event) => onEditorHashClick(event, 'editor')}
           >
-            Start creating free
-            <span aria-hidden> →</span>
+            Open photo editor
           </a>
-          <button type="button" className="btn-outline" onClick={onQuickIdea}>
+          <button type="button" className="btn-outline hero-cta-tertiary" onClick={onQuickIdea}>
             Shuffle Quick idea
           </button>
         </div>
         <p className="hero-fine">
-          Unlimited preview saves · {TRIAL_DAYS}-day clean-export trial on Pricing
+          Free AI backdrop · unlimited preview saves · {TRIAL_DAYS}-day clean-export trial
         </p>
       </div>
     </section>
@@ -226,8 +236,8 @@ export function HowItWorks() {
     {
       n: 3,
       tone: 'blue',
-      title: 'Photo & drag to fit',
-      body: 'Add your face or product shot. Drag the title block and stickers on the live canvas.',
+      title: 'AI scene or your photo',
+      body: 'Generate a free AI backdrop, upload a still, or start from a template. Drag the title on the live canvas.',
     },
     {
       n: 4,

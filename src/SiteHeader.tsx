@@ -12,13 +12,13 @@ export function SiteHeader({ userLabel, onLoginClick }: SiteHeaderProps) {
   const onHome = useOnHomePage()
   const navigate = useNavigate()
 
-  function onStartFree(event: MouseEvent<HTMLAnchorElement>) {
+  function goHomeHash(event: MouseEvent<HTMLAnchorElement>, hash: string) {
     event.preventDefault()
     if (onHome) {
-      goToHash('editor')
+      goToHash(hash)
       return
     }
-    navigate({ pathname: '/', hash: '#editor' })
+    navigate({ pathname: '/', hash: `#${hash}` })
   }
 
   return (
@@ -33,8 +33,14 @@ export function SiteHeader({ userLabel, onLoginClick }: SiteHeaderProps) {
         <NavHashLink hash="features">Features</NavHashLink>
         <Link to="/pricing">Pricing</Link>
         <NavHashLink hash="how">How it works</NavHashLink>
-        <NavHashLink hash="editor">Editor</NavHashLink>
-        <Link to="/career">Careers</Link>
+        <NavHashLink hash="editor-ai">
+          <span className="nav-ai-cta">
+            <span className="nav-ai-spark" aria-hidden>
+              ✦
+            </span>
+            Try AI Thumbnail creator
+          </span>
+        </NavHashLink>
       </nav>
       <div className="top-actions">
         {onLoginClick ? (
@@ -43,17 +49,39 @@ export function SiteHeader({ userLabel, onLoginClick }: SiteHeaderProps) {
           </button>
         ) : null}
         {onHome ? (
-          <a className="top-cta top-cta-light" href="#editor" onClick={onStartFree}>
-            Start free
-          </a>
+          <>
+            <a
+              className="top-cta top-cta-ai"
+              href="#editor-ai"
+              onClick={(event) => goHomeHash(event, 'editor-ai')}
+            >
+              Try AI Thumbnail creator
+            </a>
+            <a
+              className="top-cta top-cta-light top-cta-secondary"
+              href="#editor"
+              onClick={(event) => goHomeHash(event, 'editor')}
+            >
+              Start free
+            </a>
+          </>
         ) : (
-          <Link
-            className="top-cta top-cta-light"
-            to={{ pathname: '/', hash: '#editor' }}
-            onClick={onStartFree}
-          >
-            Start free
-          </Link>
+          <>
+            <Link
+              className="top-cta top-cta-ai"
+              to={{ pathname: '/', hash: '#editor-ai' }}
+              onClick={(event) => goHomeHash(event, 'editor-ai')}
+            >
+              Try AI Thumbnail creator
+            </Link>
+            <Link
+              className="top-cta top-cta-light top-cta-secondary"
+              to={{ pathname: '/', hash: '#editor' }}
+              onClick={(event) => goHomeHash(event, 'editor')}
+            >
+              Start free
+            </Link>
+          </>
         )}
       </div>
     </header>
