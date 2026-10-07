@@ -2,25 +2,17 @@
 
 Free browser thumbnail maker for **YouTube**, Shorts/Reels, Instagram, LinkedIn, and Facebook — plus **AI image** generation in the editor.
 
-**Live site:** https://thiru-cloud-architect.github.io/thumbric/
+**Live site:** https://thumbric.app/  
+**Fallback:** https://thiru-cloud-architect.github.io/thumbric/
 
 ## Brand vs URL
 
 | What | Name |
 |------|------|
 | **Product** | **Thumbric.ai** |
-| **GitHub Pages path** | `/thumbric/` (repo name) until you attach a custom domain |
+| **Public site** | **thumbric.app** (Cloudflare → GitHub Pages) |
 
-### Connect `thumbric.ai` on Cloudflare (recommended)
-
-**Blocker today:** `thumbric.ai` is not registered (NXDOMAIN). Buy it first, then:
-
-1. Buy **thumbric.ai** (Cloudflare Registrar or any registrar).
-2. Add DNS records GitHub shows for Pages (apex `A`/`AAAA`, optional `www` `CNAME`).
-3. GitHub → repo **Settings → Pages → Custom domain** → `thumbric.ai`.
-4. Uncomment `VITE_BASE_PATH: /` and `VITE_SITE_URL: https://thumbric.ai/` in `.github/workflows/pages.yml` and push `main`.
-
-See `DEPLOY.md` for the full checklist. Worker API (optional) can live on `api.thumbric.ai` — see `worker/`.
+Connect steps and DNS records: see **[DEPLOY.md](./DEPLOY.md)**. Optional later: buy `thumbric.ai` and redirect `.app` → `.ai`. Worker API can live on `api.thumbric.app` — see `worker/`.
 
 ## Features today
 

@@ -4,10 +4,10 @@ import path from 'node:path'
 import react from '@vitejs/plugin-react'
 import { defineConfig, type Plugin } from 'vite'
 
-/** GitHub project site: `/thumbric/` matches repo name. Custom domain: set VITE_BASE_PATH=/ */
-const base = process.env.VITE_BASE_PATH || '/thumbric/'
+/** Custom domain defaults to /. Local project-path builds: VITE_BASE_PATH=/thumbric/ */
+const base = process.env.VITE_BASE_PATH || '/'
 const siteUrl = (
-  process.env.VITE_SITE_URL || 'https://thiru-cloud-architect.github.io/thumbric/'
+  process.env.VITE_SITE_URL || 'https://thumbric.app/'
 ).replace(/\/?$/, '/')
 // So Vite's HTML `%VITE_SITE_URL%` replacement (and client import.meta.env) see a default.
 process.env.VITE_SITE_URL = siteUrl

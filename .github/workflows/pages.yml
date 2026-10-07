@@ -13,11 +13,10 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # Defaults keep the project site at /thumbric/ on github.io.
-    # After thumbric.ai is purchased + DNS → GitHub Pages, uncomment:
-    # env:
-    #   VITE_BASE_PATH: /
-    #   VITE_SITE_URL: https://thumbric.ai/
+    # Custom domain thumbric.app (Cloudflare → GitHub Pages).
+    env:
+      VITE_BASE_PATH: /
+      VITE_SITE_URL: https://thumbric.app/
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

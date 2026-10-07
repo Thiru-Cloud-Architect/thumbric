@@ -1,90 +1,60 @@
-# Deploy notes (Thumbric.ai)
+# Deploy notes (Thumbric)
 
-## Production URL (live now — zero user action)
+## Live URLs
 
-- Product: **Thumbric.ai**
-- GitHub repo: `Thiru-Cloud-Architect/thumbric`
-- **Canonical site:** https://thiru-cloud-architect.github.io/thumbric/
-- Custom domain: **not connected**
+| URL | Role |
+|-----|------|
+| **https://thumbric.app/** | **Primary** (Cloudflare Registrar → GitHub Pages) |
+| https://thiru-cloud-architect.github.io/thumbric/ | Fallback project URL (still works) |
 
-GitHub Pages only updates when **`main` is pushed** and the **Pages** workflow finishes. Footer build stamp should match `UI_BUILD` in `src/brand.ts`.
+Product display name remains **Thumbric.ai**; the public site is on **`.app`** for cost.
 
-## Domain plan state (2026-10-06 agent scan)
+Build env (`.github/workflows/pages.yml`):
 
-### Credentials / accounts scanned
+```yaml
+env:
+  VITE_BASE_PATH: /
+  VITE_SITE_URL: https://thumbric.app/
+```
 
-| Source | Result |
-|--------|--------|
-| Env (`CLOUDFLARE_*`, `CF_*`, `AWS_*`, `NAMECHEAP_*`, `WRANGLER_*`, etc.) | **None set** |
-| `gh secret list` (repo) | **Empty** |
-| `~/.config`, `~/.aws`, `~/.wrangler`, `~/.cloudflared`, `.env*` | **No registrar / DNS tokens** |
-| `wrangler whoami` / local wrangler binary | **Not authenticated** (no wrangler install + no CF login) |
-| AWS CLI / Route53 | **Not installed / no credentials** |
-| Cloudflare API | **Unreachable without token** |
+## Connect domain (do once in Cloudflare + GitHub)
 
-### Owned hostnames under this GitHub account
+### 1. Cloudflare DNS (zone: `thumbric.app`)
 
-| Site | URL | Custom domain |
-|------|-----|---------------|
-| thumbric | https://thiru-cloud-architect.github.io/thumbric/ | **none** (`cname: null`) |
-| thumbforge | https://thiru-cloud-architect.github.io/thumbforge/ | none |
-| agent-pr-gate-app | https://thiru-cloud-architect.github.io/agent-pr-gate-app/ | none |
-| `Thiru-Cloud-Architect.github.io` user site | **does not exist** | — |
+Set records to **DNS only** (grey cloud), not proxied, until HTTPS works:
 
-No Cloudflare zones, `*.pages.dev`, or `*.workers.dev` deployments are available without Cloudflare auth.
+| Type | Name | Content |
+|------|------|---------|
+| **A** | `@` | `185.199.108.153` |
+| **A** | `@` | `185.199.109.153` |
+| **A** | `@` | `185.199.110.153` |
+| **A** | `@` | `185.199.111.153` |
+| **AAAA** | `@` | `2606:50c0:8000::153` |
+| **AAAA** | `@` | `2606:50c0:8001::153` |
+| **AAAA** | `@` | `2606:50c0:8002::153` |
+| **AAAA** | `@` | `2606:50c0:8003::153` |
+| **CNAME** | `www` | `thiru-cloud-architect.github.io` |
 
-### DNS availability (Cloudflare DoH Status=3 = NXDOMAIN)
+Delete conflicting A/AAAA/CNAME on `@` if Cloudflare added parking records.
 
-| Domain | DNS |
-|--------|-----|
-| `thumbric.ai` | **NXDOMAIN** (not registered) — preferred target |
-| `thumbric.dev` / `.app` / `.io` / `.net` / `.org` / `.xyz` | NXDOMAIN |
-| `thumbric.com` | **REGISTERED** (GoDaddy NS) — do not target |
+### 2. GitHub Pages custom domain
 
-### What can be automated vs not
+Repo **Thiru-Cloud-Architect/thumbric** → **Settings → Pages → Custom domain** → `thumbric.app` → Save.  
+Wait for DNS check ✓ → enable **Enforce HTTPS** (required for `.app`).
 
-| Goal | Automatable without user? |
-|------|---------------------------|
-| Keep shipping on github.io | **Yes** — already live |
-| Register `thumbric.ai` (or alt) via API | **No** — needs paid registrar + billing method; no API token present |
-| Cloudflare Pages `*.pages.dev` deploy | **No** — needs `wrangler` login / `CLOUDFLARE_API_TOKEN` |
-| GitHub Pages custom domain + HTTPS + `VITE_*` flip | **After domain is owned + DNS** — agent can finish via `gh` + workflow edit |
+Optional: also add `www.thumbric.app` if you use the www CNAME.
 
-**Zero-touch custom domain is impossible** in this environment. The only free hostname that works with zero user action remains the GitHub project Pages URL above.
+### 3. Push / wait
 
-### Free vs buy (recommendation)
+Push to `main` runs the Pages workflow. Footer stamp should match `UI_BUILD` in `src/brand.ts`.
 
-| Choice | Cost | Notes |
-|--------|------|-------|
-| Stay on github.io | **Free** | Live now; fine for launch |
-| `thumbric.ai` | **~$80/yr** (often 2-yr min) | Preferred brand match; Cloudflare Registrar |
-| `thumbric.app` / `.dev` | **~$8–15/yr** | Strong cheaper alternatives |
-| Other names (`thumbrix`, `thumbora`, …) | see **DOMAIN_OPTIONS.md** | Full TLD + alternate-name matrix |
+## Later: move to thumbric.ai
 
-**Not purchased yet** — do not claim domain progress. Live stays on github.io until someone buys + follows steps below.
+1. Buy `thumbric.ai` on Cloudflare (~$80/yr).  
+2. Point DNS the same way.  
+3. Change Pages custom domain + set `VITE_SITE_URL: https://thumbric.ai/`.  
+4. Redirect `thumbric.app` → `thumbric.ai` (Cloudflare Redirect Rule).
 
-See **[DOMAIN_OPTIONS.md](./DOMAIN_OPTIONS.md)** for Cloudflare pricing choices across `.ai` / `.app` / `.dev` / `.io` and alternate brands.
+## Domain shopping notes
 
-## Single unavoidable user step (custom domain)
-
-1. **Buy `thumbric.ai`** (or cheaper `thumbric.app`) with your payment method. Cloudflare Registrar recommended for `.ai`.
-
-Optional but best for agents afterward: create a Cloudflare API token (Zone DNS Edit + Registrar if available) and put it in the Cursor environment / repo secret as `CLOUDFLARE_API_TOKEN`. Then say `@team.md domain` — agents can finish DNS + Pages + `VITE_*` without further clicks.
-
-If you only buy in the dashboard and do not provide a token, also complete DNS + Pages UI yourself (steps below).
-
-## After purchase (exact steps)
-
-1. In Cloudflare DNS for `thumbric.ai`, add GitHub Pages records (apex `A`/`AAAA` and/or `www` `CNAME` → `thiru-cloud-architect.github.io`).
-2. GitHub → **Settings → Pages → Custom domain** → `thumbric.ai` (optionally `www`). Wait until DNS check passes and **Enforce HTTPS** is on.
-3. In `.github/workflows/pages.yml`, uncomment:
-
-   ```yaml
-   env:
-     VITE_BASE_PATH: /
-     VITE_SITE_URL: https://thumbric.ai/
-   ```
-
-4. Push `main`. Build stamps `SITE_URL`, sitemap, robots, `404.html`, and router basename from those env vars — no further code edits needed.
-
-Optional: add a `CNAME` file containing `thumbric.ai` under `public/` after step 2 (GitHub also sets this when you save the custom domain in the UI).
+See [DOMAIN_OPTIONS.md](./DOMAIN_OPTIONS.md).
