@@ -37,6 +37,9 @@ describe('titleFromScene', () => {
 
   it('derives a short title from the scene when title is empty', () => {
     expect(titleFromScene('Tamil Song Cover | Own Voice', '')).toBe('Tamil Song Cover Own Voice')
+    expect(titleFromScene('cute cartoon fox in a sunny jungle, big eyes', '')).toBe(
+      'cute cartoon fox in a sunny jungle',
+    )
   })
 
   it('ignores the YOUR TITLE HERE placeholder', () => {

@@ -239,10 +239,11 @@ export function titleFromScene(hint: string, fallbackTitle = '') {
 
   // Prefer the first clause; keep it short enough for a YouTube thumb.
   const clause = scene.split(/[,.–—:]/)[0]?.trim() || scene
-  const words = clause.split(/\s+/).filter(Boolean).slice(0, 6)
-  const short = words.join(' ')
-  if (short.length <= 42) return short
-  return `${short.slice(0, 39).trim()}…`
+  if (clause.length <= 42) return clause
+  const cut = clause.slice(0, 42)
+  const lastSpace = cut.lastIndexOf(' ')
+  const short = (lastSpace > 16 ? cut.slice(0, lastSpace) : cut).trim()
+  return `${short}…`
 }
 
 function aspectFraming(platform: Platform) {

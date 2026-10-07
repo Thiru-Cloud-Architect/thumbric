@@ -2,7 +2,7 @@
 
 **Date:** 2026-10-07  
 **Live:** https://thumbric.app/  
-**Stamp at audit:** `UI_BUILD=2026.10.07-fallback`  
+**Stamp at audit:** `UI_BUILD=2026.10.07-verify`  
 Blueprint: ChatGPT `THUMBRIC_CURSOR_AGENT_BLUEPRINT` v1.0. This is the editor/AI slice, not a full-funnel audit.
 
 | ID | Requirement | Status | Evidence |

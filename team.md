@@ -20,7 +20,7 @@ When someone says `@team.md can you help here`, treat these as the open threads:
 | Features AI-first section | **Live** — banner: “Describe the scene…”, Works now / Not yet, `#editor-ai` deep link. |
 | Selling-point CTA | **Live** — hero primary “Try AI Thumbnail creator” → `#editor-ai`; header **Start free** opens AI editor; hero **Start 7-day trial**. Careers is footer-only. |
 | Editor AI + classic | **Live** — studio layout (tools / canvas / inspector), title kit, templates, one-tap Bigger / Punchier / Cleaner. |
-| AI looks | **Live** — 3 looks always fill. Free path: 1 model call + framed crops. If the model is busy/unreachable, **3 studio stills** still land on the picker (stamp `UI_BUILD=2026.10.07-fallback`). |
+| AI looks | **Live** — 3 looks always fill. Free path: 1 model call + framed crops. If the model is busy/unreachable, **3 cinematic studio plates** still land on the picker (stamp `UI_BUILD=2026.10.07-verify`). |
 | Title drag | **Fixed** — titles can sit in the upper third. |
 | Accents | **Live** — coral→soft magenta (`#ff7f8a` / `#d4a6f0`). |
 | Pricing | **Live** — Creator $19 / Pro $49; INR ₹999 / ₹2499. |
@@ -37,5 +37,5 @@ When someone says `@team.md can you help here`, treat these as the open threads:
 ```bash
 curl -sL https://thumbric.app/ | rg -o '/assets/index-[^"]+\.js'
 # Expect UI_BUILD string inside that bundle:
-# 2026.10.07-fallback
+# 2026.10.07-verify
 ```

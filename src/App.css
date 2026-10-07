@@ -1056,7 +1056,7 @@ main {
 }
 
 .hero-inner > .hero-cta-row {
-  animation-delay: 0.34s;
+  animation: none;
 }
 
 .hero-inner > .hero-fine {

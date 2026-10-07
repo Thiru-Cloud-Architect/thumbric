@@ -49,65 +49,37 @@ function focalForVariant(index: number) {
   return variants[((index % variants.length) + variants.length) % variants.length]!
 }
 
-function paintSubject(
+/** Soft cinematic mass — a poster plate, not clip-art silhouettes. */
+function paintHeroVolume(
   ctx: CanvasRenderingContext2D,
   fx: number,
   fy: number,
   size: number,
   palette: StudioPalette,
-  cues: SceneCues,
-  styleId: AiStyleId,
 ) {
   ctx.save()
-  ctx.translate(fx, fy)
-  ctx.fillStyle = rgba(palette.deep, 0.88)
-  ctx.strokeStyle = rgba(palette.glow, 0.55)
-  ctx.lineWidth = Math.max(3, size * 0.03)
-
-  if (cues.animals && !cues.wantsHuman) {
-    ctx.beginPath()
-    ctx.ellipse(0, size * 0.12, size * 0.42, size * 0.34, 0, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.beginPath()
-    ctx.ellipse(0, -size * 0.22, size * 0.28, size * 0.26, 0, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.beginPath()
-    ctx.moveTo(-size * 0.22, -size * 0.38)
-    ctx.lineTo(-size * 0.08, -size * 0.58)
-    ctx.lineTo(0, -size * 0.32)
-    ctx.moveTo(size * 0.22, -size * 0.38)
-    ctx.lineTo(size * 0.08, -size * 0.58)
-    ctx.lineTo(0, -size * 0.32)
-    ctx.fill()
-  } else if (styleId === 'product-hero') {
-    const w = size * 0.38
-    const h = size * 0.52
-    ctx.beginPath()
-    ctx.rect(-w, -h * 0.45, w * 2, h)
-    ctx.fill()
-    ctx.stroke()
-    ctx.fillStyle = rgba(palette.rim, 0.18)
-    ctx.fillRect(-w * 0.7, -h * 0.35, w * 0.18, h * 0.7)
-  } else if (cues.wantsHuman || styleId === 'face-reaction') {
-    ctx.beginPath()
-    ctx.ellipse(0, size * 0.28, size * 0.48, size * 0.38, 0, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.beginPath()
-    ctx.arc(0, -size * 0.18, size * 0.22, 0, Math.PI * 2)
-    ctx.fill()
-  } else {
-    ctx.beginPath()
-    ctx.moveTo(-size * 0.48, size * 0.4)
-    ctx.quadraticCurveTo(-size * 0.1, -size * 0.55, size * 0.12, size * 0.08)
-    ctx.quadraticCurveTo(size * 0.32, -size * 0.22, size * 0.5, size * 0.4)
-    ctx.closePath()
-    ctx.fill()
-  }
+  const core = ctx.createRadialGradient(fx, fy, size * 0.04, fx, fy, size * 0.55)
+  core.addColorStop(0, rgba(palette.rim, 0.55))
+  core.addColorStop(0.22, rgba(palette.glow, 0.42))
+  core.addColorStop(0.58, rgba(palette.mid, 0.22))
+  core.addColorStop(1, rgba(palette.deep, 0))
+  ctx.fillStyle = core
+  ctx.beginPath()
+  ctx.ellipse(fx, fy, size * 0.42, size * 0.5, -0.18, 0, Math.PI * 2)
+  ctx.fill()
 
   ctx.globalCompositeOperation = 'screen'
-  ctx.fillStyle = rgba(palette.glow, 0.22)
+  const shaft = ctx.createLinearGradient(fx - size * 0.05, fy - size * 0.7, fx + size * 0.2, fy + size * 0.6)
+  shaft.addColorStop(0, rgba(palette.rim, 0))
+  shaft.addColorStop(0.45, rgba(palette.glow, 0.28))
+  shaft.addColorStop(1, rgba(palette.glow, 0))
+  ctx.fillStyle = shaft
   ctx.beginPath()
-  ctx.ellipse(-size * 0.12, -size * 0.18, size * 0.2, size * 0.14, -0.4, 0, Math.PI * 2)
+  ctx.moveTo(fx - size * 0.08, fy - size * 0.72)
+  ctx.lineTo(fx + size * 0.14, fy - size * 0.72)
+  ctx.lineTo(fx + size * 0.32, fy + size * 0.55)
+  ctx.lineTo(fx - size * 0.22, fy + size * 0.55)
+  ctx.closePath()
   ctx.fill()
   ctx.restore()
 }
@@ -127,7 +99,7 @@ export function paintStudioLook(
     styleId: AiStyleId
   },
 ) {
-  const { width, height, palette, variantIndex, cues, styleId } = options
+  const { width, height, palette, variantIndex } = options
   const focal = focalForVariant(variantIndex)
 
   ctx.fillStyle = palette.deep
@@ -170,8 +142,8 @@ export function paintStudioLook(
   }
   ctx.restore()
 
-  const size = Math.min(width, height) * 0.72 * focal.scale
-  paintSubject(ctx, gx, gy, size, palette, cues, styleId)
+  const size = Math.min(width, height) * 0.78 * focal.scale
+  paintHeroVolume(ctx, gx, gy, size, palette)
 
   const floor = ctx.createLinearGradient(0, height * 0.62, 0, height)
   floor.addColorStop(0, rgba(palette.deep, 0))
