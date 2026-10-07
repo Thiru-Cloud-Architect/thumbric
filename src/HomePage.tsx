@@ -1549,7 +1549,7 @@ export default function HomePage() {
               />
               {photoDragOver ? (
                 <div className="canvas-drop-overlay">Drop photo to place it</div>
-              ) : !photo && !aiBusy ? (
+              ) : !photo && !aiBusy && !title.trim() ? (
                 <div className="canvas-empty-hint">
                   {editorMode === 'ai' ? (
                     <>
