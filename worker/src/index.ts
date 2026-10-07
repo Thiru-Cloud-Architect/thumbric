@@ -171,9 +171,8 @@ async function handleAiImage(request: Request, env: Env) {
       ? await generateWithFal(env, prompt, width, height, seed)
       : await generateWithWorkersAi(env, prompt, seed)
     return imageResponse(generated.bytes, generated.mime)
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'AI failed'
-    return json({ error: 'generate_failed', message }, 502)
+  } catch {
+    return json({ error: 'generate_failed' }, 502)
   }
 }
 

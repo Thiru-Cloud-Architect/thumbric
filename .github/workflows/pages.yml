@@ -17,6 +17,8 @@ jobs:
     env:
       VITE_BASE_PATH: /
       VITE_SITE_URL: https://thumbric.app/
+      # After `wrangler secret put FAL_KEY` + deploy worker/:
+      # VITE_API_BASE: https://thumbric-api.YOUR_SUBDOMAIN.workers.dev
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

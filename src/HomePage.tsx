@@ -703,9 +703,13 @@ export default function HomePage() {
       const canMore = missing > 0 && !batch.rateLimited && resolveAiBackend().premium
       setAiCanFetchMore(canMore)
       setAiAwaitingRetry(false)
+      if (batch.rateLimited) {
+        setAiCooldownSec(AI_RATE_LIMIT_COOLDOWN_SEC)
+      }
 
-      const okMsg =
-        merged.length >= AI_LOOK_TARGET
+      const okMsg = batch.usedStudioFallback
+        ? 'Free AI is busy — 3 studio looks are ready. Style the title on the canvas.'
+        : merged.length >= AI_LOOK_TARGET
           ? '3 looks ready — tap one to put it on the canvas.'
           : `Pick 1 of ${merged.length} — tap a look to put it on the canvas.`
       setAiStatus({ kind: 'ok', text: okMsg })
@@ -1026,9 +1030,9 @@ export default function HomePage() {
                 <div>
                   <p className="photo-title">AI Thumbnail creator</p>
                   <p className="photo-help">
-                    Describe a visual scene (who, where, mood). You always get 3 looks to pick from
-                    — one hero still plus two styled crops. Title text is added on the canvas, not
-                    burned into the photo.
+                    Describe a visual scene (who, where, mood). You always get 3 looks — even if
+                    free AI is busy, studio stills fill the picker. Title text is added on the
+                    canvas, not burned into the photo.
                   </p>
                   {photoName ? <p className="photo-name">Selected: {photoName}</p> : null}
                 </div>
@@ -1157,6 +1161,11 @@ export default function HomePage() {
                             <img src={item.objectUrl} alt={`AI look ${index + 1}`} />
                             <span>
                               {item.lookLabel || `Look ${index + 1}`}
+                              {item.source === 'grade'
+                                ? ' · restyle'
+                                : item.source === 'studio'
+                                  ? ' · studio'
+                                  : ''}
                               {index === aiPick ? ' · selected' : ''}
                             </span>
                           </button>
@@ -1790,6 +1799,21 @@ export default function HomePage() {
                 onChange={(event) => setTitleOutlineColor(event.target.value)}
               />
             </div>
+            <label className="inspector-field">
+              Font
+              <select
+                className="inspector-select"
+                value={fontId}
+                onChange={(event) => setFontId(event.target.value as FontId)}
+                aria-label="Title font"
+              >
+                {FONTS.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+            </label>
             <label className="inspector-check">
               <input
                 type="checkbox"
@@ -1798,6 +1822,42 @@ export default function HomePage() {
               />
               Drop shadow
             </label>
+            <div className="inspector-polish" role="group" aria-label="One-tap title polish">
+              <button
+                type="button"
+                className="inspector-pill"
+                onClick={() => {
+                  setTitleFontSizePx(clampTitleFontSize(titleFontSizePx + 18))
+                  setStatus('Bigger type — readable on a phone tile.')
+                }}
+              >
+                Bigger type
+              </button>
+              <button
+                type="button"
+                className="inspector-pill"
+                onClick={() => {
+                  setTextStyleId('yellow-pop')
+                  setTitleOutlineWidth(Math.max(14, titleOutlineWidth))
+                  setTitleShadow(true)
+                  setStatus('Punchier title — high contrast for the feed.')
+                }}
+              >
+                Punchier
+              </button>
+              <button
+                type="button"
+                className="inspector-pill"
+                onClick={() => {
+                  applyTitlePreset('left')
+                  setStickers([])
+                  setLayout('photo-full')
+                  setStatus('Cleaner layout — full-bleed photo, title on the left.')
+                }}
+              >
+                Cleaner
+              </button>
+            </div>
             {aiVariants.length > 0 ? (
               <div className="inspector-looks">
                 <span className="inspector-label">Looks</span>

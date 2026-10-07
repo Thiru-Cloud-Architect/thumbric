@@ -24,7 +24,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'How does the AI thumbnail work?',
-    a: 'Tap “Try AI Thumbnail creator” in the hero. Describe the visual scene, pick a style, and generate up to 3 looks. Pick a favorite, then finish the title on the live canvas. It does not paste a YouTube URL or analyze your video file.',
+    a: 'Tap “Try AI Thumbnail creator” in the hero. Describe the visual scene, pick a style, and generate 3 looks. If free AI is busy, studio looks still fill so you can keep editing. Pick a favorite, then finish the title on the live canvas. It does not paste a YouTube URL or analyze your video file.',
   },
   {
     q: 'How long does it take?',
@@ -116,8 +116,8 @@ export function HeroFlashy({ onStartTrial }: HeroFlashyProps) {
           YouTube thumbnails that <span className="gradient-text gradient-text-motion">get the click.</span>
         </h1>
         <p className="hero-sub">
-          {PRODUCT_TAGLINE}. Type your title, pick a mood, watch the live preview update, and download
-          a PNG sized for YouTube, Shorts, Reels, or LinkedIn — in minutes, not hours.
+          {PRODUCT_TAGLINE}. Describe a scene, generate 3 looks, then finish the title on a live
+          YouTube-sized canvas — in minutes, not hours.
         </p>
         <div className="hero-cta-row">
           <a
@@ -224,20 +224,20 @@ export function HowItWorks() {
     {
       n: 1,
       tone: 'violet',
-      title: 'Pick platform & mood',
-      body: 'YouTube, Shorts, Instagram, LinkedIn — correct aspect ratio and color vibe in one tap.',
+      title: 'Describe the scene',
+      body: 'Type who, where, and the mood — or pick a starter. YouTube size is already set.',
     },
     {
       n: 2,
       tone: 'pink',
-      title: 'Title, font & size',
-      body: 'Type your hook, choose a display font, set title size in pixels, and pick a title style.',
+      title: 'Generate 3 looks',
+      body: 'Free AI paints a backdrop. If it is busy, studio looks still fill so you can keep editing.',
     },
     {
       n: 3,
       tone: 'blue',
-      title: 'AI scene or your photo',
-      body: 'Generate a free AI backdrop, upload a still, or start from a template. Drag the title on the live canvas.',
+      title: 'Style the title',
+      body: 'Two-line hook, font, size, and drag-to-place on the live canvas. Punchier / bigger in one tap.',
     },
     {
       n: 4,

@@ -30,26 +30,27 @@ export const LOCAL_LOOK_RECIPES: LocalLookRecipe[] = [
   {
     id: 'hero',
     label: 'Hero',
-    blurb: 'Mid-frame subject',
-    crop: { sx: 0.06, sy: 0.22, sw: 0.88, sh: 0.52 },
-    grade: { contrast: 1.1, brightness: 1.03, saturate: 1.14 },
-    vignette: 0.2,
+    blurb: 'Top-right frame',
+    /** Quadrant crops turn 2x2/split collages into a single still. */
+    crop: { sx: 0.5, sy: 0, sw: 0.5, sh: 0.5 },
+    grade: { contrast: 1.12, brightness: 1.04, saturate: 1.16 },
+    vignette: 0.18,
   },
   {
     id: 'warm',
     label: 'Warm',
-    blurb: 'Top frame, golden grade',
-    crop: { sx: 0, sy: 0, sw: 0.78, sh: 0.48 },
+    blurb: 'Top-left, golden grade',
+    crop: { sx: 0, sy: 0, sw: 0.5, sh: 0.5 },
     grade: { contrast: 1.14, brightness: 1.06, saturate: 1.28, sepia: 0.22 },
     vignette: 0.16,
   },
   {
     id: 'cinematic',
     label: 'Cinematic',
-    blurb: 'Lower frame, cool contrast',
-    crop: { sx: 0.18, sy: 0.5, sw: 0.82, sh: 0.5 },
+    blurb: 'Bottom-right, cool contrast',
+    crop: { sx: 0.5, sy: 0.5, sw: 0.5, sh: 0.5 },
     grade: { contrast: 1.28, brightness: 0.9, saturate: 0.88, hueRotate: 196 },
-    vignette: 0.36,
+    vignette: 0.34,
   },
 ]
 
@@ -144,7 +145,7 @@ export type FillLooksOptions = {
   prompt: string
   seed: number
   styleId: AiStyleId
-  /** Keep the original as look 1 when true (default). */
+  /** Keep the original as look 1 when true. Default false so a collage still is split into 3 framed looks. */
   keepOriginal?: boolean
 }
 

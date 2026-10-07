@@ -699,7 +699,7 @@ export async function generateAiThumbnailImage(
 
     if (gate.timedOut()) {
       throw new Error(
-        `AI scene timed out after ${Math.round(AI_IMAGE_TIMEOUT_MS / 1000)}s. Try a shorter scene, or tap Generate again.`,
+        'That took too long. Try a shorter scene, or tap Generate again.',
       )
     }
     if (signal?.aborted) {
@@ -709,7 +709,7 @@ export async function generateAiThumbnailImage(
   } catch (error) {
     if (gate.timedOut() && (isAbortError(error) || (error instanceof DOMException && error.name === 'TimeoutError'))) {
       throw new Error(
-        `AI scene timed out after ${Math.round(AI_IMAGE_TIMEOUT_MS / 1000)}s. Try a shorter scene, or tap Generate again.`,
+        'That took too long. Try a shorter scene, or tap Generate again.',
       )
     }
     if (isAbortError(error) && signal?.aborted) {
@@ -745,7 +745,8 @@ export type GenerateAiVariantsHooks = {
 
 /**
  * Generate looks so the user can pick the best backdrop.
- * Free Pollinations: one model call, then local crop/grade fills to 3 looks.
+ * Free path: one model call, then local crop/grade fills to 3 looks.
+ * If the model is busy or unreachable, 3 cinematic studio stills still fill the picker.
  * Premium (Worker/fal): up to 3 model calls, then local fill if a call fails.
  * `onItem` fires as soon as a look lands so the canvas is not empty until all 3 finish.
  */
@@ -766,6 +767,11 @@ export async function generateAiThumbnailVariants(
   const results: AiGeneratedImage[] = []
   const base = Math.floor(Math.random() * 1_000_000)
   let rateLimited = false
+  let usedStudioFallback = false
+  const width = Math.min(1280, options.platform.width)
+  const height = Math.round((width * options.platform.height) / options.platform.width)
+  const styleId = getAiStyle(options.styleId).id
+  const prompt = buildAiThumbnailPrompt({ ...options, styleId })
 
   for (let i = 0; i < total; i++) {
     if (signal?.aborted) break
@@ -793,29 +799,53 @@ export async function generateAiThumbnailVariants(
       onItem?.(item, results.length - 1)
       onProgress?.(i + 1, total)
     } catch (error) {
+      if (isAbortError(error) && signal?.aborted) {
+        if (results.length > 0) break
+        throw error
+      }
       if (isAbortError(error) || (error instanceof DOMException && error.name === 'TimeoutError')) {
         if (results.length > 0 && !signal?.aborted) {
           break
         }
-        throw error
+        if (signal?.aborted) throw error
+        break
       }
       if (isAiRateLimitedError(error)) {
         rateLimited = true
-        if (results.length === 0) throw friendlyNetworkError(error)
         break
       }
       if (i === total - 1 && results.length === 0) {
-        throw friendlyNetworkError(error)
+        break
       }
     }
   }
 
   if (results.length === 0) {
-    throw new Error('Could not create those looks. Try again in a moment.')
+    if (signal?.aborted) {
+      throw new DOMException('Aborted', 'AbortError')
+    }
+    const studio = await composeStudioLooks({
+      width,
+      height,
+      prompt,
+      seed: base,
+      styleId,
+      hint: options.hint ?? options.title,
+      niche: options.niche,
+      cues: analyzeScene(`${options.hint ?? ''} ${options.title}`),
+      count: AI_LOOK_TARGET,
+    })
+    if (studio.length === 0) {
+      throw new Error('Could not create those looks. Try again in a moment.')
+    }
+    usedStudioFallback = true
+    for (const item of studio) {
+      results.push(item)
+      onItem?.(item, results.length - 1)
+    }
+    onProgress?.(results.length, AI_LOOK_TARGET)
   }
 
-  const width = Math.min(1280, options.platform.width)
-  const height = Math.round((width * options.platform.height) / options.platform.width)
   const filled = await fillLooksToTarget(results, AI_LOOK_TARGET, {
     width,
     height,
@@ -831,7 +861,7 @@ export async function generateAiThumbnailVariants(
   }
   onProgress?.(filled.length, AI_LOOK_TARGET)
 
-  return { results: filled, rateLimited, requested: total, startIndex }
+  return { results: filled, rateLimited, requested: total, startIndex, usedStudioFallback }
 }
 
 function loadImage(src: string, signal?: AbortSignal) {

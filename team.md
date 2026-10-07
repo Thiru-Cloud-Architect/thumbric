@@ -1,7 +1,8 @@
 # Thumbric.ai — team brief
 
 Living status for agents and humans.  
-**Canonical live URL:** https://thiru-cloud-architect.github.io/thumbric/  
+**Canonical live URL:** https://thumbric.app/  
+Fallback: https://thiru-cloud-architect.github.io/thumbric/  
 Repo: `Thiru-Cloud-Architect/thumbric` · Code checkout often at `/home/ubuntu/thumbforge`
 
 ## Help here (current ask)
@@ -9,46 +10,32 @@ Repo: `Thiru-Cloud-Architect/thumbric` · Code checkout often at `/home/ubuntu/t
 When someone says `@team.md can you help here`, treat these as the open threads:
 
 1. **Features / AI UX** — Make it obvious that AI is “describe the scene → free AI image,” not full video analysis (cost).
-2. **Custom domain** — Preferred: `thumbric.ai`. **Blocked on paid registration** (see Domain plan).
-3. **Stale UI** — If the user still sees the old Features grid, verify deploy stamp vs cache / wrong URL.
+2. **Custom domain `thumbric.ai`** — Preferred later; **live is `thumbric.app`**. `.ai` still needs paid registration.
+3. **Stale UI** — Footer stamp must match `UI_BUILD` in `src/brand.ts`. Hard-refresh if cache shows an older stamp.
 
 ## Status (2026-10-07)
 
 | Thread | State |
 |--------|--------|
-| Features AI-first section | **Live** — stamp `UI_BUILD=2026.10.07-studio`. Banner: “Describe the scene…”, Works now / Not yet, `#editor-ai` deep link. |
-| Selling-point CTA | **Live** — hero primary “Try AI Thumbnail creator” → `#editor-ai`; header **Start free** opens AI editor; hero **Start 7-day trial** replaces Shuffle. Careers is footer-only. Nav pill removed. |
-| Editor AI + classic | **Live** — studio layout (tools / canvas / inspector), 3 looks always fill (1 model call + local grades on free), fal Worker proxy when `FAL_KEY` + `VITE_API_BASE` are set. |
-| Title drag | **Fixed** — `clampTextPosition` no longer locks Y to the layout text column (~55% on photo-full); titles can sit in the upper third. |
-| Title font & size | **Restored on Title tab** — font picker + px size (was only on Export/polish after AI UX refactor). |
-| Accents | **Live** — coral→soft magenta (`#ff7f8a` / `#d4a6f0`); purple peeks in gradients, coral stays primary. |
-| Pricing | **Live** — Creator $19 (was $39), Pro $49 (was $99); INR ₹999 / ₹2499. Launch offer copy on Pricing. |
-| Custom domain `thumbric.ai` | **Blocked — one user step** — NXDOMAIN; not purchased; live stays github.io. Prefer buy `thumbric.ai` (~$80/yr) or cheaper `thumbric.app` (~$8–15); see `DEPLOY.md`. |
-| Old UI complaints | **Resolved on origin** — hard-refresh or open `/thumbric/` (not `/thumbforge/`). Footer stamp should show `2026.10.06-az`. |
+| Features AI-first section | **Live** — banner: “Describe the scene…”, Works now / Not yet, `#editor-ai` deep link. |
+| Selling-point CTA | **Live** — hero primary “Try AI Thumbnail creator” → `#editor-ai`; header **Start free** opens AI editor; hero **Start 7-day trial**. Careers is footer-only. |
+| Editor AI + classic | **Live** — studio layout (tools / canvas / inspector), title kit, templates, one-tap Bigger / Punchier / Cleaner. |
+| AI looks | **Live** — 3 looks always fill. Free path: 1 model call + framed crops. If the model is busy/unreachable, **3 studio stills** still land on the picker (stamp `UI_BUILD=2026.10.07-fallback`). |
+| Title drag | **Fixed** — titles can sit in the upper third. |
+| Accents | **Live** — coral→soft magenta (`#ff7f8a` / `#d4a6f0`). |
+| Pricing | **Live** — Creator $19 / Pro $49; INR ₹999 / ₹2499. |
+| Custom domain `thumbric.app` | **Live** (Cloudflare Registrar → GitHub Pages). `thumbric.ai` still NXDOMAIN / unpaid. |
+| Premium Worker AI | **Ready in repo, not in production** — needs `wrangler deploy`, `FAL_KEY` (or Workers AI bind), and `VITE_API_BASE` on Pages. No secrets in git. |
 
 ## AI product truth (cost-aware)
 
-- **Now:** User types a short scene (or title + niche hint) → free AI generates a backdrop image → they finish title/fonts/stickers on the canvas.
-- **Not yet:** Paste YouTube URL / watch a video file / full video analysis (needs a paid model).
-
-## Domain plan (final — agent-automated as far as possible)
-
-**Scan (re-run 2026-10-06):** no Cloudflare / Wrangler / AWS Route53 / Namecheap / Google Domains tokens in env, gh secrets, or `~/.config`. No Pages `cname` on any repo. `thumbric.ai` still NXDOMAIN; `thumbric.com` taken (GoDaddy). Free alternatives (`*.pages.dev` / `*.workers.dev`) need Cloudflare login that does not exist here.
-
-**Production without user:** keep https://thiru-cloud-architect.github.io/thumbric/ (already live).
-
-**Only unavoidable user step for a real custom domain:** buy `thumbric.ai` (or `.dev` / `.app`) with a payment method. Prefer Cloudflare Registrar. Optionally add `CLOUDFLARE_API_TOKEN` so agents can finish DNS + GitHub Pages + uncomment `VITE_BASE_PATH` / `VITE_SITE_URL` in `pages.yml` and push `main`.
-
-Details: `DEPLOY.md`.
+- **Now:** User types a short scene → free AI (or studio fallback) fills 3 looks → they finish title/fonts on the canvas.
+- **Not yet:** Paste YouTube URL / watch a video file / photoreal Canva-grade faces with burned-in text (needs a paid model key).
 
 ## Verify deploy
 
 ```bash
-# Build stamp in shipped JS
-curl -sL https://thiru-cloud-architect.github.io/thumbric/ \
-  | rg -o '/thumbric/assets/index-[^"]+\.js'
+curl -sL https://thumbric.app/ | rg -o '/assets/index-[^"]+\.js'
 # Expect UI_BUILD string inside that bundle:
-# 2026.10.06-az  and  "Describe the scene"
+# 2026.10.07-fallback
 ```
-
-Wrong path: `…/thumbforge/` is a redirect stub — use `…/thumbric/`.

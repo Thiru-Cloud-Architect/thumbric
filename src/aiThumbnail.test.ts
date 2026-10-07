@@ -12,9 +12,11 @@ import {
   sanitizeSceneText,
   suggestAiStyle,
   titleFromScene,
+  userFacingAiError,
   visualSceneFromHint,
   waitMsBeforeLook,
 } from './aiThumbnail'
+import { studioPaletteForScene } from './studioLooks'
 import { LOCAL_LOOK_RECIPES, cssFilterForGrade } from './aiLooks'
 import { apiLookBudget } from './aiConfig'
 import { splitTitleLines, TITLE_POSITION_PRESETS } from './titleKit'
@@ -157,6 +159,27 @@ describe('friendlyAiHttpMessage', () => {
     expect(msg402).toMatch(/minute|try again/i)
     expect(msg402).not.toMatch(/402|Pollinations|API key|sequentially/i)
     expect(msg429).not.toMatch(/429|Pollinations/i)
+  })
+})
+
+describe('userFacingAiError', () => {
+  it('never mentions CORS, ad-block, or Pollinations', () => {
+    const msg = userFacingAiError(new Error('Failed to fetch')).message
+    expect(msg).toMatch(/studio looks|try again|reach/i)
+    expect(msg).not.toMatch(/CORS|ad-block|Pollinations|402|API key/i)
+    expect(userFacingAiError(new Error('No premium AI backend configured.')).message).not.toMatch(
+      /premium|Worker|fal/i,
+    )
+  })
+})
+
+describe('studioPaletteForScene', () => {
+  it('nudges glow from the scene without copying slogans onto the still', () => {
+    const niche = getNiche('music')
+    const jungle = studioPaletteForScene('cute cartoon animals in the woods', niche, 'music-stage')
+    const neon = studioPaletteForScene('rgb gamer neon room', niche, 'dark-moody')
+    expect(jungle.glow).not.toBe(neon.glow)
+    expect(jungle.deep).toBe(niche.background[0])
   })
 })
 

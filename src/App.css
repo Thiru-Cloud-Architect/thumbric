@@ -3881,6 +3881,23 @@ footer {
   font-weight: 700;
 }
 
+.inspector-select {
+  width: 100%;
+  appearance: none;
+  border: 1px solid var(--line);
+  background: var(--bg-soft);
+  color: var(--ink);
+  border-radius: 8px;
+  padding: 0.4rem 0.55rem;
+  font: 700 0.78rem/1.2 Plus Jakarta Sans, sans-serif;
+}
+
+.inspector-polish {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.3rem;
+}
+
 .inspector-looks {
   display: grid;
   gap: 0.4rem;

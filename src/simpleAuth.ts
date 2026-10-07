@@ -61,8 +61,7 @@ export async function registerSimpleUser(name: string, email: string): Promise<S
       body: JSON.stringify(user),
     })
     if (!res.ok) {
-      const text = await res.text().catch(() => '')
-      throw new Error(text || `Could not sync account (${res.status}). Saved on this device only.`)
+      throw new Error('Saved on this device. Cloud sync is not available yet.')
     }
   }
 
