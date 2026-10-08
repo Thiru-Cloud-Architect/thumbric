@@ -6,7 +6,6 @@ import {
   CREATOR_CLEAN_DOWNLOADS_PER_MONTH,
   TRIAL_DAYS,
   activateDemoPlan,
-  activateDemoTrial,
   loadEntitlement,
   registerEmail,
   type Entitlement,
@@ -35,18 +34,9 @@ export default function PricingPage() {
     return registerEmail(email)
   }
 
-  function onDemoSelect(planId: Exclude<PlanId, 'free' | 'agency'>) {
+  function onDemoSelect(planId: Exclude<PlanId, 'free'>) {
     let next = ensureEmail(entitlement)
     if (!next) return
-
-    if (planId === 'trial') {
-      next = activateDemoTrial(next)
-      setEntitlement(next)
-      window.alert(
-        `${TRIAL_DAYS}-day Creator trial unlocked in this browser. Open the editor to export clean PNGs. Payments come later.`,
-      )
-      return
-    }
 
     next = activateDemoPlan(next, planId)
     setEntitlement(next)
@@ -63,15 +53,13 @@ export default function PricingPage() {
         <section className="pricing-hero" aria-labelledby="pricing-page-title">
           <p className="section-eyebrow">Pricing</p>
           <h1 id="pricing-page-title" className="section-title center">
-            Simple plans for <span className="gradient-text">every upload cadence</span>
+            Three simple tiers. <span className="gradient-text">Launch pricing.</span>
           </h1>
           <p className="section-lede center">
-            Unlimited watermarked previews stay free. Start a {TRIAL_DAYS}-day Creator trial, then
-            upgrade when you need ongoing clean PNGs without the on-photo mark.
+            Free forever for watermarked previews. Creator and Pro unlock clean PNGs — both include a{' '}
+            {TRIAL_DAYS}-day demo trial when checkout is not live yet.
           </p>
-          <p className="pricing-launch-offer">
-            Launch price — never again at these rates.
-          </p>
+          <p className="pricing-launch-offer">Never again at these rates.</p>
           <div className="currency-toggle" role="group" aria-label="Billing currency">
             <button
               type="button"
@@ -100,17 +88,11 @@ export default function PricingPage() {
         </section>
 
         <section className="pricing-section pricing-section-page" aria-label="Plans">
-          <div className="pricing-grid pricing-grid-four">
+          <div className="pricing-grid pricing-grid-three">
             {PLANS.map((plan) => {
               const compare = formatCompareAt(plan, currency)
               const price = formatPlanPrice(plan, currency)
-              const paid = plan.id === 'creator' || plan.id === 'pro'
-              const period =
-                plan.id === 'trial' ? (
-                  <small>/{TRIAL_DAYS} days</small>
-                ) : paid ? (
-                  <small>/mo</small>
-                ) : null
+              const paid = plan.id !== 'free'
               return (
                 <article
                   key={plan.id}
@@ -122,7 +104,7 @@ export default function PricingPage() {
                   <p className="price-amount">
                     {compare ? <span className="price-was">{compare}</span> : null}
                     <span>{price}</span>
-                    {period}
+                    {paid ? <small>/mo</small> : null}
                   </p>
                   {plan.highlight ? <p className="price-highlight">{plan.highlight}</p> : null}
                   <ul>
@@ -134,15 +116,11 @@ export default function PricingPage() {
                     <Link className="btn-outline price-cta" to="/#editor-ai">
                       {plan.cta}
                     </Link>
-                  ) : plan.id === 'agency' ? (
-                    <a className="btn-outline price-cta" href="mailto:hello@thumbric.app?subject=Thumbric%20Agency">
-                      {plan.cta}
-                    </a>
                   ) : (
                     <button
                       type="button"
                       className={plan.popular ? 'btn-gradient price-cta' : 'btn-outline price-cta'}
-                      onClick={() => onDemoSelect(plan.id as Exclude<PlanId, 'free' | 'agency'>)}
+                      onClick={() => onDemoSelect(plan.id as Exclude<PlanId, 'free'>)}
                     >
                       {plan.cta}
                     </button>
@@ -154,8 +132,7 @@ export default function PricingPage() {
           <p className="pricing-footnote">
             Creator includes {CREATOR_CLEAN_DOWNLOADS_PER_MONTH} clean downloads per calendar month.
             Pro is unlimited. Struck-through amounts are regular rates; launch pricing ends when
-            checkout goes live. The {TRIAL_DAYS}-day trial unlocks Creator quota in this browser —
-            Stripe connects next; no card required for the demo trial.
+            checkout goes live. Demo unlocks need no card.
           </p>
         </section>
       </main>

@@ -523,18 +523,17 @@ export function PricingTeaser() {
         <div>
           <p className="section-eyebrow">Pricing</p>
           <h2 id="pricing-teaser-title" className="section-title">
-            Free previews. <span className="gradient-text">{TRIAL_DAYS}-day trial</span> for clean
-            exports.
+            Free · Creator · <span className="gradient-text">Pro</span>
           </h2>
           <p className="section-lede">
-            Start a {TRIAL_DAYS}-day Creator trial (demo, no card yet). Then Creator at{' '}
-            {planPriceLabel('creator')} ({CREATOR_CLEAN_DOWNLOADS_PER_MONTH} clean PNGs/month) or Pro
-            unlimited at {planPriceLabel('pro')} — launch pricing, never again this low. INR rates
-            on the pricing page.
+            Watermarked previews stay free. Creator at {planPriceLabel('creator')} (
+            {CREATOR_CLEAN_DOWNLOADS_PER_MONTH} clean PNGs/month) or Pro unlimited at{' '}
+            {planPriceLabel('pro')} — includes a {TRIAL_DAYS}-day demo trial. INR rates on the pricing
+            page.
           </p>
         </div>
         <Link className="btn-gradient pricing-teaser-cta" to="/pricing">
-          View plans &amp; start trial
+          View plans
         </Link>
       </div>
     </section>

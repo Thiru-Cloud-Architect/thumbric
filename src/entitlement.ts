@@ -180,7 +180,7 @@ export function isValidEmail(value: string) {
 export function entitlementStatusLabel(entitlement: Entitlement, now = Date.now()) {
   const ent = normalizeEntitlement(entitlement, now)
   if (!ent.email) return 'Register to unlock clean exports'
-  if (!isPaid(ent, now)) return 'Choose Creator, Pro, or the 7-day trial on the pricing page'
+  if (!isPaid(ent, now)) return 'Choose Creator or Pro on the pricing page'
   if (ent.plan === 'pro') {
     return ent.trial ? 'Pro trial — unlimited clean downloads' : 'Pro — unlimited clean downloads'
   }

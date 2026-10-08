@@ -5208,8 +5208,15 @@ footer {
   color: var(--accent-bright);
 }
 
-.pricing-grid-four {
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+.pricing-grid-three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+@media (max-width: 900px) {
+  .pricing-grid-three {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 720px) {

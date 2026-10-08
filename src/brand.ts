@@ -14,4 +14,4 @@ export const DOWNLOAD_PREFIX = 'thumbric'
 
 export const WATERMARK_LABEL = `${PRODUCT_NAME_FULL} · free preview`
 
-export const UI_BUILD = '2026.10.08-price2'
+export const UI_BUILD = '2026.10.08-price3'

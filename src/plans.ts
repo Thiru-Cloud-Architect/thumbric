@@ -1,6 +1,6 @@
 import { CREATOR_CLEAN_DOWNLOADS_PER_MONTH, TRIAL_DAYS } from './entitlement'
 
-export type PlanId = 'free' | 'trial' | 'creator' | 'pro' | 'agency'
+export type PlanId = 'free' | 'creator' | 'pro'
 export type BillingCurrency = 'USD' | 'INR'
 
 export type PlanPricing = {
@@ -21,6 +21,7 @@ export type Plan = {
   cta: string
 }
 
+/** Three public tiers only: Free · Creator · Pro */
 export const PLANS: Plan[] = [
   {
     id: 'free',
@@ -30,74 +31,42 @@ export const PLANS: Plan[] = [
     inr: { amount: 0, compareAt: 0, symbol: '₹' },
     features: [
       'Unlimited preview downloads (watermarked)',
-      'All platforms & moods',
-      'Quick idea & templates',
-      'Drag text and stickers',
+      'All platforms, templates & tools',
+      'Layers, brand kit, Doctor & score',
+      'No card required',
     ],
     cta: 'Start free',
-  },
-  {
-    id: 'trial',
-    name: '7-day Trial',
-    tagline: 'Creator clean exports — no card yet',
-    usd: { amount: 0, compareAt: 5, symbol: '$' },
-    inr: { amount: 0, compareAt: 99, symbol: '₹' },
-    highlight: `${TRIAL_DAYS}-day Creator trial in this browser`,
-    popular: true,
-    features: [
-      'Everything in Free',
-      `${CREATOR_CLEAN_DOWNLOADS_PER_MONTH} clean PNGs (Creator quota) during the trial`,
-      'Demo unlock stored locally — payments come later',
-      'Then continue on Creator or Pro when you are ready',
-    ],
-    cta: 'Start 7-day free trial',
   },
   {
     id: 'creator',
     name: 'Creator',
     tagline: 'For weekly uploads',
-    usd: { amount: 5, compareAt: 12, symbol: '$' },
-    inr: { amount: 99, compareAt: 199, symbol: '₹' },
-    highlight: `${CREATOR_CLEAN_DOWNLOADS_PER_MONTH} clean PNGs every month`,
+    usd: { amount: 3, compareAt: 9, symbol: '$' },
+    inr: { amount: 49, compareAt: 149, symbol: '₹' },
+    highlight: `${CREATOR_CLEAN_DOWNLOADS_PER_MONTH} clean PNGs / month · includes ${TRIAL_DAYS}-day trial`,
+    popular: true,
     features: [
       'Everything in Free',
       `${CREATOR_CLEAN_DOWNLOADS_PER_MONTH} clean exports per month (no watermark)`,
+      `${TRIAL_DAYS}-day trial unlock in this browser (demo)`,
       'Email support',
-      'Early access to new moods',
-      `Includes a ${TRIAL_DAYS}-day free trial unlock (demo)`,
     ],
     cta: 'Get Creator',
   },
   {
     id: 'pro',
     name: 'Pro',
-    tagline: 'Daily publishers & teams',
-    usd: { amount: 9, compareAt: 19, symbol: '$' },
-    inr: { amount: 199, compareAt: 399, symbol: '₹' },
+    tagline: 'Daily publishers',
+    usd: { amount: 7, compareAt: 15, symbol: '$' },
+    inr: { amount: 149, compareAt: 299, symbol: '₹' },
     highlight: 'Unlimited clean downloads',
     features: [
       'Everything in Creator',
       'Unlimited clean exports',
-      'Priority when we add AI assists',
-      'Team-friendly — one price, many uploads',
-      `Includes a ${TRIAL_DAYS}-day free trial unlock (demo)`,
+      'Priority when AI assists ship',
+      `${TRIAL_DAYS}-day trial unlock available (demo)`,
     ],
     cta: 'Go Pro',
-  },
-  {
-    id: 'agency',
-    name: 'Agency',
-    tagline: 'Multi-channel teams & clients',
-    usd: { amount: 29, compareAt: 59, symbol: '$' },
-    inr: { amount: 799, compareAt: 1499, symbol: '₹' },
-    highlight: '5 seats · brand kits · priority support',
-    features: [
-      'Everything in Pro',
-      'Shared brand kits across seats (coming with checkout)',
-      'Client folders & export history sync',
-      'Invoice billing — contact for early access',
-    ],
-    cta: 'Contact for Agency',
   },
 ]
 
@@ -121,6 +90,6 @@ export function planPriceLabel(planId: PlanId, currency: BillingCurrency = 'USD'
   const plan = PLANS.find((item) => item.id === planId)
   if (!plan) return ''
   const formatted = formatPlanPrice(plan, currency)
-  if (planId === 'free' || planId === 'trial') return formatted
+  if (planId === 'free') return formatted
   return `${formatted} / month`
 }
