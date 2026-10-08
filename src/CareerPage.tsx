@@ -30,28 +30,16 @@ export default function CareerPage() {
               they will appear here first.
             </p>
             <p>
-              <strong>Watch this space</strong> — bookmark this page or star the{' '}
-              <a
-                href="https://github.com/Thiru-Cloud-Architect/thumbric"
-                rel="noopener noreferrer"
-                target="_blank"
-              >
-                GitHub repo
-              </a>{' '}
-              for updates.
+              <strong>Watch this space</strong> — bookmark this page. When roles open, they will be
+              listed here first.
             </p>
             <div className="career-actions">
               <Link className="btn-outline" to="/">
                 Back to home
               </Link>
-              <a
-                className="btn-gradient"
-                href="https://github.com/Thiru-Cloud-Architect/thumbric/issues"
-                rel="noopener noreferrer"
-                target="_blank"
-              >
-                Send a note via GitHub
-              </a>
+              <Link className="btn-gradient" to={{ pathname: '/', hash: '#editor-ai' }}>
+                Try the AI editor
+              </Link>
             </div>
           </article>
         </section>

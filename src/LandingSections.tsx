@@ -367,11 +367,9 @@ export function FaqAccordion() {
         <div className="faq-intro">
           <h2 id="faq-title">Frequently asked questions</h2>
           <p>
-            Haven&apos;t found what you need? Open the{' '}
-            <a href="https://github.com/Thiru-Cloud-Architect/thumbric" rel="noopener noreferrer">
-              GitHub repo
-            </a>{' '}
-            and leave feedback.
+            Haven&apos;t found what you need? Try the free{' '}
+            <Link to="/tools">Tools</Link> or start in the{' '}
+            <a href="#editor-ai">AI editor</a>.
           </p>
         </div>
         <div className="faq-list">
@@ -582,20 +580,7 @@ export function SiteFooter({ buildLabel }: { buildLabel?: string }) {
               <Link to="/learn">Lessons</Link>
               <Link to="/legal">Privacy &amp; terms</Link>
               <Link to="/career">Careers</Link>
-              <a
-                href="https://github.com/Thiru-Cloud-Architect/thumbric"
-                rel="noopener noreferrer"
-                target="_blank"
-              >
-                GitHub repo
-              </a>
-              <a
-                href="https://github.com/Thiru-Cloud-Architect/thumbric/issues"
-                rel="noopener noreferrer"
-                target="_blank"
-              >
-                Report an issue
-              </a>
+              <Link to="/ai-thumbnail-maker">AI Thumbnail Maker</Link>
               <a href={`${SITE_URL}sitemap.xml`}>Sitemap</a>
             </div>
           </div>
