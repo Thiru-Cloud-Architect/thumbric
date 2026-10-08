@@ -46,27 +46,29 @@ export function ToolShell({
       <DocumentHead path={path} />
       <SiteHeader userLabel={userLabel} onLoginClick={onLoginClick} />
       <main className="tool-page-main">
-        <nav className="tool-breadcrumbs" aria-label="Breadcrumb">
-          <ol>
-            {crumbs.map((crumb, index) => (
-              <li key={`${crumb.label}-${index}`}>
-                {crumb.to && index < crumbs.length - 1 ? (
-                  <Link to={crumb.to}>{crumb.label}</Link>
-                ) : (
-                  <span aria-current={index === crumbs.length - 1 ? 'page' : undefined}>
-                    {crumb.label}
-                  </span>
-                )}
-              </li>
-            ))}
-          </ol>
-        </nav>
-        <section className="tool-hero">
-          {kicker ? <p className="section-eyebrow">{kicker}</p> : null}
-          <h1 className="section-title">{title}</h1>
-          <p className="section-lede">{lede}</p>
-        </section>
-        {children}
+        <div className="tool-lead">
+          <nav className="tool-breadcrumbs" aria-label="Breadcrumb">
+            <ol>
+              {crumbs.map((crumb, index) => (
+                <li key={`${crumb.label}-${index}`}>
+                  {crumb.to && index < crumbs.length - 1 ? (
+                    <Link to={crumb.to}>{crumb.label}</Link>
+                  ) : (
+                    <span aria-current={index === crumbs.length - 1 ? 'page' : undefined}>
+                      {crumb.label}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </nav>
+          <section className="tool-hero">
+            {kicker ? <p className="section-eyebrow">{kicker}</p> : null}
+            <h1 className="section-title">{title}</h1>
+            <p className="section-lede">{lede}</p>
+          </section>
+          {children}
+        </div>
         <nav className="tool-more" aria-label="More free tools">
           <p className="footer-head">More free tools</p>
           <div className="tool-more-grid">

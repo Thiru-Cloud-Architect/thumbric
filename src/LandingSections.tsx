@@ -5,7 +5,6 @@ import { PRODUCT_NAME, PRODUCT_NAME_FULL, SITE_URL, UI_BUILD } from './brand'
 import { CREATOR_CLEAN_DOWNLOADS_PER_MONTH, TRIAL_DAYS } from './entitlement'
 import { planPriceLabel } from './plans'
 import { useBillingCurrency } from './useBillingCurrency'
-import { FEATURES, AI_FEATURE } from './features'
 import { TOOL_NAV } from './toolsCatalog'
 import { HERO_THUMBS, type HeroThumb } from './heroThumbs'
 import { CountUpValue, RevealItem } from './LazyReveal'
@@ -295,11 +294,7 @@ export function HowItWorks() {
   return (
     <section id="how" className="how-rail" aria-labelledby="how-title">
       <p className="section-eyebrow">How it works</p>
-      <h2 id="how-title">
-        From a link to a click-worthy
-        <br />
-        thumbnail
-      </h2>
+      <h2 id="how-title">From a link to a click{'\u2011'}worthy thumbnail</h2>
       <ol className="how-rail-steps">
         {steps.map((step) => (
           <li key={step.n}>
@@ -433,101 +428,15 @@ export function FaqAccordion() {
 }
 
 export function FeaturesSection() {
-  const core = FEATURES.filter((item) => item.available)
   return (
-    <section
-      id="features"
-      className="features-section"
-      aria-labelledby="features-title"
-      data-ui-build={UI_BUILD}
-    >
-      <RevealItem index={0}>
-        <div className="features-head">
-          <p className="section-eyebrow">Features</p>
-          <h2 id="features-title" className="section-title center">
-            AI scene first. <span className="gradient-text gradient-text-motion">Editor tools next.</span>
-          </h2>
-          <p className="section-lede center">
-            Describe your video or paste a YouTube URL, then finish the title in the editor.
-          </p>
-        </div>
-      </RevealItem>
-
-      <RevealItem index={1}>
-        <div className="feature-ai-panel">
-          <div className="feature-ai-panel-copy">
-            <p className="feature-ai-kicker">{AI_FEATURE.kicker}</p>
-            <p className="feature-where">{AI_FEATURE.where}</p>
-            <h3>{AI_FEATURE.title}</h3>
-            <p className="feature-ai-lead">{AI_FEATURE.description}</p>
-            <div className="feature-ai-split">
-              <div className="feature-ai-split-col is-now">
-                <p className="feature-ai-split-label">{AI_FEATURE.nowLabel}</p>
-                <ul>
-                  {AI_FEATURE.nowItems.map((line) => (
-                    <li key={line}>{line}</li>
-                  ))}
-                </ul>
-              </div>
-              <div className="feature-ai-split-col is-later">
-                <p className="feature-ai-split-label">{AI_FEATURE.notYetLabel}</p>
-                <ul>
-                  {AI_FEATURE.notYetItems.map((line) => (
-                    <li key={line}>{line}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-          {AI_FEATURE.href.startsWith('/') ? (
-            <Link to={AI_FEATURE.href} className="feature-ai-cta btn-pulse">
-              {AI_FEATURE.cta} →
-            </Link>
-          ) : (
-            <a
-              href={AI_FEATURE.href}
-              className="feature-ai-cta btn-pulse"
-              onClick={(event) => onEditorHashClick(event, AI_FEATURE.href)}
-            >
-              {AI_FEATURE.cta} →
-            </a>
-          )}
-        </div>
-      </RevealItem>
-
-      <div className="features-core">
-        <RevealItem index={2}>
-          <h3 className="features-core-title">Core editor tools</h3>
-          <p className="features-core-lede">
-            Everything below is available in the editor today — each card jumps to the right step.
-          </p>
-        </RevealItem>
-        <div className="features-grid">
-          {core.map((item, index) => (
-            <RevealItem key={item.id} index={index + 3}>
-              {item.href.startsWith('/') ? (
-                <Link className="feature-card" to={item.href}>
-                  {item.where ? <p className="feature-where">{item.where}</p> : null}
-                  <h3>{item.title}</h3>
-                  <p>{item.description}</p>
-                  <span className="feature-card-link">{item.cta ?? 'Open editor'} →</span>
-                </Link>
-              ) : (
-                <a
-                  href={item.href}
-                  className="feature-card"
-                  onClick={(event) => onEditorHashClick(event, item.href)}
-                >
-                  {item.where ? <p className="feature-where">{item.where}</p> : null}
-                  <h3>{item.title}</h3>
-                  <p>{item.description}</p>
-                  <span className="feature-card-link">{item.cta ?? 'Open editor'} →</span>
-                </a>
-              )}
-            </RevealItem>
-          ))}
-        </div>
-      </div>
+    <section id="features" className="ai-band" aria-label="AI thumbnail maker" data-ui-build={UI_BUILD}>
+      <p className="ai-band-line">Describe a scene or paste a YouTube link.</p>
+      <Link to="/ai-thumbnail-maker" className="btn-gradient ai-band-cta">
+        Create with AI
+      </Link>
+      <a href="/#editor" className="ai-band-editor" onClick={(event) => onEditorHashClick(event, '#editor')}>
+        Or open the editor
+      </a>
     </section>
   )
 }

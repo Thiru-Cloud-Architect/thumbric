@@ -1709,8 +1709,10 @@ export default function HomePage() {
       />
 
       <main id="top" className="page-main page-main-calm">
-        <HeroFlashy onStartTrial={startTrialFlow} />
-        <HowItWorks />
+        <div className="home-lock">
+          <HeroFlashy onStartTrial={startTrialFlow} />
+          <HowItWorks />
+        </div>
 
         <section id="editor" className="editor-section editor-fit" aria-label="Thumbnail editor">
           <div className="editor-fit-bar">
