@@ -244,6 +244,8 @@ export default function HomePage() {
   const [beforeUrl, setBeforeUrl] = useState('')
   const [compareBefore, setCompareBefore] = useState(false)
   const [versions, setVersions] = useState(() => loadVersions())
+  const [showMoreCanvasTools, setShowMoreCanvasTools] = useState(false)
+  const [showAdvancedText, setShowAdvancedText] = useState(false)
   const ZOOM_PRESETS = [0.25, 0.5, 0.75, 1, 2] as const
   const [layerState, setLayerState] = useState<LayerState>(() => defaultLayerState())
   const [photoTreatment, setPhotoTreatment] = useState<
@@ -1665,77 +1667,58 @@ export default function HomePage() {
 
         <section id="editor" className="editor-section" aria-label="Thumbnail editor">
           <OnboardingTips />
-          <div className="editor-head">
-            <p className="section-kicker">Studio</p>
+          <div className="editor-head editor-head-slim">
             <h2 className="editor-title">
-              Idea to finished thumbnail <span className="gradient-text">in one canvas</span>
+              Thumbnail studio
             </h2>
             <p className="editor-lede">
-              Generate a free AI backdrop or start from a photo and template — then style the title
-              live. Both paths use the same {PRODUCT_NAME_FULL} canvas.
+              One canvas. Start with AI, a template, or an existing thumb — edit text last.
             </p>
           </div>
         <section className="workbench editor-workbench studio-grid" aria-label="Thumbnail studio">
-          <div className="editor-path editor-path-three" role="tablist" aria-label="What do you want to do?">
+          <div className="editor-mode-bar" role="tablist" aria-label="Start mode">
             <button
               id="editor-ai"
               type="button"
               role="tab"
               aria-selected={editorMode === 'ai'}
-              className={editorMode === 'ai' ? 'editor-path-card is-active' : 'editor-path-card'}
+              className={editorMode === 'ai' ? 'editor-mode-pill is-active' : 'editor-mode-pill'}
               onClick={() => {
                 setEditorMode('ai')
                 setEditorTab('create')
               }}
             >
-              <span className="editor-path-kicker">✦ Create with AI</span>
-              <strong>Tell us about your video</strong>
-              <small>Get 3 packaging concepts · then edit</small>
+              Create with AI
             </button>
             <button
               type="button"
               role="tab"
               aria-selected={editorMode === 'classic'}
-              className={
-                editorMode === 'classic' ? 'editor-path-card is-active' : 'editor-path-card'
-              }
+              className={editorMode === 'classic' ? 'editor-mode-pill is-active' : 'editor-mode-pill'}
               onClick={() => {
                 setEditorMode('classic')
                 setEditorTab('create')
               }}
             >
-              <span className="editor-path-kicker">🎨 Design from scratch</span>
-              <strong>Professional editor</strong>
-              <small>Templates, upload, title kit</small>
+              From scratch
             </button>
             <button
               type="button"
               role="tab"
               aria-selected={editorMode === 'improve'}
-              className={
-                editorMode === 'improve' ? 'editor-path-card is-active' : 'editor-path-card'
-              }
+              className={editorMode === 'improve' ? 'editor-mode-pill is-active' : 'editor-mode-pill'}
               onClick={() => {
                 setEditorMode('improve')
                 setEditorTab('create')
               }}
             >
-              <span className="editor-path-kicker">🩺 Improve my thumbnail</span>
-              <strong>Analyze &amp; improve</strong>
-              <small>Score an existing thumb · then restyle</small>
+              Improve
             </button>
+            <p className="editor-mode-meta" aria-live="polite">
+              {platform.width}×{platform.height}
+              {photoName ? ` · ${photoName}` : ''}
+            </p>
           </div>
-          <p className="picks-bar" aria-live="polite">
-            {editorMode === 'ai'
-              ? 'AI concepts'
-              : editorMode === 'improve'
-                ? 'Improve'
-                : 'Design'}{' '}
-            · <strong>{platform.label}</strong> · {platform.width}×{platform.height} · Look:{' '}
-            <strong>{niche.label}</strong>
-            {accentOverride ? ' · Custom accent' : ''}
-            {photoName ? ` · ${photoName}` : ''}
-          </p>
           <form
             className="controls studio-tools"
             onSubmit={(event) => {
@@ -2214,11 +2197,7 @@ export default function HomePage() {
             {editorTab === 'title' ? (
             <section id="editor-title" className="step step-clean">
               <p className="step-lede">
-                Two-line YouTube hook, font, and size — drag the title or use Left / Center / Right.
-              </p>
-              <p className="drag-affordance" aria-hidden>
-                Grab the title on the preview and drag it. Inspector on the right has color, outline,
-                and shadow.
+                Write the hook. Drag it on the canvas — color, outline, and size live in the inspector.
               </p>
 
               <label>
@@ -2253,38 +2232,7 @@ export default function HomePage() {
               </label>
 
               <fieldset>
-                <legend>Position</legend>
-                <div className="choice-row" role="radiogroup" aria-label="Title position">
-                  {TITLE_POSITION_PRESETS.map((preset) => (
-                    <button
-                      key={preset.id}
-                      type="button"
-                      className={titleAlign === preset.align ? 'choice is-selected' : 'choice'}
-                      role="radio"
-                      aria-checked={titleAlign === preset.align}
-                      onClick={() => applyTitlePreset(preset.id)}
-                    >
-                      <span>{preset.label}</span>
-                      <small>{preset.blurb}</small>
-                    </button>
-                  ))}
-                </div>
-              </fieldset>
-              <button
-                type="button"
-                className="linkish"
-                onClick={() => {
-                  setTextPos(defaultTextPosition(platform, layout))
-                  setTitleAlign('left')
-                  setTextSelected(false)
-                  setStatus('Title position reset for this layout.')
-                }}
-              >
-                Reset title position on preview
-              </button>
-
-              <fieldset>
-                <legend>Title style</legend>
+                <legend>Style</legend>
                 <div className="title-style-row" role="listbox" aria-label="Title style">
                   {TEXT_STYLES.map((item) => (
                     <button
@@ -2308,56 +2256,84 @@ export default function HomePage() {
                 </div>
               </fieldset>
 
-              <fieldset>
-                <legend>Title font</legend>
-                <div className="font-menu" role="listbox" aria-label="Title font">
-                  {FONTS.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      role="option"
-                      aria-selected={fontId === item.id}
-                      className={fontId === item.id ? 'font-pick is-selected' : 'font-pick'}
-                      style={{ fontFamily: item.css, fontWeight: item.weight }}
-                      onClick={() => setFontId(item.id)}
-                    >
-                      {item.label}
-                    </button>
-                  ))}
+              <details className="editor-advanced">
+                <summary>Position, font &amp; size</summary>
+                <fieldset>
+                  <legend>Position</legend>
+                  <div className="choice-row" role="radiogroup" aria-label="Title position">
+                    {TITLE_POSITION_PRESETS.map((preset) => (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        className={titleAlign === preset.align ? 'choice is-selected' : 'choice'}
+                        role="radio"
+                        aria-checked={titleAlign === preset.align}
+                        onClick={() => applyTitlePreset(preset.id)}
+                      >
+                        <span>{preset.label}</span>
+                        <small>{preset.blurb}</small>
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+                <button
+                  type="button"
+                  className="linkish"
+                  onClick={() => {
+                    setTextPos(defaultTextPosition(platform, layout))
+                    setTitleAlign('left')
+                    setTextSelected(false)
+                    setStatus('Title position reset for this layout.')
+                  }}
+                >
+                  Reset title position
+                </button>
+                <fieldset>
+                  <legend>Font</legend>
+                  <div className="font-menu" role="listbox" aria-label="Title font">
+                    {FONTS.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        role="option"
+                        aria-selected={fontId === item.id}
+                        className={fontId === item.id ? 'font-pick is-selected' : 'font-pick'}
+                        style={{ fontFamily: item.css, fontWeight: item.weight }}
+                        onClick={() => setFontId(item.id)}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+                <div className="size-row">
+                  <label className="size-field">
+                    Size (px at 1280w)
+                    <input
+                      type="number"
+                      min={TITLE_FONT_SIZE_MIN}
+                      max={TITLE_FONT_SIZE_MAX}
+                      step={1}
+                      value={titleFontSizePx}
+                      onChange={(event) =>
+                        setTitleFontSizePx(clampTitleFontSize(Number(event.target.value)))
+                      }
+                    />
+                  </label>
+                  <label className="size-slider">
+                    <span className="sr-only">Title size slider</span>
+                    <input
+                      type="range"
+                      min={TITLE_FONT_SIZE_MIN}
+                      max={TITLE_FONT_SIZE_MAX}
+                      value={titleFontSizePx}
+                      onChange={(event) =>
+                        setTitleFontSizePx(clampTitleFontSize(Number(event.target.value)))
+                      }
+                    />
+                  </label>
                 </div>
-              </fieldset>
-
-              <div className="size-row">
-                <label className="size-field">
-                  Title size (px at 1280w)
-                  <input
-                    type="number"
-                    min={TITLE_FONT_SIZE_MIN}
-                    max={TITLE_FONT_SIZE_MAX}
-                    step={1}
-                    value={titleFontSizePx}
-                    onChange={(event) =>
-                      setTitleFontSizePx(clampTitleFontSize(Number(event.target.value)))
-                    }
-                  />
-                </label>
-                <label className="size-slider">
-                  <span className="sr-only">Title size slider</span>
-                  <input
-                    type="range"
-                    min={TITLE_FONT_SIZE_MIN}
-                    max={TITLE_FONT_SIZE_MAX}
-                    value={titleFontSizePx}
-                    onChange={(event) =>
-                      setTitleFontSizePx(clampTitleFontSize(Number(event.target.value)))
-                    }
-                  />
-                </label>
-              </div>
-              <p className="field-help">
-                Range {TITLE_FONT_SIZE_MIN}–{TITLE_FONT_SIZE_MAX}. Try 96–120 for YouTube titles; go
-                bigger for Shorts. Drag the title block on the canvas to place it.
-              </p>
+              </details>
 
               <div className="editor-next-row">
                 <button type="button" className="chip solid" onClick={() => setEditorTab('finish')}>
@@ -2370,24 +2346,25 @@ export default function HomePage() {
             {editorTab === 'finish' ? (
             <section className="step step-clean">
               <p className="step-lede">
-                Layout, photo shape, accents, and stickers — then download. Title font &amp; size
-                stay on the Title tab.
+                Place the photo, add stickers, then download. Advanced brand tools stay collapsed.
               </p>
 
-              <LayersPanel
-                state={layerState}
-                onChange={setLayerState}
-                stickerCount={stickers.length}
-                hasLogo={Boolean(creatorKit.logoDataUrl)}
-              />
-
-              <CreatorKitPanel
-                kit={creatorKit}
-                onChange={setCreatorKit}
-                onApply={applyBrandToCanvas}
-                onLogoFile={onBrandLogoFile}
-                onCreateInMyStyle={createInMyStyle}
-              />
+              <details className="editor-advanced">
+                <summary>Brand kit &amp; layers</summary>
+                <LayersPanel
+                  state={layerState}
+                  onChange={setLayerState}
+                  stickerCount={stickers.length}
+                  hasLogo={Boolean(creatorKit.logoDataUrl)}
+                />
+                <CreatorKitPanel
+                  kit={creatorKit}
+                  onChange={setCreatorKit}
+                  onApply={applyBrandToCanvas}
+                  onLogoFile={onBrandLogoFile}
+                  onCreateInMyStyle={createInMyStyle}
+                />
+              </details>
 
               <div className="fold-body">
                   <fieldset>
@@ -2577,35 +2554,21 @@ export default function HomePage() {
                 <button type="button" className="preview-tool" onClick={redoEdit} title="Redo (Ctrl+Y)">
                   Redo
                 </button>
-                <div className="zoom-presets" role="group" aria-label="Zoom">
-                  {ZOOM_PRESETS.map((z) => (
-                    <button
-                      key={z}
-                      type="button"
-                      className={canvasZoom === z ? 'preview-tool is-on' : 'preview-tool'}
-                      title={`${Math.round(z * 100)}%`}
-                      onClick={() => setCanvasZoom(z)}
-                    >
-                      {Math.round(z * 100)}%
-                    </button>
-                  ))}
-                </div>
-                <button
-                  type="button"
-                  className={showSafeZones ? 'preview-tool is-on' : 'preview-tool'}
-                  title="Safe area / cropping check"
-                  onClick={() => setShowSafeZones((v) => !v)}
-                >
-                  Safe zone
-                </button>
-                <button
-                  type="button"
-                  className={showGrid ? 'preview-tool is-on' : 'preview-tool'}
-                  title="Optional grid"
-                  onClick={() => setShowGrid((v) => !v)}
-                >
-                  Grid
-                </button>
+                <label className="zoom-select-wrap">
+                  <span className="sr-only">Zoom</span>
+                  <select
+                    className="zoom-select"
+                    value={canvasZoom}
+                    onChange={(event) => setCanvasZoom(Number(event.target.value))}
+                    aria-label="Zoom level"
+                  >
+                    {ZOOM_PRESETS.map((z) => (
+                      <option key={z} value={z}>
+                        {Math.round(z * 100)}%
+                      </option>
+                    ))}
+                  </select>
+                </label>
                 <button
                   type="button"
                   className={mobilePreview ? 'preview-tool is-on' : 'preview-tool'}
@@ -2621,30 +2584,48 @@ export default function HomePage() {
                 </button>
                 <button
                   type="button"
-                  className={feedPreview ? 'preview-tool is-on' : 'preview-tool'}
-                  title="Simulated YouTube preview"
-                  onClick={() => setFeedPreview((v) => !v)}
+                  className={showMoreCanvasTools ? 'preview-tool is-on' : 'preview-tool'}
+                  onClick={() => setShowMoreCanvasTools((v) => !v)}
                 >
-                  YouTube feed
-                </button>
-                <button
-                  type="button"
-                  className={compareBefore && beforeUrl ? 'preview-tool is-on' : 'preview-tool'}
-                  title="Before / after comparison"
-                  disabled={!beforeUrl}
-                  onClick={() => setCompareBefore((v) => !v)}
-                >
-                  Before/After
-                </button>
-                <button
-                  type="button"
-                  className="preview-tool"
-                  title="Keyboard shortcuts (?)"
-                  onClick={() => setShortcutsOpen(true)}
-                >
-                  Shortcuts
+                  More
                 </button>
               </div>
+              {showMoreCanvasTools ? (
+                <div className="preview-toolbar preview-toolbar-more" role="toolbar" aria-label="More canvas tools">
+                  <button
+                    type="button"
+                    className={showSafeZones ? 'preview-tool is-on' : 'preview-tool'}
+                    onClick={() => setShowSafeZones((v) => !v)}
+                  >
+                    Safe zone
+                  </button>
+                  <button
+                    type="button"
+                    className={showGrid ? 'preview-tool is-on' : 'preview-tool'}
+                    onClick={() => setShowGrid((v) => !v)}
+                  >
+                    Grid
+                  </button>
+                  <button
+                    type="button"
+                    className={feedPreview ? 'preview-tool is-on' : 'preview-tool'}
+                    onClick={() => setFeedPreview((v) => !v)}
+                  >
+                    YouTube feed
+                  </button>
+                  <button
+                    type="button"
+                    className={compareBefore && beforeUrl ? 'preview-tool is-on' : 'preview-tool'}
+                    disabled={!beforeUrl}
+                    onClick={() => setCompareBefore((v) => !v)}
+                  >
+                    Before/After
+                  </button>
+                  <button type="button" className="preview-tool" onClick={() => setShortcutsOpen(true)}>
+                    Shortcuts
+                  </button>
+                </div>
+              ) : null}
               <p className="autosave-pill" aria-live="polite">
                 {autosaveLabel}
               </p>
@@ -2789,63 +2770,6 @@ export default function HomePage() {
                 }
               />
             </label>
-            <label className="inspector-field">
-              Rotation {textRotationDeg}°
-              <input
-                type="range"
-                min={-12}
-                max={12}
-                value={textRotationDeg}
-                onChange={(event) => setTextRotationDeg(Number(event.target.value))}
-              />
-            </label>
-            <label className="inspector-field">
-              Letter spacing {letterSpacing}px
-              <input
-                type="range"
-                min={-4}
-                max={16}
-                value={letterSpacing}
-                onChange={(event) => setLetterSpacing(Number(event.target.value))}
-              />
-            </label>
-            <label className="inspector-field">
-              Line height {lineHeight.toFixed(2)}
-              <input
-                type="range"
-                min={0.85}
-                max={1.4}
-                step={0.01}
-                value={lineHeight}
-                onChange={(event) => setLineHeight(Number(event.target.value))}
-              />
-            </label>
-            <label className="inspector-field">
-              Opacity {Math.round(titleOpacity * 100)}%
-              <input
-                type="range"
-                min={0.2}
-                max={1}
-                step={0.05}
-                value={titleOpacity}
-                onChange={(event) => setTitleOpacity(Number(event.target.value))}
-              />
-            </label>
-            <div className="inspector-row">
-              <span className="inspector-label">Canvas align</span>
-              <div className="inspector-pills">
-                {(['left', 'center', 'right', 'top', 'middle', 'bottom'] as const).map((mode) => (
-                  <button
-                    key={mode}
-                    type="button"
-                    className="inspector-pill"
-                    onClick={() => alignTitle(mode)}
-                  >
-                    {mode}
-                  </button>
-                ))}
-              </div>
-            </div>
             <div className="inspector-row">
               <span className="inspector-label">Fill</span>
               <div className="inspector-swatches">
@@ -2886,15 +2810,6 @@ export default function HomePage() {
                 onChange={(event) => setTitleOutlineWidth(clampOutlineWidth(Number(event.target.value)))}
               />
             </label>
-            <div className="inspector-row">
-              <span className="inspector-label">Outline color</span>
-              <input
-                className="inspector-color"
-                type="color"
-                value={titleOutlineColor}
-                onChange={(event) => setTitleOutlineColor(event.target.value)}
-              />
-            </div>
             <label className="inspector-field">
               Font
               <select
@@ -2918,6 +2833,83 @@ export default function HomePage() {
               />
               Drop shadow
             </label>
+            <button
+              type="button"
+              className="chip ghost inspector-advanced-toggle"
+              onClick={() => setShowAdvancedText((v) => !v)}
+            >
+              {showAdvancedText ? 'Hide advanced text' : 'Advanced text'}
+            </button>
+            {showAdvancedText ? (
+              <div className="inspector-advanced">
+                <label className="inspector-field">
+                  Rotation {textRotationDeg}°
+                  <input
+                    type="range"
+                    min={-12}
+                    max={12}
+                    value={textRotationDeg}
+                    onChange={(event) => setTextRotationDeg(Number(event.target.value))}
+                  />
+                </label>
+                <label className="inspector-field">
+                  Letter spacing {letterSpacing}px
+                  <input
+                    type="range"
+                    min={-4}
+                    max={16}
+                    value={letterSpacing}
+                    onChange={(event) => setLetterSpacing(Number(event.target.value))}
+                  />
+                </label>
+                <label className="inspector-field">
+                  Line height {lineHeight.toFixed(2)}
+                  <input
+                    type="range"
+                    min={0.85}
+                    max={1.4}
+                    step={0.01}
+                    value={lineHeight}
+                    onChange={(event) => setLineHeight(Number(event.target.value))}
+                  />
+                </label>
+                <label className="inspector-field">
+                  Opacity {Math.round(titleOpacity * 100)}%
+                  <input
+                    type="range"
+                    min={0.2}
+                    max={1}
+                    step={0.05}
+                    value={titleOpacity}
+                    onChange={(event) => setTitleOpacity(Number(event.target.value))}
+                  />
+                </label>
+                <div className="inspector-row">
+                  <span className="inspector-label">Canvas align</span>
+                  <div className="inspector-pills">
+                    {(['left', 'center', 'right', 'top', 'middle', 'bottom'] as const).map((mode) => (
+                      <button
+                        key={mode}
+                        type="button"
+                        className="inspector-pill"
+                        onClick={() => alignTitle(mode)}
+                      >
+                        {mode}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="inspector-row">
+                  <span className="inspector-label">Outline color</span>
+                  <input
+                    className="inspector-color"
+                    type="color"
+                    value={titleOutlineColor}
+                    onChange={(event) => setTitleOutlineColor(event.target.value)}
+                  />
+                </div>
+              </div>
+            ) : null}
             <div className="inspector-improve">
               <span className="inspector-label">Improve</span>
               <button type="button" className="chip solid ai-generate" onClick={runImproveAnalysis}>
