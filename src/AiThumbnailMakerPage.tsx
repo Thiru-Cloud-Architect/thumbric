@@ -72,6 +72,35 @@ export default function AiThumbnailMakerPage() {
     const handoff = consumeAiHandoff()
     if (handoff?.hint) setInput(handoff.hint)
     if (handoff?.photoDataUrl) setPhotoDataUrl(handoff.photoDataUrl)
+    // UI QA / walkthrough stub — never claims paid face-swap or YouTube frames.
+    if (new URLSearchParams(window.location.search).get('demoResult') === '1') {
+      const stub =
+        'data:image/svg+xml;charset=utf-8,' +
+        encodeURIComponent(
+          `<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+            <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#7db8ff"/><stop offset="1" stop-color="#8b7cff"/></linearGradient></defs>
+            <rect width="1280" height="720" fill="url(#g)"/>
+            <text x="80" y="340" fill="#fff" font-family="DM Sans, sans-serif" font-size="72" font-weight="800">Your thumbnail</text>
+            <text x="80" y="420" fill="#f7faff" font-family="DM Sans, sans-serif" font-size="36" font-weight="600">Demo preview · open in editor</text>
+          </svg>`,
+        )
+      const image = new Image()
+      image.src = stub
+      setVariants([
+        {
+          image,
+          objectUrl: stub,
+          prompt: 'demo-result-stub',
+          seed: 0,
+          styleId: 'auto',
+          lookLabel: 'Demo',
+          lookWhy: 'UI preview stub',
+          lookHeadline: 'Your thumbnail',
+          source: 'studio',
+        } satisfies AiGeneratedImage,
+      ])
+      setPhase('ready')
+    }
     return () => {
       abortRef.current?.abort()
       for (const url of objectUrls.current) URL.revokeObjectURL(url)
@@ -255,11 +284,12 @@ export default function AiThumbnailMakerPage() {
       ]}
       kicker="AI Thumbnail Maker"
       title="Free AI thumbnail maker"
-      lede="Describe the shot or paste a YouTube URL. You get one cover, then you can download it or open it in the editor."
+      lede="One field: paste a YouTube link or describe the scene. We create a cover you can download or finish in the editor."
       hideMoreTools
     >
       {phase === 'ready' && chosen ? (
         <section className="ai-canva-result" aria-label="Thumbnail result">
+          <p className="ai-canva-hook">Your thumbnail is ready</p>
           <img src={chosen.objectUrl} alt="Generated thumbnail" />
           <div className="ai-canva-actions">
             <button type="button" className="btn-gradient" onClick={() => void downloadHd()}>
@@ -316,6 +346,15 @@ export default function AiThumbnailMakerPage() {
               {phase === 'busy' ? statusLine || 'Creating…' : cooldown > 0 ? `Try again in ${cooldown}s` : 'Create thumbnail'}
             </button>
           </div>
+          {urlMode ? (
+            <p className="ai-canva-note">
+              {youtubeMeta?.title
+                ? `Using title: ${youtubeMeta.title}. Frame pull from YouTube is not available yet — we package from the idea.`
+                : 'YouTube links use the video title when available. We do not pull private frames yet.'}
+            </p>
+          ) : (
+            <p className="ai-canva-note">Tip: keep the idea short — subject, emotion, and one bold claim.</p>
+          )}
           {phase === 'err' && errorText ? (
             <p className="tool-error" role="alert">
               {errorText}

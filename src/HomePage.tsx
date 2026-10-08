@@ -1740,7 +1740,7 @@ export default function HomePage() {
             </label>
             <Link to="/ai-thumbnail-maker">AI maker</Link>
             <button type="button" className="editor-fit-download" onClick={() => requestExportWithChecks(false)}>
-              Download PNG
+              Download
             </button>
           </div>
         <section className="workbench editor-workbench studio-grid studio-grid-calm" aria-label="Thumbnail studio">

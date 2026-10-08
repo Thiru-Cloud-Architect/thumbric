@@ -44,11 +44,13 @@ export function ToolShell({
       { label: typeof title === 'string' ? title : 'Tool' },
     ] satisfies Crumb[])
 
+  const mainClass = hideMoreTools ? 'tool-page-main ai-maker-shell' : 'tool-page-main'
+
   return (
     <div className="page">
       <DocumentHead path={path} />
       <SiteHeader userLabel={userLabel} onLoginClick={onLoginClick} />
-      <main className="tool-page-main">
+      <main className={mainClass}>
         <div className="tool-lead">
           <nav className="tool-breadcrumbs" aria-label="Breadcrumb">
             <ol>
