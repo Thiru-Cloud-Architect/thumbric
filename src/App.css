@@ -3197,8 +3197,8 @@ footer {
 
 @media (max-width: 420px) {
   .top {
-    flex-wrap: nowrap;
-    gap: 0.4rem;
+    flex-wrap: wrap;
+    gap: 0.45rem 0.55rem;
     padding-left: 0.7rem;
     padding-right: 0.7rem;
   }
@@ -7258,5 +7258,18 @@ body {
   .tool-page-main:has(.doctor-upload) .tool-hero {
     gap: 0.2rem;
     padding-bottom: 0.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .top-nav {
+    display: none;
+  }
+
+  .top-cta,
+  .top-cta-light {
+    max-width: none;
+    overflow: visible;
+    white-space: nowrap;
   }
 }

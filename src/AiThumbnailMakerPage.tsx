@@ -290,9 +290,9 @@ export default function AiThumbnailMakerPage() {
         <section className="ai-canva" aria-label="Create a thumbnail">
           <label className="ai-canva-prompt">
             <span className="sr-only">Paste a YouTube link, or describe the scene</span>
-            <input
+            <textarea
               id="ai-maker-hint"
-              type="text"
+              rows={2}
               value={input}
               disabled={phase === 'busy'}
               onChange={(event) => {
