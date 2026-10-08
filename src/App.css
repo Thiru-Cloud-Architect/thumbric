@@ -6252,3 +6252,194 @@ footer {
   font-size: 0.88rem;
   font-weight: 650;
 }
+
+.account-home {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1.25rem 1.25rem 2rem;
+  min-height: calc(100vh - 8rem);
+}
+
+.account-hero {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.25rem 0 1.1rem;
+}
+
+.account-avatar {
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #1c2430;
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.25rem;
+  flex: none;
+}
+
+.account-identity h1 {
+  margin: 0;
+  font-size: 1.65rem;
+  letter-spacing: -0.03em;
+}
+
+.account-identity p {
+  margin: 0.15rem 0 0;
+  color: var(--muted);
+}
+
+.account-kicker {
+  margin: 0 0 0.15rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.account-hero-side {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.account-plan {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+.account-signout {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  color: var(--muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+.account-signout:hover {
+  color: var(--ink);
+}
+
+.account-meters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+.account-meters article {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--raise);
+  padding: 0.9rem 1rem;
+  display: grid;
+  gap: 0.15rem;
+}
+
+.account-meters strong {
+  font-size: 1.35rem;
+  letter-spacing: -0.03em;
+}
+
+.account-meters span,
+.account-meters a {
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.account-work {
+  display: grid;
+  grid-template-columns: 1.4fr 0.8fr;
+  gap: 0.75rem;
+}
+
+.account-panel {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--raise);
+  padding: 1rem;
+}
+
+.account-panel h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.account-panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.account-empty {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.account-thumbs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.account-thumbs li {
+  display: flex;
+  gap: 0.7rem;
+  align-items: center;
+}
+
+.account-thumbs img {
+  width: 120px;
+  height: 68px;
+  object-fit: cover;
+  border-radius: 8px;
+  background: #000;
+}
+
+.account-thumbs strong,
+.account-thumbs span {
+  display: block;
+}
+
+.account-thumbs span {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.account-invite p {
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.account-invite input {
+  width: 100%;
+  margin: 0.35rem 0 0.65rem;
+}
+
+@media (max-width: 800px) {
+  .account-hero,
+  .account-work,
+  .account-meters {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+
+  .account-hero {
+    display: grid;
+  }
+
+  .account-hero-side {
+    margin-left: 0;
+  }
+}
