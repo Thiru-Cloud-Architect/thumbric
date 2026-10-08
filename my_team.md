@@ -39,9 +39,13 @@ Implemented the next honest slice from `docs/THUMBRIC_PHASED_MASTER_PLAN_AI_EDIT
 
 Local preview screenshots in `.walkthrough/sky-pass/` (desktop 1440×900 + phone 390×844): AI compose/result, home, editor, pricing, doctor.
 
+## Follow-up (after sky pass)
+
+- [x] Hero mosaic no longer paints a dark tile through the headline (“click.” readable)
+
 ## Still open
 
-1. `THUMBRIC_AI_ENGINE_ORCHESTRATOR_IMPLEMENTATION_MASTER.md` — drop into `docs/` when available
+1. `THUMBRIC_AI_ENGINE_ORCHESTRATOR_IMPLEMENTATION_MASTER.md` — drop into `docs/` when available (not on this VM; Windows Downloads path unreachable)
 2. Paid fal / face-wow AI (deferred — unpaid)
 3. Real YouTube frame extraction (deferred)
 4. Supabase prod credentials + Stripe
