@@ -35,6 +35,10 @@ Implemented the next honest slice from `docs/THUMBRIC_PHASED_MASTER_PLAN_AI_EDIT
 - [x] Canvas toolbar: Undo, Redo, More
 - [x] Matches sky/purple system
 
+## Screenshot evidence
+
+Local preview screenshots in `.walkthrough/sky-pass/` (desktop 1440×900 + phone 390×844): AI compose/result, home, editor, pricing, doctor.
+
 ## Still open
 
 1. `THUMBRIC_AI_ENGINE_ORCHESTRATOR_IMPLEMENTATION_MASTER.md` — drop into `docs/` when available
@@ -42,3 +46,4 @@ Implemented the next honest slice from `docs/THUMBRIC_PHASED_MASTER_PLAN_AI_EDIT
 3. Real YouTube frame extraction (deferred)
 4. Supabase prod credentials + Stripe
 5. Mobile mega-menu sheet polish if needed after live check
+6. Mobile editor still stacks canvas above Upload/Templates (usable; further quieting optional)
