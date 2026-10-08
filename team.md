@@ -1,34 +1,27 @@
 # Thumbric.ai — team brief
 
-Living status for agents and humans.  
-**Canonical live URL:** https://thumbric.app/  
-Repo: `Thiru-Cloud-Architect/thumbric` · Checkout: `/home/ubuntu/thumbforge`
-
-**Master plan:** `docs/THUMBRIC_PHASED_MASTER_PLAN_AI_EDITOR_FIRST.md`  
-**Audit:** `docs/AUDIT_REPORT.md`  
+**Live:** https://thumbric.app/ · Repo: `Thiru-Cloud-Architect/thumbric`  
 **Call with:** `@team.md`
 
-## Help here
+## Docs
 
-1. Continue Phase 1B until user corrects UI/product.
-2. Never require video URL for core flow.
-3. Footer stamp = `UI_BUILD` in `src/brand.ts`.
+- Master plan: `docs/THUMBRIC_PHASED_MASTER_PLAN_AI_EDITOR_FIRST.md`
+- Growth blueprint: `docs/THUMBRIC_GROWTH_AND_ACQUISITION_BLUEPRINT.md`
+- **Honest gap:** `docs/IMPLEMENTATION_GAP.md` ← read this before claiming “done”
+- Audit: `docs/AUDIT_REPORT.md`
 
-## Status (2026-10-08)
+## Truth
 
-| Thread | State |
-|--------|--------|
-| Phase 0 audit | Done |
-| Phase 1A concepts + entry chooser | Live |
-| Phase 1B Improve / refine | Live — Improve this thumbnail, Fix all, freeform refine chips |
-| Phase 1B Undo/Redo | Live — toolbar + Ctrl/Cmd+Z / Y |
-| Phase 1B Zoom / Safe zone / Mobile preview | Live |
-| Stamp | `UI_BUILD=2026.10.08-phase1b` |
-| Still open | Full layers system, BG remove, brand kit, YouTube simulated feed chrome, paid fal |
+**We have NOT implemented everything in the MD files.**  
+Shipped: Phase 0 audit, Phase 1A entry/concepts (partial), thin Phase 1B (improve/undo/zoom), growth P0/P1 tools.  
+Missing: wow AI (needs fal), full pro editor, payments, Phase 2–6.
 
-## Verify
+## Current stamp
 
-```bash
-# Expect 2026.10.08-phase1b in the served JS
-curl -sL https://thumbric.app/ | rg -o '/assets/index-[^"]+\.js'
-```
+`UI_BUILD=2026.10.08-gap`
+
+## Open threads
+
+1. UI polish until user is impressed (nav alignment fixed in gap pass).
+2. Paid AI path for real concept quality.
+3. Continue master-plan Phase 1B gaps only after UI bar is acceptable.
