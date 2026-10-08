@@ -3667,6 +3667,56 @@ footer {
   margin-bottom: 0.35rem;
 }
 
+.editor-path-three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 900px) {
+  .editor-path-three {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ai-director {
+  margin: 0.35rem 0 0.15rem;
+  padding: 0.7rem 0.8rem;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 211, 106, 0.28);
+  background: linear-gradient(145deg, rgba(255, 211, 106, 0.08), rgba(192, 132, 252, 0.06));
+}
+
+.ai-director-kicker {
+  margin: 0 0 0.25rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #ffe44d;
+}
+
+.ai-director-lead {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.45;
+  color: rgba(232, 236, 245, 0.9);
+}
+
+.ai-concept-why {
+  display: block;
+  font-style: normal;
+  font-weight: 550;
+  font-size: 0.68rem;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.ai-concept-hook {
+  display: block;
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  color: #ffe7b8;
+}
+
 .editor-path-card {
   appearance: none;
   text-align: left;

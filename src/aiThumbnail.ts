@@ -146,6 +146,12 @@ export type AiGeneratedImage = {
   styleId: AiStyleId
   /** Shown on the picker (Hero / Warm / Cinematic) when locally restyled. */
   lookLabel?: string
+  /** Creative-director blurb for this concept (Phase 1A). */
+  lookWhy?: string
+  /** Editable headline suggested for this concept. */
+  lookHeadline?: string
+  lookSubheadline?: string
+  lookPlacement?: 'left' | 'center' | 'right'
   /** True when this look is a crop/grade of another look, not a new model call. */
   derived?: boolean
   /** Where the pixels came from — never dump provider names in the UI. */

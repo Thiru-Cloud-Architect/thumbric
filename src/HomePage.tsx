@@ -84,7 +84,6 @@ import {
   getAiStyle,
   isAiRateLimitedError,
   suggestAiStyle,
-  titleFromScene,
   type AiGeneratedImage,
   type AiStyleId,
 } from './aiThumbnail'
@@ -105,6 +104,11 @@ import {
   type SimpleUser,
 } from './simpleAuth'
 import { consumeAiHandoff, loadImageFromUrl } from './aiHandoff'
+import {
+  buildCreativeBrief,
+  visualHintForConcept,
+  type CreativeBrief,
+} from './creativeBrief'
 import { track } from './analytics'
 import { DocumentHead } from './DocumentHead'
 import { DOWNLOAD_PREFIX, PRODUCT_NAME_FULL, UI_BUILD } from './brand'
@@ -122,7 +126,7 @@ const POPULAR: NicheId[] = ['tech', 'finance', 'gaming', 'cooking', 'travel', 'f
 
 type DragTarget = 'sticker' | 'text' | null
 type EditorTab = 'create' | 'title' | 'finish'
-type EditorMode = 'ai' | 'classic'
+type EditorMode = 'ai' | 'classic' | 'improve'
 
 export default function HomePage() {
   const [platformId, setPlatformId] = useState<PlatformId>('youtube')
@@ -163,6 +167,7 @@ export default function HomePage() {
   const [aiBusy, setAiBusy] = useState(false)
   const [aiStyleId, setAiStyleId] = useState<AiStyleId>('auto')
   const [aiVariants, setAiVariants] = useState<AiGeneratedImage[]>([])
+  const [creativeBrief, setCreativeBrief] = useState<CreativeBrief | null>(null)
   const [aiPick, setAiPick] = useState(0)
   /** How many picker slots to show while generating / after a partial batch. */
   const [aiSlotCount, setAiSlotCount] = useState(3)
@@ -606,11 +611,46 @@ export default function HomePage() {
     setAiPick(index)
     setPhoto(item.image)
     setPhotoUrl(item.objectUrl)
-    setPhotoName(`AI scene · look ${index + 1} of ${total}`)
+    setPhotoName(
+      item.lookLabel
+        ? `Concept · ${item.lookLabel}`
+        : `AI scene · look ${index + 1} of ${total}`,
+    )
     setLayout('photo-full')
     setPhotoShape('square')
     setStickers([])
     setActiveStickerIndex(null)
+    if (item.lookHeadline) {
+      setTitle(item.lookHeadline)
+      setTitleLine2(item.lookSubheadline ?? '')
+    }
+    if (item.lookPlacement) {
+      const preset = TITLE_POSITION_PRESETS.find((p) => p.id === item.lookPlacement)
+      if (preset) {
+        setTitleAlign(preset.align)
+        setTextPos({ x: preset.x, y: preset.y })
+        setTextSelected(true)
+      }
+    }
+  }
+
+  function attachConcepts(
+    images: AiGeneratedImage[],
+    brief: CreativeBrief | null,
+  ): AiGeneratedImage[] {
+    if (!brief) return images
+    return images.map((item, index) => {
+      const concept = brief.concepts[index]
+      if (!concept) return item
+      return {
+        ...item,
+        lookLabel: concept.strategy,
+        lookWhy: concept.why,
+        lookHeadline: concept.headline,
+        lookSubheadline: concept.subheadline,
+        lookPlacement: concept.placement,
+      }
+    })
   }
 
   function applyScenePreset(preset: (typeof AI_SCENE_PRESETS)[number]) {
@@ -640,6 +680,13 @@ export default function HomePage() {
         : AI_LOOK_TARGET
     if (wantCount <= 0) return
 
+    const brief = mode === 'fresh' ? buildCreativeBrief(aiHint || title) : creativeBrief
+    if (mode === 'fresh' && brief) setCreativeBrief(brief)
+    const primaryHint =
+      brief?.concepts[0] != null
+        ? visualHintForConcept(brief, brief.concepts[0])
+        : aiHint
+
     aiAbortRef.current?.abort()
     const controller = new AbortController()
     const runId = ++aiRunIdRef.current
@@ -661,18 +708,18 @@ export default function HomePage() {
 
     const busyMsg =
       mode === 'more'
-        ? `Creating look ${prior.length + 1} of ${AI_LOOK_TARGET}…`
-        : 'Creating 3 looks — the first lands on the canvas.'
+        ? `Creating concept ${prior.length + 1} of ${AI_LOOK_TARGET}…`
+        : 'Packaging 3 concepts — strategy first, then visuals…'
     setAiStatus({ kind: 'busy', text: busyMsg })
     setStatus(busyMsg)
 
     try {
       const batch = await generateAiThumbnailVariants(
         {
-          title,
+          title: brief?.concepts[0]?.headline || title,
           niche,
           platform,
-          hint: aiHint,
+          hint: primaryHint,
           styleId,
         },
         {
@@ -685,36 +732,39 @@ export default function HomePage() {
             const nextIndex = prior.length + Math.min(done + 1, total)
             const text =
               done >= total
-                ? 'Looks are ready — pick one below.'
-                : `Creating look ${nextIndex} of ${AI_LOOK_TARGET}…`
+                ? 'Concepts are ready — pick one below.'
+                : `Creating concept ${nextIndex} of ${AI_LOOK_TARGET}…`
             setAiStatus({ kind: 'busy', text })
             setStatus(text)
           },
           onWait: (lookIndex) => {
             if (runId !== aiRunIdRef.current) return
             setAiProgressDone(lookIndex)
-            const text = `Look ${lookIndex} is ready. Getting look ${lookIndex + 1} of ${AI_LOOK_TARGET}…`
+            const text = `Concept ${lookIndex} is ready. Getting concept ${lookIndex + 1} of ${AI_LOOK_TARGET}…`
             setAiStatus({ kind: 'busy', text })
             setStatus(text)
           },
           onItem: (item, index) => {
             if (runId !== aiRunIdRef.current) return
+            const tagged = attachConcepts([item], brief)[0]!
             const slot = prior.length + index
             setAiVariants((current) => {
               const next = [...current]
-              next[slot] = item
+              next[slot] = tagged
               return next.slice(0, AI_LOOK_TARGET)
             })
             if (mode === 'fresh' && index === 0) {
-              applyAiLook(item, 0, AI_LOOK_TARGET)
-              if (!title.trim()) setTitle(titleFromScene(aiHint, title))
+              applyAiLook(tagged, 0, AI_LOOK_TARGET)
             }
           },
         },
       )
       if (runId !== aiRunIdRef.current) return
 
-      const merged = [...prior, ...batch.results].slice(0, AI_LOOK_TARGET)
+      const merged = attachConcepts(
+        [...prior, ...batch.results].slice(0, AI_LOOK_TARGET),
+        brief,
+      )
       setAiVariants(merged)
       setAiSlotCount(AI_LOOK_TARGET)
       setAiProgressDone(merged.length)
@@ -731,12 +781,17 @@ export default function HomePage() {
       }
 
       const okMsg = batch.usedStudioFallback
-        ? 'Free AI is busy — 3 studio looks are ready. Style the title on the canvas.'
+        ? 'Free AI is busy — 3 concept packs are ready with editable titles.'
         : merged.length >= AI_LOOK_TARGET
-          ? '3 looks ready — tap one to put it on the canvas.'
-          : `Pick 1 of ${merged.length} — tap a look to put it on the canvas.`
+          ? 'I found 3 ways to package your video — tap a concept.'
+          : `Pick 1 of ${merged.length} concepts — tap to put it on the canvas.`
       setAiStatus({ kind: 'ok', text: okMsg })
       setStatus(okMsg)
+      track('concepts_generated', {
+        tool: 'editor-ai',
+        count: merged.length,
+        studio: batch.usedStudioFallback,
+      })
       track('generation_completed', {
         tool: 'editor-ai',
         looks: merged.length,
@@ -952,7 +1007,7 @@ export default function HomePage() {
             </p>
           </div>
         <section className="workbench editor-workbench studio-grid" aria-label="Thumbnail studio">
-          <div className="editor-path" role="tablist" aria-label="How to start">
+          <div className="editor-path editor-path-three" role="tablist" aria-label="What do you want to do?">
             <button
               id="editor-ai"
               type="button"
@@ -964,9 +1019,9 @@ export default function HomePage() {
                 setEditorTab('create')
               }}
             >
-              <span className="editor-path-kicker">✦ AI</span>
-              <strong>AI Thumbnail creator</strong>
-              <small>Describe a scene · always get 3 looks</small>
+              <span className="editor-path-kicker">✦ Create with AI</span>
+              <strong>Tell us about your video</strong>
+              <small>Get 3 packaging concepts · then edit</small>
             </button>
             <button
               type="button"
@@ -980,14 +1035,35 @@ export default function HomePage() {
                 setEditorTab('create')
               }}
             >
-              <span className="editor-path-kicker">Photo</span>
-              <strong>Templates &amp; upload</strong>
-              <small>Drop a still · start from a layout</small>
+              <span className="editor-path-kicker">🎨 Design from scratch</span>
+              <strong>Professional editor</strong>
+              <small>Templates, upload, title kit</small>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={editorMode === 'improve'}
+              className={
+                editorMode === 'improve' ? 'editor-path-card is-active' : 'editor-path-card'
+              }
+              onClick={() => {
+                setEditorMode('improve')
+                setEditorTab('create')
+              }}
+            >
+              <span className="editor-path-kicker">🩺 Improve my thumbnail</span>
+              <strong>Analyze &amp; improve</strong>
+              <small>Score an existing thumb · then restyle</small>
             </button>
           </div>
           <p className="picks-bar" aria-live="polite">
-            {editorMode === 'ai' ? 'AI path' : 'Photo path'} · <strong>{platform.label}</strong> ·{' '}
-            {platform.width}×{platform.height} · Look: <strong>{niche.label}</strong>
+            {editorMode === 'ai'
+              ? 'AI concepts'
+              : editorMode === 'improve'
+                ? 'Improve'
+                : 'Design'}{' '}
+            · <strong>{platform.label}</strong> · {platform.width}×{platform.height} · Look:{' '}
+            <strong>{niche.label}</strong>
             {accentOverride ? ' · Custom accent' : ''}
             {photoName ? ` · ${photoName}` : ''}
           </p>
@@ -1038,8 +1114,10 @@ export default function HomePage() {
             <section className="step step-clean">
               <p className="step-lede">
                 {editorMode === 'ai'
-                  ? 'Describe the scene. You always get 3 looks — pick one, then style the title on the canvas.'
-                  : 'Pick a platform, tap a YouTube-style template, drop a photo. Title tools sit on the right.'}
+                  ? 'Tell Thumbric what the video is about. AI proposes 3 packaging strategies — you pick one and finish in the editor.'
+                  : editorMode === 'improve'
+                    ? 'Upload a thumbnail you already have, score it, then jump back here to generate stronger alternatives.'
+                    : 'Pick a platform, tap a YouTube-style template, drop a photo. Title tools sit on the right.'}
               </p>
               <div className="choice-row platform-row" role="radiogroup" aria-label="Platform">
                 {PLATFORMS.map((item) => (
@@ -1068,14 +1146,45 @@ export default function HomePage() {
               </div>
               ) : null}
 
+              {editorMode === 'improve' ? (
+              <div className="photo-box ai-scene-box">
+                <div>
+                  <p className="photo-title">Improve my thumbnail</p>
+                  <p className="photo-help">
+                    Score an existing thumbnail for contrast, face size, and title space — then
+                    generate 3 stronger packaging concepts in the AI path.
+                  </p>
+                </div>
+                <div className="photo-actions">
+                  <Link className="chip solid ai-generate" to="/youtube-thumbnail-score">
+                    Open Thumbnail Score →
+                  </Link>
+                  <button
+                    type="button"
+                    className="chip"
+                    onClick={() => {
+                      setEditorMode('ai')
+                      setEditorTab('create')
+                    }}
+                  >
+                    Or create with AI
+                  </button>
+                </div>
+                <p className="ai-honesty-note">
+                  After you score, use <strong>Generate 3 alternatives</strong> on the score page —
+                  it hands a brief back into this editor.
+                </p>
+              </div>
+              ) : null}
+
               {editorMode === 'ai' ? (
               <div className="photo-box ai-scene-box">
                 <div>
-                  <p className="photo-title">AI Thumbnail creator</p>
+                  <p className="photo-title">Create with AI</p>
                   <p className="photo-help">
-                    Describe a visual scene (who, where, mood). You always get 3 looks — even if
-                    free AI is busy, studio stills fill the picker. Title text is added on the
-                    canvas, not burned into the photo.
+                    Tell us what the video is about. Thumbric builds 3 packaging strategies
+                    (warning, curiosity, outcome…) with editable titles — not three crops of the
+                    same image.
                   </p>
                   {photoName ? <p className="photo-name">Selected: {photoName}</p> : null}
                 </div>
@@ -1093,7 +1202,7 @@ export default function HomePage() {
                   ))}
                 </div>
                 <fieldset className="ai-style-field">
-                  <legend>Look style</legend>
+                  <legend>Creative direction</legend>
                   <div className="ai-style-row" role="list">
                     {AI_STYLES.map((style) => (
                       <button
@@ -1117,18 +1226,18 @@ export default function HomePage() {
                   </div>
                 </fieldset>
                 <label className="ai-hint-field">
-                  Describe the scene for your thumbnail
+                  What is your video about?
                   <textarea
                     id="ai-scene-hint"
                     rows={3}
                     value={aiHint}
                     onChange={(event) => onAiHintChange(event.target.value)}
-                    placeholder="e.g. cute cartoon animals playing in a sunny jungle for kids"
+                    placeholder='e.g. “5 mistakes people make when buying their first house”'
                   />
                 </label>
                 {aiStyleTip ? (
                   <p className="ai-style-suggest" role="status">
-                    This scene fits <strong>{getAiStyle(aiStyleTip).label}</strong> better than{' '}
+                    This topic fits <strong>{getAiStyle(aiStyleTip).label}</strong> better than{' '}
                     {getAiStyle(aiStyleId).label}.
                     <button type="button" className="ai-style-suggest-btn" onClick={applySuggestedStyle}>
                       Switch style
@@ -1136,9 +1245,8 @@ export default function HomePage() {
                   </p>
                 ) : (
                   <p className="ai-honesty-note">
-                    Tip: describe people, place, and lighting — not slogans. Put the hook text on
-                    the canvas after you pick a look. Animals / kids → use <strong>Kids / fun</strong>{' '}
-                    or <strong>Cartoon</strong>.
+                    Natural language is fine. Optional photo upload comes next. Headlines stay
+                    editable on the canvas — never burned into the AI image.
                   </p>
                 )}
                 <div className="photo-actions">
@@ -1150,10 +1258,10 @@ export default function HomePage() {
                     onClick={() => void runAiThumbnail('fresh')}
                   >
                     {aiBusy
-                      ? 'Creating looks…'
+                      ? 'Creating concepts…'
                       : aiCooldownSec > 0 && aiVariants.length === 0
                         ? 'Try again'
-                        : 'Generate 3 looks'}
+                        : 'Create 3 concepts →'}
                   </button>
                   {aiCanFetchMore && !aiBusy && aiCooldownSec === 0 ? (
                     <button
@@ -1178,15 +1286,24 @@ export default function HomePage() {
                     </button>
                   ) : null}
                 </div>
+                {creativeBrief && aiVariants.length > 0 ? (
+                  <div className="ai-director" role="status">
+                    <p className="ai-director-kicker">Creative director</p>
+                    <p className="ai-director-lead">
+                      I found {aiVariants.length} ways to package{' '}
+                      <strong>{creativeBrief.topic}</strong> for {creativeBrief.audience.toLowerCase()}.
+                    </p>
+                  </div>
+                ) : null}
                 <div className="ai-picker-block">
                   <p className="ai-picker-label">
                     {aiBusy
-                      ? `Creating looks… ${Math.min(aiProgressDone + 1, AI_LOOK_TARGET)} of ${AI_LOOK_TARGET}`
+                      ? `Creating concepts… ${Math.min(aiProgressDone + 1, AI_LOOK_TARGET)} of ${AI_LOOK_TARGET}`
                       : aiVariants.length > 0
-                        ? `Pick a look · ${aiVariants.length} ready`
+                        ? `Pick a concept · ${aiVariants.length} ready`
                         : aiStatus.kind === 'err'
-                          ? 'No looks yet — try a shorter scene'
-                          : '3 looks will land here after you generate'}
+                          ? 'No concepts yet — try a shorter topic'
+                          : '3 concepts land here after you create'}
                   </p>
                   <div className="ai-variant-picker" role="listbox" aria-label="Pick one of up to 3 AI looks">
                     {Array.from({ length: aiSlotCount }, (_, index) => {
@@ -1203,9 +1320,15 @@ export default function HomePage() {
                           >
                             <img src={item.objectUrl} alt={`AI look ${index + 1}`} />
                             <span>
-                              {item.lookLabel || `Look ${index + 1}`}
+                              {item.lookLabel || `Concept ${index + 1}`}
                               {index === aiPick ? ' · selected' : ''}
                             </span>
+                            {item.lookWhy ? (
+                              <em className="ai-concept-why">{item.lookWhy}</em>
+                            ) : null}
+                            {item.lookHeadline ? (
+                              <strong className="ai-concept-hook">{item.lookHeadline}</strong>
+                            ) : null}
                           </button>
                         )
                       }
