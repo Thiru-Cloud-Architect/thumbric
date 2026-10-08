@@ -18,6 +18,7 @@ import DashboardPage from './DashboardPage'
 import DoctorPage from './DoctorPage'
 import FeedbackPage from './FeedbackPage'
 import RoadmapPage from './RoadmapPage'
+import ProjectsPage from './ProjectsPage'
 import { captureAttribution, markReturnVisit } from './analytics'
 import { ScrollToHash } from './nav'
 
@@ -58,10 +59,19 @@ export default function App() {
         <Route path="/legal" element={<LegalPage />} />
         <Route path="/roast/:code" element={<RoastPage />} />
         <Route path="/thumbnail-doctor" element={<DoctorPage />} />
+        <Route path="/projects" element={<ProjectsPage />} />
         <Route path="/account" element={<AccountPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/feedback" element={<FeedbackPage />} />
         <Route path="/roadmap" element={<RoadmapPage />} />
+        <Route
+          path="/youtube-thumbnail-generator"
+          element={<SeoMakerPage path="/youtube-thumbnail-generator" />}
+        />
+        <Route
+          path="/finance-thumbnail-maker"
+          element={<SeoMakerPage path="/finance-thumbnail-maker" />}
+        />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

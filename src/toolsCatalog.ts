@@ -130,6 +130,42 @@ export const MAKER_PAGES: MakerCopy[] = [
     nicheHint: 'youtube',
   },
   {
+    path: '/youtube-thumbnail-generator',
+    kicker: 'Generator · free',
+    h1: 'YouTube thumbnail generator',
+    h1Accent: 'from idea to PNG.',
+    lede: 'Generate packaging concepts from a short description, then finish titles on a live 1280×720 canvas. No video upload required.',
+    steps: [
+      { title: 'Describe the video', body: 'Topic, emotion, and who should be in frame.' },
+      { title: 'Pick a concept', body: 'Three packaging angles — warning, curiosity, outcome, and more.' },
+      { title: 'Export', body: 'Drag type, refine, download a YouTube-ready PNG.' },
+    ],
+    tips: [
+      'A generator is only useful if text stays editable — ours never burns words into the pixels.',
+      'Score an existing thumb first if you already publish weekly.',
+    ],
+    editorHash: 'editor-ai',
+    nicheHint: 'youtube',
+  },
+  {
+    path: '/finance-thumbnail-maker',
+    kicker: 'Finance · markets',
+    h1: 'Finance thumbnail maker',
+    h1Accent: 'charts that still click.',
+    lede: 'Market and money thumbnails: one clear subject, calm or alert color, and a short hook that reads on mobile.',
+    steps: [
+      { title: 'Pick Finance mood', body: 'Use the finance template or green-accent brand kit.' },
+      { title: 'Keep one idea', body: 'Crash, tip, or explainer — not three charts at once.' },
+      { title: 'Title does the stake', body: '3–5 words. Numbers help when they are huge.' },
+    ],
+    tips: [
+      'Avoid fake “to the moon” clutter — clarity beats meme stickers for money topics.',
+      'Run Thumbnail Doctor on last week’s upload before you redesign.',
+    ],
+    editorHash: 'editor',
+    nicheHint: 'finance',
+  },
+  {
     path: '/ai-thumbnail-maker',
     kicker: 'AI · free scene stills',
     h1: 'AI thumbnail maker',

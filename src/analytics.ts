@@ -18,6 +18,14 @@ export type AnalyticsEventName =
   | 'user_returned'
   | 'cta_click'
   | 'ab_test_created'
+  | 'doctor_started'
+  | 'doctor_completed'
+  | 'project_duplicated'
+  | 'project_deleted'
+  | 'bug_report_submitted'
+  | 'feature_request_submitted'
+  | 'mobile_preview_used'
+  | 'concept_selected'
 
 export type Attribution = {
   source: string

@@ -1,7 +1,7 @@
 import { type MouseEvent, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { PRODUCT_NAME_FULL } from './brand'
-import { NavHashLink, goToHash, useOnHomePage } from './nav'
+import { goToHash, useOnHomePage } from './nav'
 import { TOOL_NAV } from './toolsCatalog'
 
 type SiteHeaderProps = {
@@ -66,7 +66,20 @@ export function SiteHeader({ userLabel, onLoginClick }: SiteHeaderProps) {
         </span>
         {PRODUCT_NAME_FULL}
       </Link>
-      <nav className="top-nav" aria-label="Sections">
+      <nav className="top-nav" aria-label="Primary">
+        <a
+          className="nav-link"
+          href={onHome ? '#editor-ai' : '/#editor-ai'}
+          onClick={(event) => goHomeHash(event, 'editor-ai')}
+        >
+          Create
+        </a>
+        <Link className="nav-link" to="/projects">
+          Projects
+        </Link>
+        <Link className="nav-link" to="/thumbnail-doctor">
+          Analyze
+        </Link>
         <div
           className={toolsOpen ? 'nav-dropdown is-open' : 'nav-dropdown'}
           ref={toolsRef}
@@ -118,28 +131,31 @@ export function SiteHeader({ userLabel, onLoginClick }: SiteHeaderProps) {
               onClick={() => setToolsOpen(false)}
             >
               <strong>All free tools</strong>
-              <span>Score · tester · resizer · CTR · titles · AI</span>
+              <span>Score · tester · resizer · CTR · titles · Doctor</span>
             </Link>
           </div>
         </div>
-        <NavHashLink hash="features">Features</NavHashLink>
-        <Link to="/dashboard">Dashboard</Link>
-        <Link to="/pricing">Pricing</Link>
-        <NavHashLink hash="how">How it works</NavHashLink>
+        <Link className="nav-link" to="/pricing">
+          Pricing
+        </Link>
       </nav>
       <div className="top-actions">
         {onLoginClick ? (
           <button type="button" className="top-login" onClick={onLoginClick}>
             {userLabel ? userLabel : 'Sign in'}
           </button>
-        ) : null}
+        ) : (
+          <Link className="top-login" to="/account">
+            {userLabel ? userLabel : 'Sign in'}
+          </Link>
+        )}
         {onHome ? (
           <a
             className="top-cta top-cta-light"
             href="#editor-ai"
             onClick={(event) => goHomeHash(event, 'editor-ai')}
           >
-            Start free
+            Create thumbnail
           </a>
         ) : (
           <Link
@@ -147,7 +163,7 @@ export function SiteHeader({ userLabel, onLoginClick }: SiteHeaderProps) {
             to={{ pathname: '/', hash: '#editor-ai' }}
             onClick={(event) => goHomeHash(event, 'editor-ai')}
           >
-            Start free
+            Create thumbnail
           </Link>
         )}
       </div>

@@ -5,6 +5,7 @@ import { PRODUCT_NAME_FULL, UI_BUILD } from './brand'
 import { DocumentHead } from './DocumentHead'
 import { SiteFooter } from './LandingSections'
 import { SiteHeader } from './SiteHeader'
+import { loadProjects } from './projects'
 import { loadThumbnailHistory } from './thumbnailHistory'
 import './App.css'
 
@@ -13,6 +14,9 @@ export default function DashboardPage() {
   const funnel = summarizeEvents(events)
   const byDay = eventsByDay(events)
   const historyCount = loadThumbnailHistory().length
+  const projects = loadProjects()
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
 
   return (
     <div className="page">
@@ -21,24 +25,62 @@ export default function DashboardPage() {
       <main className="dashboard-main tool-page-main">
         <p className="section-eyebrow">Creator dashboard</p>
         <h1 className="section-title">
-          Funnel &amp; <span className="gradient-text">retention</span>
+          {greeting}. <span className="gradient-text">Create your next thumbnail.</span>
         </h1>
         <p className="section-lede">
-          Product analytics stored on this device ({events.length} events). Connect{' '}
-          <code>VITE_API_BASE</code> to mirror to the Worker for team cohorts.
+          Action first — then a quiet look at what you already made on this device.
         </p>
+
+        <section className="dashboard-actions" aria-label="Start creating">
+          <Link className="dashboard-action is-primary" to={{ pathname: '/', hash: '#editor-ai' }}>
+            <strong>Describe your video</strong>
+            <span>AI concepts → editable canvas</span>
+          </Link>
+          <Link className="dashboard-action" to="/thumbnail-doctor">
+            <strong>Upload thumbnail to improve</strong>
+            <span>Doctor score + top 3 fixes</span>
+          </Link>
+          <Link className="dashboard-action" to={{ pathname: '/', hash: '#video-optional' }}>
+            <strong>Optional: understand my video</strong>
+            <span>Privacy-first · never required</span>
+          </Link>
+        </section>
+
+        {projects.length === 0 && historyCount === 0 ? (
+          <article className="tool-card empty-state-card">
+            <h2>Your next thumbnail starts here.</h2>
+            <p>No projects yet. Create with AI or analyze an existing thumb — exports land in Projects.</p>
+            <Link className="chip solid" to={{ pathname: '/', hash: '#editor-ai' }}>
+              Create thumbnail
+            </Link>
+          </article>
+        ) : (
+          <article className="tool-card">
+            <h2>Recent projects</h2>
+            <ul className="history-list">
+              {projects.slice(0, 4).map((item) => (
+                <li key={item.id}>
+                  <img src={item.previewDataUrl} alt="" width={120} height={68} />
+                  <div>
+                    <strong>{item.name || item.title || 'Untitled'}</strong>
+                    <span>
+                      {item.platform} · {new Date(item.updatedAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <Link to="/projects">View all projects →</Link>
+          </article>
+        )}
 
         <div className="dashboard-stats">
           {(
             [
-              ['Landing views', funnel.landing],
-              ['Tools started', funnel.toolStarted],
-              ['Thumbs analyzed', funnel.analyzed],
-              ['Generations done', funnel.generated],
               ['Downloads', funnel.downloaded],
-              ['Shares', funnel.shared],
-              ['Signups', funnel.signupCompleted],
-              ['Return visits', funnel.returned],
+              ['Generations', funnel.generated],
+              ['Analyzed', funnel.analyzed],
+              ['Returns', funnel.returned],
             ] as const
           ).map(([label, value]) => (
             <div key={label} className="dashboard-stat">
@@ -62,17 +104,6 @@ export default function DashboardPage() {
               ))}
             </ul>
           )}
-        </article>
-
-        <article className="tool-card">
-          <h2>Cloud history</h2>
-          <p>
-            {historyCount} thumbnails in local history. Server sync and YouTube OAuth are planned for Pro — see{' '}
-            <Link to="/roadmap">roadmap</Link>.
-          </p>
-          <Link className="chip solid" to={{ pathname: '/', hash: '#editor-ai' }}>
-            Back to editor
-          </Link>
         </article>
       </main>
       <SiteFooter buildLabel={`${PRODUCT_NAME_FULL} · build ${UI_BUILD}`} />

@@ -178,6 +178,27 @@ export const SITE_ROUTES: SiteRouteMeta[] = [
     changefreq: 'monthly',
     priority: '0.45',
   },
+  {
+    path: '/projects',
+    title: 'Projects — Thumbric.ai',
+    description: 'Local thumbnail project history: open, duplicate, analyze, or delete exports from this browser.',
+    changefreq: 'weekly',
+    priority: '0.55',
+  },
+  {
+    path: '/youtube-thumbnail-generator',
+    title: 'YouTube Thumbnail Generator — free | Thumbric.ai',
+    description: 'Generate YouTube thumbnail concepts from a short idea, then finish titles on a live canvas.',
+    changefreq: 'weekly',
+    priority: '0.8',
+  },
+  {
+    path: '/finance-thumbnail-maker',
+    title: 'Finance Thumbnail Maker | Thumbric.ai',
+    description: 'Make finance and markets YouTube thumbnails with clear subjects and mobile-readable hooks.',
+    changefreq: 'weekly',
+    priority: '0.7',
+  },
 ]
 
 export function routeMeta(path: string) {

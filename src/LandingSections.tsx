@@ -1,7 +1,7 @@
 import { type MouseEvent, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { NavHashLink, goToHash } from './nav'
-import { PRODUCT_NAME, PRODUCT_NAME_FULL, PRODUCT_TAGLINE, SITE_URL, UI_BUILD } from './brand'
+import { PRODUCT_NAME, PRODUCT_NAME_FULL, SITE_URL, UI_BUILD } from './brand'
 import { CREATOR_CLEAN_DOWNLOADS_PER_MONTH, TRIAL_DAYS } from './entitlement'
 import { planPriceLabel } from './plans'
 import { FEATURES, AI_FEATURE } from './features'
@@ -115,14 +115,14 @@ export function HeroFlashy({ onStartTrial }: HeroFlashyProps) {
       <div className="hero-inner">
         <p className="hero-badge">
           <span className="hero-badge-pulse" aria-hidden />
-          Free in browser · Photo stays on your device
+          Free in browser · No video upload required
         </p>
         <h1 id="hero-title">
-          YouTube thumbnails that <span className="gradient-text gradient-text-motion">get the click.</span>
+          Create thumbnails that <span className="gradient-text gradient-text-motion">earn the click.</span>
         </h1>
         <p className="hero-sub">
-          {PRODUCT_TAGLINE}. Describe a scene, generate 3 looks, then finish the title on a live
-          YouTube-sized canvas — in minutes, not hours.
+          Give Thumbric your idea, assets, or an existing thumbnail. Create strong concepts, then refine them
+          in a professional editor — your unpublished video never has to leave your machine.
         </p>
         <div className="hero-cta-row">
           <a
@@ -130,25 +130,18 @@ export function HeroFlashy({ onStartTrial }: HeroFlashyProps) {
             href="#editor-ai"
             onClick={(event) => onEditorHashClick(event, 'editor-ai')}
           >
-            <span className="nav-ai-spark" aria-hidden>
-              ✦
-            </span>
-            Try AI Thumbnail creator
+            Create my thumbnail — Free
             <span aria-hidden> →</span>
           </a>
-          <a
-            className="btn-outline hero-cta-secondary"
-            href="#editor"
-            onClick={(event) => onEditorHashClick(event, 'editor')}
-          >
-            Open photo editor
-          </a>
+          <Link className="btn-outline hero-cta-secondary" to="/thumbnail-doctor">
+            Analyze my thumbnail
+          </Link>
           <button type="button" className="btn-outline hero-cta-tertiary hero-cta-trial" onClick={onStartTrial}>
-            Start 7-day trial
+            Start {TRIAL_DAYS}-day trial
           </button>
         </div>
         <p className="hero-fine">
-          Free AI backdrop · unlimited preview saves · {TRIAL_DAYS}-day clean-export trial
+          Privacy-first · photo stays on device · unlimited preview saves · optional video understanding later
         </p>
       </div>
     </section>
@@ -229,26 +222,26 @@ export function HowItWorks() {
     {
       n: 1,
       tone: 'violet',
-      title: 'Describe the scene',
-      body: 'Type who, where, and the mood — or pick a starter. YouTube size is already set.',
+      title: 'Idea',
+      body: 'Describe the video, upload a photo, or drop an existing thumbnail. No video file required.',
     },
     {
       n: 2,
       tone: 'pink',
-      title: 'Generate 3 looks',
-      body: 'Free AI paints a backdrop. If it is busy, studio looks still fill so you can keep editing.',
+      title: 'AI concepts',
+      body: 'Three packaging strategies with editable titles — pick the angle that fits the click.',
     },
     {
       n: 3,
       tone: 'blue',
-      title: 'Style the title',
-      body: 'Two-line hook, font, size, and drag-to-place on the live canvas. Punchier / bigger in one tap.',
+      title: 'Editor + mobile preview',
+      body: 'Layers, brand kit, snap guides, YouTube feed simulation — refine until it reads at phone size.',
     },
     {
       n: 4,
       tone: 'green',
-      title: 'Download PNG',
-      body: 'Export a platform-sized file ready for YouTube Studio or your social app.',
+      title: 'Export',
+      body: 'Download a platform-sized PNG. Projects save locally so you can come back and iterate.',
     },
   ]
   return (
@@ -256,7 +249,7 @@ export function HowItWorks() {
       <RevealItem index={0}>
         <p className="section-eyebrow">How it works</p>
         <h2 id="how-title" className="section-title center">
-          Title in. <span className="gradient-text">Thumbnail out.</span>
+          Idea → concepts → editor → <span className="gradient-text">export.</span>
         </h2>
       </RevealItem>
       <div className="how-steps">
@@ -578,7 +571,8 @@ export function SiteFooter({ buildLabel }: { buildLabel?: string }) {
             <div className="footer-col">
               <p className="footer-head">Resources</p>
               <Link to="/learn">Lessons</Link>
-              <Link to="/thumbnail-doctor">Thumbnail Doctor</Link>
+              <Link to="/projects">Projects</Link>
+              <Link to="/thumbnail-doctor">Analyze</Link>
               <Link to="/dashboard">Dashboard</Link>
               <Link to="/account">Account</Link>
               <Link to="/feedback">Feedback</Link>

@@ -87,6 +87,8 @@ import {
 } from './creatorKit'
 import { snapNormalized } from './snapGuides'
 import { pushThumbnailHistory } from './thumbnailHistory'
+import { upsertProject } from './projects'
+import { styleHintFromKit } from './creatorKit'
 import {
   DEFAULT_STICKER_SLOTS,
   STICKERS,
@@ -688,8 +690,29 @@ export default function HomePage() {
   function applyBrandToCanvas() {
     setAccentOverride(creatorKit.accent)
     setFontId(creatorKit.fontId)
+    setLayout(creatorKit.preferredLayout)
+    setTextPos(defaultTextPosition(platform, creatorKit.preferredLayout))
     saveCreatorKit(creatorKit)
-    setStatus('Brand colors and font applied. Logo renders when uploaded in Creator kit.')
+    setStatus('Brand colors, font, and preferred layout applied.')
+  }
+
+  function createInMyStyle() {
+    applyBrandToCanvas()
+    setEditorMode('ai')
+    setEditorTab('create')
+    setAiHint(styleHintFromKit(creatorKit))
+    if (creatorKit.facePhotos[0]) {
+      const img = new Image()
+      img.onload = () => {
+        setPhoto(img)
+        setPhotoName('Creator kit face')
+        setStatus('Loaded your face photo. Generate 3 concepts in your style.')
+      }
+      img.src = creatorKit.facePhotos[0]
+    } else {
+      setStatus('Style brief loaded — describe the video or generate concepts.')
+    }
+    goToHash('editor-ai')
   }
 
   async function onBrandLogoFile(file: File) {
@@ -705,11 +728,20 @@ export default function HomePage() {
         ...previewInput,
         watermark: !clean,
       })
+      const name = title.trim() || 'Untitled'
       pushThumbnailHistory({
-        title: title.trim() || 'Untitled',
+        title: name,
         platform: platform.label,
         previewDataUrl,
         clean,
+      })
+      upsertProject({
+        name,
+        previewDataUrl,
+        title: name,
+        platform: platform.label,
+        status: 'exported',
+        variants: Math.max(1, aiVariants.length || 1),
       })
     } catch {
       /* ignore history if canvas tainted */
@@ -2040,6 +2072,7 @@ export default function HomePage() {
                 onChange={setCreatorKit}
                 onApply={applyBrandToCanvas}
                 onLogoFile={onBrandLogoFile}
+                onCreateInMyStyle={createInMyStyle}
               />
 
               <div className="fold-body">
@@ -2239,7 +2272,12 @@ export default function HomePage() {
                 <button
                   type="button"
                   className={mobilePreview ? 'preview-tool is-on' : 'preview-tool'}
-                  onClick={() => setMobilePreview((v) => !v)}
+                  onClick={() => {
+                    setMobilePreview((v) => {
+                      if (!v) track('mobile_preview_used', { tool: 'editor' })
+                      return !v
+                    })
+                  }}
                 >
                   Mobile
                 </button>
@@ -2537,6 +2575,42 @@ export default function HomePage() {
         </LazyReveal>
       </main>
 
+      <section id="video-optional" className="video-optional-section" aria-labelledby="video-optional-title">
+        <div className="video-optional-inner">
+          <p className="section-eyebrow">Optional · Phase 4 preview</p>
+          <h2 id="video-optional-title" className="section-title">
+            Understand my video — <span className="gradient-text">never required</span>
+          </h2>
+          <p className="section-lede">
+            Thumbric works from an idea, a photo, or an existing thumbnail. You do not need to upload
+            unpublished videos or connect YouTube. If you want a still from your own file, pick a frame
+            locally — it stays in this browser.
+          </p>
+          <ul className="video-privacy-list">
+            <li>What you share: only a frame or photo you choose — not your full upload by default.</li>
+            <li>Retention: local browser only until you export.</li>
+            <li>Training: we do not claim model training on your media.</li>
+            <li>Delete: clear site data or remove the photo in the editor anytime.</li>
+          </ul>
+          <div className="video-optional-actions">
+            <button
+              type="button"
+              className="chip solid"
+              onClick={() => {
+                setEditorMode('classic')
+                setEditorTab('create')
+                goToHash('editor')
+                window.setTimeout(() => fileRef.current?.click(), 200)
+              }}
+            >
+              Pick a local still frame
+            </button>
+            <Link className="chip" to="/roadmap">
+              See roadmap for YouTube loop
+            </Link>
+          </div>
+        </div>
+      </section>
       <SiteFooter buildLabel={`${PRODUCT_NAME_FULL} · UI ${UI_BUILD}`} />
 
       {modal !== 'none' ? (

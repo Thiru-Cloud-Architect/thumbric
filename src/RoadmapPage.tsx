@@ -5,35 +5,60 @@ const PHASES = [
   {
     id: '1',
     title: 'Phase 1 — AI editor first',
-    status: 'Shipped (free tier)',
+    status: 'Shipped',
     items: [
       'Three entry paths · creative brief · editable titles',
-      'Pro editor slice: undo, zoom, safe zone, mobile + YouTube feed sim',
-      'Layers, brand kit, snap guides, photo treatments',
-      'Free tools + SEO landings + Thumbnail Doctor funnel',
+      'Pro editor: layers, undo, snap, zoom, safe zone, rotation',
+      'Creator kit + categorized templates',
+      'Free tools + SEO landings',
     ],
   },
   {
     id: '2',
-    title: 'Phase 2 — Paid wow AI',
-    status: 'Next (requires fal + checkout)',
+    title: 'Phase 2 — Thumbnail Doctor',
+    status: 'Shipped (heuristic)',
     items: [
-      'Three independent photoreal generations per concept',
-      'Stripe / Razorpay · ₹299 Creator · ₹799 Pro',
-      'Cloud history sync via Worker',
+      'Inline upload → score → top 3 problems → Fix with Thumbric',
+      'Growth funnel without forcing signup to analyze',
+      'A/B compare handoff',
     ],
   },
   {
     id: '3',
-    title: 'Phase 3 — YouTube loop',
-    status: 'Planned',
-    items: ['YouTube OAuth', 'Channel CTR context', 'Live A/B on real videos'],
+    title: 'Phase 3 — Creator personalization',
+    status: 'Shipped (local)',
+    items: [
+      'Faces (up to 10), logo, colors, fonts',
+      'Preferred layout + style preference + expression',
+      '“Create next in my style” from Creator kit',
+      'Projects history + action-first dashboard',
+    ],
   },
   {
     id: '4',
-    title: 'Phase 4+ — Video intelligence',
-    status: 'Research',
-    items: ['Video-aware packaging', 'Agency seats', 'Public API'],
+    title: 'Phase 4 — Optional video intelligence',
+    status: 'Privacy stub live',
+    items: [
+      'Optional “Understand my video” section — never required',
+      'Local still-frame pick only (no forced upload)',
+      'Full URL/video queue analysis waits for paid infra',
+    ],
+  },
+  {
+    id: '5',
+    title: 'Phase 5–6 — YouTube loop & A/B learning',
+    status: 'Deferred (paid / OAuth)',
+    items: ['YouTube OAuth CTR context', 'Live A/B on real videos', 'Audience learning moat'],
+  },
+  {
+    id: 'paid',
+    title: 'Paid wow AI + checkout',
+    status: 'Deferred by request',
+    items: [
+      'fal photoreal 3-concept generation',
+      'Stripe / Razorpay · ₹299 / ₹799',
+      'Cloud history sync',
+    ],
   },
 ]
 
@@ -44,10 +69,10 @@ export default function RoadmapPage() {
       kicker="Roadmap"
       title={
         <>
-          What shipped vs <span className="gradient-text">what is next</span>
+          Phases shipped vs <span className="gradient-text">what waits on paid</span>
         </>
       }
-      lede="Everything in Phase 1 except premium AI thumbnail generation is in the app today. Paid keys unlock the wow factor."
+      lede="Phase 2 Doctor and Phase 3 personalization are live locally. Premium AI and YouTube OAuth stay parked until you choose paid."
     >
       {PHASES.map((phase) => (
         <article key={phase.id} className="tool-card">
@@ -61,8 +86,8 @@ export default function RoadmapPage() {
         </article>
       ))}
       <p className="hint">
-        <Link to="/pricing">Pricing</Link> · <Link to="/dashboard">Dashboard</Link> ·{' '}
-        <Link to="/feedback">Send feedback</Link>
+        <Link to="/thumbnail-doctor">Doctor</Link> · <Link to="/projects">Projects</Link> ·{' '}
+        <Link to="/feedback">Feedback</Link>
       </p>
     </ToolShell>
   )
