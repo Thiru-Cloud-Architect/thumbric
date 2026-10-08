@@ -109,6 +109,22 @@ import {
   visualHintForConcept,
   type CreativeBrief,
 } from './creativeBrief'
+import {
+  analyzeDesignIssues,
+  applyRefineAction,
+  parseRefineIntent,
+  refineChipList,
+  type DesignIssue,
+  type DesignSnapshot,
+  type RefineActionId,
+} from './refineActions'
+import {
+  createHistory,
+  pushHistory,
+  redoHistory,
+  undoHistory,
+  type HistoryStack,
+} from './editorHistory'
 import { track } from './analytics'
 import { DocumentHead } from './DocumentHead'
 import { DOWNLOAD_PREFIX, PRODUCT_NAME_FULL, UI_BUILD } from './brand'
@@ -127,6 +143,24 @@ const POPULAR: NicheId[] = ['tech', 'finance', 'gaming', 'cooking', 'travel', 'f
 type DragTarget = 'sticker' | 'text' | null
 type EditorTab = 'create' | 'title' | 'finish'
 type EditorMode = 'ai' | 'classic' | 'improve'
+
+type EditorSnap = {
+  title: string
+  titleLine2: string
+  titleFontSizePx: number
+  titleAlign: TitleAlign
+  titleFill: string
+  titleOutlineWidth: number
+  titleOutlineColor: string
+  titleShadow: boolean
+  textStyleId: TextStyleId
+  layout: LayoutId
+  photoShape: PhotoShapeId
+  stickers: PlacedSticker[]
+  textPos: { x: number; y: number }
+  fontId: FontId
+  aiPick: number
+}
 
 export default function HomePage() {
   const [platformId, setPlatformId] = useState<PlatformId>('youtube')
@@ -169,6 +203,13 @@ export default function HomePage() {
   const [aiVariants, setAiVariants] = useState<AiGeneratedImage[]>([])
   const [creativeBrief, setCreativeBrief] = useState<CreativeBrief | null>(null)
   const [aiPick, setAiPick] = useState(0)
+  const [showSafeZones, setShowSafeZones] = useState(false)
+  const [canvasZoom, setCanvasZoom] = useState(1)
+  const [mobilePreview, setMobilePreview] = useState(false)
+  const [mobilePreviewUrl, setMobilePreviewUrl] = useState('')
+  const [refineDraft, setRefineDraft] = useState('')
+  const [designIssues, setDesignIssues] = useState<DesignIssue[]>([])
+  const historyRef = useRef<HistoryStack<EditorSnap> | null>(null)
   /** How many picker slots to show while generating / after a partial batch. */
   const [aiSlotCount, setAiSlotCount] = useState(3)
   const [aiProgressDone, setAiProgressDone] = useState(0)
@@ -229,7 +270,7 @@ export default function HomePage() {
       titleOutlineWidth,
       titleOutlineColor,
       titleShadow,
-      showSafeZones: false,
+      showSafeZones,
       activeStickerIndex: activeStickerIndex ?? undefined,
       highlightText: textSelected,
     }),
@@ -253,6 +294,7 @@ export default function HomePage() {
       titleOutlineWidth,
       titleOutlineColor,
       titleShadow,
+      showSafeZones,
       activeStickerIndex,
       textSelected,
       dragging,
@@ -313,7 +355,33 @@ export default function HomePage() {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
     renderThumbnail(ctx, previewInput)
-  }, [previewInput, platform.width, platform.height])
+    if (mobilePreview) {
+      try {
+        setMobilePreviewUrl(canvas.toDataURL('image/jpeg', 0.82))
+      } catch {
+        /* tainted canvas — ignore */
+      }
+    }
+  }, [previewInput, platform.width, platform.height, mobilePreview])
+
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      const target = event.target as HTMLElement | null
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+        return
+      }
+      const mod = event.metaKey || event.ctrlKey
+      if (mod && event.key.toLowerCase() === 'z' && !event.shiftKey) {
+        event.preventDefault()
+        undoEdit()
+      } else if (mod && (event.key.toLowerCase() === 'y' || (event.key.toLowerCase() === 'z' && event.shiftKey))) {
+        event.preventDefault()
+        redoEdit()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   useEffect(() => {
     const nextPlatform = getPlatform(platformId)
@@ -651,6 +719,174 @@ export default function HomePage() {
         lookPlacement: concept.placement,
       }
     })
+  }
+
+  function captureEditorSnap(): EditorSnap {
+    return {
+      title,
+      titleLine2,
+      titleFontSizePx,
+      titleAlign,
+      titleFill,
+      titleOutlineWidth,
+      titleOutlineColor,
+      titleShadow,
+      textStyleId,
+      layout,
+      photoShape,
+      stickers,
+      textPos,
+      fontId,
+      aiPick,
+    }
+  }
+
+  function restoreEditorSnap(snap: EditorSnap) {
+    setTitle(snap.title)
+    setTitleLine2(snap.titleLine2)
+    setTitleFontSizePx(snap.titleFontSizePx)
+    setTitleAlign(snap.titleAlign)
+    setTitleFill(snap.titleFill)
+    setTitleOutlineWidth(snap.titleOutlineWidth)
+    setTitleOutlineColor(snap.titleOutlineColor)
+    setTitleShadow(snap.titleShadow)
+    setTextStyleId(snap.textStyleId)
+    setLayout(snap.layout)
+    setPhotoShape(snap.photoShape)
+    setStickers(snap.stickers)
+    setTextPos(snap.textPos)
+    setFontId(snap.fontId)
+    setAiPick(snap.aiPick)
+  }
+
+  function rememberBeforeChange() {
+    const snap = captureEditorSnap()
+    historyRef.current = historyRef.current
+      ? pushHistory(historyRef.current, snap)
+      : createHistory(snap)
+  }
+
+  function undoEdit() {
+    if (!historyRef.current) return
+    const next = undoHistory(historyRef.current)
+    if (next === historyRef.current) {
+      setStatus('Nothing to undo.')
+      return
+    }
+    historyRef.current = next
+    restoreEditorSnap(next.present)
+    setStatus('Undid last edit.')
+  }
+
+  function redoEdit() {
+    if (!historyRef.current) return
+    const next = redoHistory(historyRef.current)
+    if (next === historyRef.current) {
+      setStatus('Nothing to redo.')
+      return
+    }
+    historyRef.current = next
+    restoreEditorSnap(next.present)
+    setStatus('Redid last edit.')
+  }
+
+  function designSnapshotNow(): DesignSnapshot {
+    return {
+      title,
+      titleLine2,
+      titleFontSizePx,
+      titleAlign,
+      titleFill,
+      titleOutlineWidth,
+      titleShadow,
+      textStyleId,
+      layout,
+      stickerCount: stickers.length,
+      hasPhoto: Boolean(photo),
+    }
+  }
+
+  function runImproveAnalysis() {
+    const issues = analyzeDesignIssues(designSnapshotNow())
+    setDesignIssues(issues)
+    setStatus(
+      issues.length
+        ? `Found ${issues.length} improvement${issues.length === 1 ? '' : 's'} — fix all or one by one.`
+        : 'Looking solid — no major heuristic issues.',
+    )
+    track('thumbnail_analyzed', { tool: 'editor-improve', issues: issues.length })
+  }
+
+  function commitRefine(id: RefineActionId) {
+    rememberBeforeChange()
+    const patch = applyRefineAction(id, designSnapshotNow())
+    if (patch.title != null) setTitle(patch.title)
+    if (patch.titleLine2 != null) setTitleLine2(patch.titleLine2)
+    if (patch.titleFontSizePx != null) setTitleFontSizePx(patch.titleFontSizePx)
+    if (patch.titleAlign != null) {
+      setTitleAlign(patch.titleAlign)
+      applyTitlePreset(patch.titleAlign)
+    }
+    if (patch.titleFill != null) setTitleFill(patch.titleFill)
+    if (patch.titleOutlineWidth != null) setTitleOutlineWidth(patch.titleOutlineWidth)
+    if (patch.titleShadow != null) setTitleShadow(patch.titleShadow)
+    if (patch.textStyleId != null) setTextStyleId(patch.textStyleId)
+    if (patch.layout != null) setLayout(patch.layout)
+    if (patch.clearStickers) {
+      setStickers([])
+      setActiveStickerIndex(null)
+    }
+    setStatus(patch.status || 'Updated.')
+    setDesignIssues((current) => current.filter((issue) => issue.fixId !== id))
+  }
+
+  function runRefineDraft() {
+    const id = parseRefineIntent(refineDraft)
+    if (!id) {
+      setStatus('Try: “make it more dramatic”, “shorter text”, or “better on mobile”.')
+      return
+    }
+    commitRefine(id)
+    setRefineDraft('')
+  }
+
+  function fixAllIssues() {
+    if (designIssues.length === 0) {
+      runImproveAnalysis()
+      return
+    }
+    rememberBeforeChange()
+    const ids = [...new Set(designIssues.map((issue) => issue.fixId))]
+    let snap = designSnapshotNow()
+    for (const id of ids) {
+      const patch = applyRefineAction(id, snap)
+      if (patch.title != null) snap = { ...snap, title: patch.title }
+      if (patch.titleLine2 != null) snap = { ...snap, titleLine2: patch.titleLine2 }
+      if (patch.titleFontSizePx != null) snap = { ...snap, titleFontSizePx: patch.titleFontSizePx }
+      if (patch.titleAlign != null) snap = { ...snap, titleAlign: patch.titleAlign }
+      if (patch.titleFill != null) snap = { ...snap, titleFill: patch.titleFill }
+      if (patch.titleOutlineWidth != null) snap = { ...snap, titleOutlineWidth: patch.titleOutlineWidth }
+      if (patch.titleShadow != null) snap = { ...snap, titleShadow: patch.titleShadow }
+      if (patch.textStyleId != null) snap = { ...snap, textStyleId: patch.textStyleId }
+      if (patch.layout != null) snap = { ...snap, layout: patch.layout }
+      if (patch.clearStickers) snap = { ...snap, stickerCount: 0 }
+    }
+    setTitle(snap.title)
+    setTitleLine2(snap.titleLine2)
+    setTitleFontSizePx(snap.titleFontSizePx)
+    setTitleAlign(snap.titleAlign)
+    applyTitlePreset(snap.titleAlign)
+    setTitleFill(snap.titleFill)
+    setTitleOutlineWidth(snap.titleOutlineWidth)
+    setTitleShadow(snap.titleShadow)
+    setTextStyleId(snap.textStyleId)
+    setLayout(snap.layout)
+    if (snap.stickerCount === 0) {
+      setStickers([])
+      setActiveStickerIndex(null)
+    }
+    setDesignIssues([])
+    setStatus('Applied fixes for the listed issues.')
   }
 
   function applyScenePreset(preset: (typeof AI_SCENE_PRESETS)[number]) {
@@ -1822,16 +2058,51 @@ export default function HomePage() {
             onDrop={onPhotoDrop}
           >
             <div className="preview-chrome">
-              <p className="preview-label">Live canvas</p>
-              <p className="preview-meta">
-                {platform.label} · {platform.width}×{platform.height}
-                {dragging ? ' · placing…' : textSelected ? ' · title selected' : ''}
-              </p>
+              <div className="preview-chrome-copy">
+                <p className="preview-label">Live canvas</p>
+                <p className="preview-meta">
+                  {platform.label} · {platform.width}×{platform.height}
+                  {dragging ? ' · placing…' : textSelected ? ' · title selected' : ''}
+                </p>
+              </div>
+              <div className="preview-toolbar" role="toolbar" aria-label="Canvas tools">
+                <button type="button" className="preview-tool" onClick={undoEdit} title="Undo (Ctrl+Z)">
+                  Undo
+                </button>
+                <button type="button" className="preview-tool" onClick={redoEdit} title="Redo">
+                  Redo
+                </button>
+                <button
+                  type="button"
+                  className={canvasZoom > 1 ? 'preview-tool is-on' : 'preview-tool'}
+                  onClick={() => setCanvasZoom((z) => (z >= 1.35 ? 1 : 1.35))}
+                >
+                  {canvasZoom > 1 ? 'Fit' : 'Zoom'}
+                </button>
+                <button
+                  type="button"
+                  className={showSafeZones ? 'preview-tool is-on' : 'preview-tool'}
+                  onClick={() => setShowSafeZones((v) => !v)}
+                >
+                  Safe zone
+                </button>
+                <button
+                  type="button"
+                  className={mobilePreview ? 'preview-tool is-on' : 'preview-tool'}
+                  onClick={() => setMobilePreview((v) => !v)}
+                >
+                  Mobile
+                </button>
+              </div>
             </div>
             <div className="preview-viewport">
             <div
-              className={`preview-wrap ${platform.orientation}${photoDragOver ? ' is-drop' : ''}${!photo ? ' is-empty' : ''}`}
-              style={{ aspectRatio: `${platform.width} / ${platform.height}` }}
+              className={`preview-wrap ${platform.orientation}${photoDragOver ? ' is-drop' : ''}${!photo ? ' is-empty' : ''}${textSelected ? ' has-selection' : ''}`}
+              style={{
+                aspectRatio: `${platform.width} / ${platform.height}`,
+                transform: `scale(${canvasZoom})`,
+                transformOrigin: 'top center',
+              }}
             >
               <canvas
                 ref={canvasRef}
@@ -1874,16 +2145,34 @@ export default function HomePage() {
               ) : null}
             </div>
             </div>
+            {mobilePreview && mobilePreviewUrl ? (
+              <div className="mobile-preview-strip" aria-label="Simulated mobile sizes">
+                <figure>
+                  <img src={mobilePreviewUrl} alt="" width={168} height={94} />
+                  <figcaption>168×94 · feed tile</figcaption>
+                </figure>
+                <figure>
+                  <img src={mobilePreviewUrl} alt="" width={320} height={180} />
+                  <figcaption>320×180 · larger card</figcaption>
+                </figure>
+                <p className="mobile-preview-note">Simulated preview — not a live YouTube feed.</p>
+              </div>
+            ) : null}
             <p className="preview-hint">
               {aiBusy
-                ? 'Creating looks — the first one lands on this canvas.'
-                : 'Drag the title or stickers. Drop a JPG/PNG onto the canvas to replace the photo.'}
+                ? 'Creating concepts — the first one lands on this canvas.'
+                : textSelected
+                  ? 'Title selected — drag to move, or edit size/style in the inspector.'
+                  : 'Drag the title or stickers. Drop a JPG/PNG onto the canvas to replace the photo.'}
             </p>
           </div>
 
           <aside className="studio-inspector" aria-label="Title inspector">
             <p className="studio-inspector-kicker">Inspector</p>
-            <h3 className="studio-inspector-title">Title</h3>
+            <h3 className="studio-inspector-title">{textSelected ? 'Title selected' : 'Title'}</h3>
+            {!textSelected && !photo ? (
+              <p className="inspector-empty">Select the title on the canvas, or generate a concept first.</p>
+            ) : null}
             <div className="inspector-row">
               <span className="inspector-label">Align</span>
               <div className="inspector-pills">
@@ -1983,41 +2272,57 @@ export default function HomePage() {
               />
               Drop shadow
             </label>
-            <div className="inspector-polish" role="group" aria-label="One-tap title polish">
-              <button
-                type="button"
-                className="inspector-pill"
-                onClick={() => {
-                  setTitleFontSizePx(clampTitleFontSize(titleFontSizePx + 18))
-                  setStatus('Bigger type — readable on a phone tile.')
-                }}
-              >
-                Bigger type
+            <div className="inspector-improve">
+              <span className="inspector-label">Improve</span>
+              <button type="button" className="chip solid ai-generate" onClick={runImproveAnalysis}>
+                ✨ Improve this thumbnail
               </button>
-              <button
-                type="button"
-                className="inspector-pill"
-                onClick={() => {
-                  setTextStyleId('yellow-pop')
-                  setTitleOutlineWidth(Math.max(14, titleOutlineWidth))
-                  setTitleShadow(true)
-                  setStatus('Punchier title — high contrast for the feed.')
-                }}
-              >
-                Punchier
+              {designIssues.length > 0 ? (
+                <ul className="inspector-issues">
+                  {designIssues.map((issue) => (
+                    <li key={issue.id}>
+                      <span>{issue.message}</span>
+                      <button type="button" className="inspector-pill" onClick={() => commitRefine(issue.fixId)}>
+                        Fix
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              {designIssues.length > 0 ? (
+                <button type="button" className="inspector-pill" onClick={fixAllIssues}>
+                  Fix all
+                </button>
+              ) : null}
+              <label className="inspector-field refine-field">
+                Refine with words
+                <input
+                  value={refineDraft}
+                  onChange={(event) => setRefineDraft(event.target.value)}
+                  placeholder='e.g. “make it more dramatic”'
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault()
+                      runRefineDraft()
+                    }
+                  }}
+                />
+              </label>
+              <button type="button" className="chip" onClick={runRefineDraft}>
+                Apply refine
               </button>
-              <button
-                type="button"
-                className="inspector-pill"
-                onClick={() => {
-                  applyTitlePreset('left')
-                  setStickers([])
-                  setLayout('photo-full')
-                  setStatus('Cleaner layout — full-bleed photo, title on the left.')
-                }}
-              >
-                Cleaner
-              </button>
+            </div>
+            <div className="inspector-polish" role="group" aria-label="One-tap refine">
+              {refineChipList().map((chip) => (
+                <button
+                  key={chip.id}
+                  type="button"
+                  className="inspector-pill"
+                  onClick={() => commitRefine(chip.id)}
+                >
+                  {chip.label}
+                </button>
+              ))}
             </div>
             {aiVariants.length > 0 ? (
               <div className="inspector-looks">

@@ -4002,8 +4002,126 @@ footer {
 
 .inspector-polish {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.3rem;
+}
+
+.inspector-empty {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.inspector-improve {
+  display: grid;
+  gap: 0.45rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid var(--line);
+}
+
+.inspector-issues {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.inspector-issues li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.45rem;
+  align-items: center;
+  padding: 0.45rem 0.55rem;
+  border-radius: 10px;
+  background: rgba(255, 211, 106, 0.08);
+  border: 1px solid rgba(255, 211, 106, 0.22);
+  font-size: 0.74rem;
+  line-height: 1.35;
+  color: #ffe7b8;
+}
+
+.refine-field input {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.28);
+  color: var(--ink);
+  padding: 0.5rem 0.65rem;
+  font: 500 0.82rem/1.3 Plus Jakarta Sans, sans-serif;
+}
+
+.preview-chrome {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.55rem 0.85rem;
+  align-items: flex-start;
+}
+
+.preview-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.preview-tool {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 0.28rem 0.65rem;
+  font: 700 0.68rem/1 Plus Jakarta Sans, sans-serif;
+  cursor: pointer;
+}
+
+.preview-tool.is-on,
+.preview-tool:hover {
+  color: var(--ink);
+  border-color: rgba(255, 127, 138, 0.45);
+  background: rgba(255, 127, 138, 0.12);
+}
+
+.preview-wrap.has-selection .preview.interactive {
+  box-shadow: inset 0 0 0 2px rgba(255, 211, 106, 0.55);
+}
+
+.mobile-preview-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  align-items: flex-end;
+  margin-top: 0.65rem;
+  padding: 0.65rem 0.15rem 0.15rem;
+  border-top: 1px solid var(--line);
+}
+
+.mobile-preview-strip figure {
+  margin: 0;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.mobile-preview-strip img {
+  display: block;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #000;
+  object-fit: cover;
+}
+
+.mobile-preview-strip figcaption,
+.mobile-preview-note {
+  margin: 0;
+  font-size: 0.68rem;
+  color: var(--muted);
+  font-weight: 650;
+}
+
+.mobile-preview-note {
+  flex-basis: 100%;
 }
 
 .inspector-looks {
