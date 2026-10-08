@@ -143,6 +143,41 @@ export const SITE_ROUTES: SiteRouteMeta[] = [
     changefreq: 'monthly',
     priority: '0.4',
   },
+  {
+    path: '/thumbnail-doctor',
+    title: 'Thumbnail Doctor — score & improve | Thumbric.ai',
+    description: 'Diagnose a YouTube thumbnail, compare A/B, then improve with packaging strategies in the editor.',
+    changefreq: 'weekly',
+    priority: '0.85',
+  },
+  {
+    path: '/dashboard',
+    title: 'Creator dashboard — Thumbric.ai',
+    description: 'Local product analytics: downloads, generations, and return visits on this device.',
+    changefreq: 'weekly',
+    priority: '0.5',
+  },
+  {
+    path: '/account',
+    title: 'Account — Thumbric.ai',
+    description: 'Device profile, plan status, referral link, and recent exports stored in this browser.',
+    changefreq: 'weekly',
+    priority: '0.5',
+  },
+  {
+    path: '/feedback',
+    title: 'Feedback — Thumbric.ai',
+    description: 'Bug reports and feature requests for the Thumbric editor and free tools.',
+    changefreq: 'monthly',
+    priority: '0.4',
+  },
+  {
+    path: '/roadmap',
+    title: 'Product roadmap — Thumbric.ai',
+    description: 'What shipped in Phase 1 vs paid AI, YouTube OAuth, and agency features.',
+    changefreq: 'monthly',
+    priority: '0.45',
+  },
 ]
 
 export function routeMeta(path: string) {

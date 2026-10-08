@@ -1,6 +1,6 @@
 import { CREATOR_CLEAN_DOWNLOADS_PER_MONTH, TRIAL_DAYS } from './entitlement'
 
-export type PlanId = 'free' | 'trial' | 'creator' | 'pro'
+export type PlanId = 'free' | 'trial' | 'creator' | 'pro' | 'agency'
 export type BillingCurrency = 'USD' | 'INR'
 
 export type PlanPricing = {
@@ -57,7 +57,7 @@ export const PLANS: Plan[] = [
     name: 'Creator',
     tagline: 'For weekly uploads',
     usd: { amount: 19, compareAt: 39, symbol: '$' },
-    inr: { amount: 999, compareAt: 1999, symbol: '₹' },
+    inr: { amount: 299, compareAt: 599, symbol: '₹' },
     highlight: `${CREATOR_CLEAN_DOWNLOADS_PER_MONTH} clean PNGs every month`,
     features: [
       'Everything in Free',
@@ -73,7 +73,7 @@ export const PLANS: Plan[] = [
     name: 'Pro',
     tagline: 'Daily publishers & teams',
     usd: { amount: 49, compareAt: 99, symbol: '$' },
-    inr: { amount: 2499, compareAt: 4999, symbol: '₹' },
+    inr: { amount: 799, compareAt: 1499, symbol: '₹' },
     highlight: 'Unlimited clean downloads',
     features: [
       'Everything in Creator',
@@ -83,6 +83,21 @@ export const PLANS: Plan[] = [
       `Includes a ${TRIAL_DAYS}-day free trial unlock (demo)`,
     ],
     cta: 'Go Pro',
+  },
+  {
+    id: 'agency',
+    name: 'Agency',
+    tagline: 'Multi-channel teams & clients',
+    usd: { amount: 129, compareAt: 199, symbol: '$' },
+    inr: { amount: 4999, compareAt: 7999, symbol: '₹' },
+    highlight: '5 seats · brand kits · priority support',
+    features: [
+      'Everything in Pro',
+      'Shared brand kits across seats (coming with checkout)',
+      'Client folders & export history sync',
+      'Invoice billing — contact for early access',
+    ],
+    cta: 'Contact for Agency',
   },
 ]
 

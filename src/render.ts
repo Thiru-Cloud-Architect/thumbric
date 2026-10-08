@@ -1,3 +1,4 @@
+import type { EditorLayerId } from './editorLayers'
 import type { FontId } from './fonts'
 import { getFont, scaledTitleFontSize } from './fonts'
 import type { LayoutId, PhotoShapeId } from './layout'
@@ -39,6 +40,16 @@ export type ThumbInput = {
   showSafeZones?: boolean
   activeStickerIndex?: number
   highlightText?: boolean
+  layerVisibility?: Partial<Record<EditorLayerId, boolean>>
+  photoTreatment?: 'normal' | 'blur-background' | 'brand-backdrop'
+  brandBackdrop?: [string, string, string]
+  logo?: HTMLImageElement | null
+  textRotationDeg?: number
+  snapGuides?: { vertical?: number; horizontal?: number }
+}
+
+function layerVisible(input: ThumbInput, id: EditorLayerId) {
+  return input.layerVisibility?.[id] !== false
 }
 
 type Box = { x: number; y: number; w: number; h: number }
@@ -216,11 +227,15 @@ function drawBackground(ctx: CanvasRenderingContext2D, input: ThumbInput) {
   const accent = accentOf(input)
   const W = platform.width
   const H = platform.height
+  const bgColors =
+    input.photoTreatment === 'brand-backdrop' && input.brandBackdrop
+      ? input.brandBackdrop
+      : niche.background
 
   const base = ctx.createLinearGradient(0, 0, W, H)
-  base.addColorStop(0, niche.background[0])
-  base.addColorStop(0.45, niche.background[1])
-  base.addColorStop(1, niche.background[2])
+  base.addColorStop(0, bgColors[0])
+  base.addColorStop(0.45, bgColors[1])
+  base.addColorStop(1, bgColors[2])
   ctx.fillStyle = base
   ctx.fillRect(0, 0, W, H)
 
@@ -352,6 +367,18 @@ function drawPhoto(
     const dh = input.photo.height * scale
     const dx = box.x + (box.w - dw) / 2
     const dy = box.y + (box.h - dh) / 2
+    if (input.photoTreatment === 'blur-background' && input.layout === 'photo-full') {
+      const W = input.platform.width
+      const H = input.platform.height
+      ctx.filter = `blur(${Math.max(12, Math.round(Math.min(box.w, box.h) * 0.04))}px)`
+      const fullScale = Math.max(W / input.photo.width, H / input.photo.height)
+      const fw = input.photo.width * fullScale
+      const fh = input.photo.height * fullScale
+      ctx.drawImage(input.photo, (W - fw) / 2, (H - fh) / 2, fw, fh)
+      ctx.filter = 'none'
+      ctx.fillStyle = 'rgba(0,0,0,0.35)'
+      ctx.fillRect(box.x, box.y, box.w, box.h)
+    }
     ctx.drawImage(input.photo, dx, dy, dw, dh)
     if (input.layout === 'photo-full') {
       const shade = ctx.createLinearGradient(0, box.y + box.h * 0.35, 0, box.y + box.h)
@@ -571,6 +598,14 @@ function drawTextBlock(ctx: CanvasRenderingContext2D, input: ThumbInput) {
     align === 'center' ? box.x + box.w / 2 : align === 'right' ? box.x + box.w - strokePad : innerX
 
   ctx.save()
+  const rotation = input.textRotationDeg ?? 0
+  if (rotation) {
+    const cx = box.x + box.w / 2
+    const cy = box.y + box.h / 2
+    ctx.translate(cx, cy)
+    ctx.rotate((rotation * Math.PI) / 180)
+    ctx.translate(-cx, -cy)
+  }
   ctx.beginPath()
   ctx.rect(box.x - strokePad, box.y, box.w + strokePad * 2, box.h)
   ctx.clip()
@@ -754,23 +789,70 @@ function drawSticker(
   ctx.restore()
 }
 
+function drawBrandLogo(ctx: CanvasRenderingContext2D, input: ThumbInput) {
+  if (!input.logo || !layerVisible(input, 'logo')) return
+  const W = input.platform.width
+  const H = input.platform.height
+  const maxW = Math.round(W * 0.14)
+  const scale = maxW / input.logo.width
+  const dw = input.logo.width * scale
+  const dh = input.logo.height * scale
+  const pad = Math.round(W * 0.03)
+  ctx.save()
+  ctx.globalAlpha = 0.92
+  ctx.drawImage(input.logo, W - dw - pad, H - dh - pad, dw, dh)
+  ctx.restore()
+}
+
+function drawSnapGuideLines(ctx: CanvasRenderingContext2D, input: ThumbInput) {
+  const guides = input.snapGuides
+  if (!guides?.vertical && !guides?.horizontal) return
+  const W = input.platform.width
+  const H = input.platform.height
+  ctx.save()
+  ctx.strokeStyle = 'rgba(214, 255, 60, 0.75)'
+  ctx.lineWidth = 2
+  ctx.setLineDash([6, 6])
+  if (typeof guides.vertical === 'number') {
+    const x = guides.vertical * W
+    ctx.beginPath()
+    ctx.moveTo(x, 0)
+    ctx.lineTo(x, H)
+    ctx.stroke()
+  }
+  if (typeof guides.horizontal === 'number') {
+    const y = guides.horizontal * H
+    ctx.beginPath()
+    ctx.moveTo(0, y)
+    ctx.lineTo(W, y)
+    ctx.stroke()
+  }
+  ctx.restore()
+}
+
 export function renderThumbnail(ctx: CanvasRenderingContext2D, input: ThumbInput) {
   const { platform } = input
   ctx.clearRect(0, 0, platform.width, platform.height)
-  drawBackground(ctx, input)
+  if (layerVisible(input, 'background')) {
+    drawBackground(ctx, input)
+  }
   const boxes = layoutBoxes(platform, input.layout)
-  if (input.layout === 'photo-full') {
+  if (layerVisible(input, 'photo')) {
     drawPhoto(ctx, input, boxes.photo)
-    drawTextBlock(ctx, input)
-  } else {
-    drawPhoto(ctx, input, boxes.photo)
+  }
+  if (layerVisible(input, 'title')) {
     drawTextBlock(ctx, input)
   }
-  drawStickers(ctx, input)
+  if (layerVisible(input, 'stickers')) {
+    drawStickers(ctx, input)
+  }
+  drawBrandLogo(ctx, input)
 
   if (input.showSafeZones) {
     drawSafeZones(ctx, platform)
   }
+
+  drawSnapGuideLines(ctx, input)
 
   if (input.watermark) {
     drawCenteredWatermark(ctx, boxes.photo)

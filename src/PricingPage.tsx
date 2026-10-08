@@ -35,7 +35,7 @@ export default function PricingPage() {
     return registerEmail(email)
   }
 
-  function onDemoSelect(planId: Exclude<PlanId, 'free'>) {
+  function onDemoSelect(planId: Exclude<PlanId, 'free' | 'agency'>) {
     let next = ensureEmail(entitlement)
     if (!next) return
 
@@ -134,11 +134,15 @@ export default function PricingPage() {
                     <Link className="btn-outline price-cta" to="/#editor-ai">
                       {plan.cta}
                     </Link>
+                  ) : plan.id === 'agency' ? (
+                    <a className="btn-outline price-cta" href="mailto:hello@thumbric.app?subject=Thumbric%20Agency">
+                      {plan.cta}
+                    </a>
                   ) : (
                     <button
                       type="button"
                       className={plan.popular ? 'btn-gradient price-cta' : 'btn-outline price-cta'}
-                      onClick={() => onDemoSelect(plan.id as Exclude<PlanId, 'free'>)}
+                      onClick={() => onDemoSelect(plan.id as Exclude<PlanId, 'free' | 'agency'>)}
                     >
                       {plan.cta}
                     </button>

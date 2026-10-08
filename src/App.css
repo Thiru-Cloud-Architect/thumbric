@@ -4624,6 +4624,266 @@ footer {
   line-height: 1.55;
 }
 
+.layers-panel,
+.creator-kit-panel {
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(8, 12, 22, 0.65);
+}
+
+.layers-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.layers-panel-kicker,
+.creator-kit-kicker,
+.yt-feed-sim-kicker {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.layers-list {
+  list-style: none;
+  margin: 0.65rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.layers-row {
+  display: grid;
+  grid-template-columns: 2rem 1fr 2rem;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.88rem;
+}
+
+.layers-row small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.layers-eye,
+.layers-lock {
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.layers-row.is-muted {
+  opacity: 0.55;
+}
+
+.template-category-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.65rem 0;
+}
+
+.yt-feed-sim {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 14px;
+  background: #0f0f0f;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.yt-feed-card {
+  display: grid;
+  grid-template-columns: minmax(0, 320px) 1fr;
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.yt-feed-thumb {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.yt-feed-thumb img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.yt-feed-duration {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: rgba(0, 0, 0, 0.85);
+}
+
+.yt-feed-meta {
+  display: flex;
+  gap: 0.65rem;
+}
+
+.yt-feed-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: #303030;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.yt-feed-title {
+  margin: 0;
+  font-weight: 700;
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
+
+.yt-feed-channel,
+.yt-feed-stats {
+  margin: 0.15rem 0 0;
+  font-size: 0.78rem;
+  color: #aaa;
+}
+
+.yt-feed-sidebar {
+  margin-top: 0.85rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.yt-feed-mini {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.yt-feed-mini-thumb {
+  aspect-ratio: 16 / 9;
+  border-radius: 8px;
+  background: #222;
+}
+
+.yt-feed-mini-title {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.yt-feed-mini-channel {
+  margin: 0.1rem 0 0;
+  font-size: 0.72rem;
+  color: #888;
+}
+
+.yt-feed-note,
+.mobile-preview-note {
+  margin: 0.65rem 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.dashboard-stats,
+.account-grid,
+.doctor-steps {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 720px) {
+  .dashboard-stats {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .account-grid,
+  .doctor-steps {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.dashboard-stat {
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(8, 12, 22, 0.5);
+}
+
+.dashboard-stat strong {
+  display: block;
+  font-size: 1.45rem;
+  margin-top: 0.25rem;
+}
+
+.history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.history-list li {
+  display: flex;
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.history-list img {
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.account-ref-input {
+  width: 100%;
+  margin-top: 0.5rem;
+  font-size: 0.82rem;
+}
+
+.creator-kit-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.creator-kit-swatches label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.78rem;
+}
+
+.feedback-form textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 8rem;
+}
+
+.roadmap-status {
+  margin: 0 0 0.35rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent-bright);
+}
+
+.pricing-grid-four {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
 @media (max-width: 720px) {
   .ab-grid,
   .ctr-fields {
@@ -4638,5 +4898,9 @@ footer {
   .nav-dropdown-panel {
     left: 0;
     transform: none;
+  }
+
+  .yt-feed-card {
+    grid-template-columns: 1fr;
   }
 }

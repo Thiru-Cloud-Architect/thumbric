@@ -13,6 +13,11 @@ import SeoMakerPage from './SeoMakerPage'
 import TesterPage from './TesterPage'
 import TitleToolPage from './TitleToolPage'
 import ToolsHubPage from './ToolsHubPage'
+import AccountPage from './AccountPage'
+import DashboardPage from './DashboardPage'
+import DoctorPage from './DoctorPage'
+import FeedbackPage from './FeedbackPage'
+import RoadmapPage from './RoadmapPage'
 import { captureAttribution, markReturnVisit } from './analytics'
 import { ScrollToHash } from './nav'
 
@@ -52,6 +57,11 @@ export default function App() {
         <Route path="/learn" element={<LearnPage />} />
         <Route path="/legal" element={<LegalPage />} />
         <Route path="/roast/:code" element={<RoastPage />} />
+        <Route path="/thumbnail-doctor" element={<DoctorPage />} />
+        <Route path="/account" element={<AccountPage />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/feedback" element={<FeedbackPage />} />
+        <Route path="/roadmap" element={<RoadmapPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

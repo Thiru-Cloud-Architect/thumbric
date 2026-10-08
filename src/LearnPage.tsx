@@ -17,6 +17,16 @@ const LESSONS = [
     title: 'Why big faces work',
     body: 'A readable face is a shortcut for emotion. Crop so eyes are large, on the left or center, with a catchlight. Faceless channels can still steal the same trick: make the object as “face-like” as possible — one product, one map, one animal, oversized. Collages and tiny heads are the usual amateur tell.',
   },
+  {
+    id: 'brand',
+    title: 'Brand kit on repeat uploads',
+    body: 'Save accent color, font, and a small logo in Creator kit (Finish tab). Apply brand before you export so every video in a series feels like the same channel — without reopening Canva brand settings each time.',
+  },
+  {
+    id: 'doctor',
+    title: 'When to use Thumbnail Doctor',
+    body: 'If a video underperformed, run Thumbnail Score first, then A/B your old thumb against a new draft at phone size. The Doctor funnel keeps you honest: heuristic scores, not fake CTR promises, then back into Improve mode for new packaging angles.',
+  },
 ]
 
 export default function LearnPage() {

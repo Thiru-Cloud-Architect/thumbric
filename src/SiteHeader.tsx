@@ -123,6 +123,7 @@ export function SiteHeader({ userLabel, onLoginClick }: SiteHeaderProps) {
           </div>
         </div>
         <NavHashLink hash="features">Features</NavHashLink>
+        <Link to="/dashboard">Dashboard</Link>
         <Link to="/pricing">Pricing</Link>
         <NavHashLink hash="how">How it works</NavHashLink>
       </nav>

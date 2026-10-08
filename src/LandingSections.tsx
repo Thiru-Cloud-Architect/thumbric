@@ -578,6 +578,11 @@ export function SiteFooter({ buildLabel }: { buildLabel?: string }) {
             <div className="footer-col">
               <p className="footer-head">Resources</p>
               <Link to="/learn">Lessons</Link>
+              <Link to="/thumbnail-doctor">Thumbnail Doctor</Link>
+              <Link to="/dashboard">Dashboard</Link>
+              <Link to="/account">Account</Link>
+              <Link to="/feedback">Feedback</Link>
+              <Link to="/roadmap">Roadmap</Link>
               <Link to="/legal">Privacy &amp; terms</Link>
               <Link to="/career">Careers</Link>
               <Link to="/ai-thumbnail-maker">AI Thumbnail Maker</Link>

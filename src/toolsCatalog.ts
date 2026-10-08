@@ -50,6 +50,13 @@ export const TOOL_NAV: ToolNavItem[] = [
     blurb: 'Describe a scene. Get 3 looks.',
     nav: true,
   },
+  {
+    id: 'doctor',
+    path: '/thumbnail-doctor',
+    label: 'Thumbnail Doctor',
+    blurb: 'Score → compare → improve funnel.',
+    nav: true,
+  },
 ]
 
 export const MAKER_NAV: ToolNavItem[] = [

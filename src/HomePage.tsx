@@ -62,12 +62,31 @@ import { TEXT_STYLES, type TextStyleId } from './textStyle'
 import {
   clampTextPosition,
   defaultTextPosition,
+  createThumbnailDataUrl,
   downloadThumbnail,
   hitTestSticker,
   hitTestTextBlock,
   renderThumbnail,
 } from './render'
-import { THUMB_TEMPLATES, type TemplateId } from './templates'
+import {
+  TEMPLATE_CATEGORIES,
+  templatesForCategory,
+  THUMB_TEMPLATES,
+  type TemplateCategory,
+  type TemplateId,
+} from './templates'
+import { LayersPanel } from './LayersPanel'
+import { YouTubeFeedPreview } from './YouTubeFeedPreview'
+import { CreatorKitPanel } from './CreatorKitPanel'
+import { defaultLayerState, isLayerLocked, type LayerState } from './editorLayers'
+import {
+  fileToDataUrl,
+  loadCreatorKit,
+  saveCreatorKit,
+  type CreatorKit,
+} from './creatorKit'
+import { snapNormalized } from './snapGuides'
+import { pushThumbnailHistory } from './thumbnailHistory'
 import {
   DEFAULT_STICKER_SLOTS,
   STICKERS,
@@ -207,6 +226,16 @@ export default function HomePage() {
   const [canvasZoom, setCanvasZoom] = useState(1)
   const [mobilePreview, setMobilePreview] = useState(false)
   const [mobilePreviewUrl, setMobilePreviewUrl] = useState('')
+  const [feedPreview, setFeedPreview] = useState(false)
+  const [layerState, setLayerState] = useState<LayerState>(() => defaultLayerState())
+  const [photoTreatment, setPhotoTreatment] = useState<
+    'normal' | 'blur-background' | 'brand-backdrop'
+  >('normal')
+  const [creatorKit, setCreatorKit] = useState<CreatorKit>(() => loadCreatorKit())
+  const [logoImage, setLogoImage] = useState<HTMLImageElement | null>(null)
+  const [textRotationDeg, setTextRotationDeg] = useState(0)
+  const [snapGuides, setSnapGuides] = useState<{ vertical?: number; horizontal?: number }>({})
+  const [templateCategory, setTemplateCategory] = useState<TemplateCategory>('all')
   const [refineDraft, setRefineDraft] = useState('')
   const [designIssues, setDesignIssues] = useState<DesignIssue[]>([])
   const historyRef = useRef<HistoryStack<EditorSnap> | null>(null)
@@ -273,6 +302,16 @@ export default function HomePage() {
       showSafeZones,
       activeStickerIndex: activeStickerIndex ?? undefined,
       highlightText: textSelected,
+      layerVisibility: layerState.visibility,
+      photoTreatment,
+      brandBackdrop: [creatorKit.primary, creatorKit.secondary, creatorKit.primary] as [
+        string,
+        string,
+        string,
+      ],
+      logo: logoImage,
+      textRotationDeg,
+      snapGuides: dragging ? snapGuides : undefined,
     }),
     [
       title,
@@ -298,8 +337,28 @@ export default function HomePage() {
       activeStickerIndex,
       textSelected,
       dragging,
+      layerState,
+      photoTreatment,
+      creatorKit,
+      logoImage,
+      textRotationDeg,
+      snapGuides,
     ],
   )
+
+  useEffect(() => {
+    track('landing_page_view', { path: '/' })
+  }, [])
+
+  useEffect(() => {
+    if (!creatorKit.logoDataUrl) {
+      setLogoImage(null)
+      return
+    }
+    const img = new Image()
+    img.onload = () => setLogoImage(img)
+    img.src = creatorKit.logoDataUrl
+  }, [creatorKit.logoDataUrl])
 
   useEffect(() => {
     return () => {
@@ -355,14 +414,14 @@ export default function HomePage() {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
     renderThumbnail(ctx, previewInput)
-    if (mobilePreview) {
+    if (mobilePreview || feedPreview) {
       try {
         setMobilePreviewUrl(canvas.toDataURL('image/jpeg', 0.82))
       } catch {
         /* tainted canvas — ignore */
       }
     }
-  }, [previewInput, platform.width, platform.height, mobilePreview])
+  }, [previewInput, platform.width, platform.height, mobilePreview, feedPreview])
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -535,7 +594,7 @@ export default function HomePage() {
     const point = canvasPoint(event)
     if (!point) return
     const stickerIndex = hitTestSticker(stickers, platform, point.x, point.y)
-    if (stickerIndex >= 0) {
+    if (stickerIndex >= 0 && !isLayerLocked(layerState, 'stickers')) {
       event.currentTarget.classList.add('is-dragging')
       event.currentTarget.setPointerCapture(event.pointerId)
       dragIndexRef.current = stickerIndex
@@ -551,7 +610,7 @@ export default function HomePage() {
       setStatus('Drag to move sticker. Release to place.')
       return
     }
-    if (hitTestTextBlock(previewInput, point.x, point.y)) {
+    if (hitTestTextBlock(previewInput, point.x, point.y) && !isLayerLocked(layerState, 'title')) {
       event.currentTarget.classList.add('is-dragging')
       event.currentTarget.setPointerCapture(event.pointerId)
       dragTargetRef.current = 'text'
@@ -579,27 +638,33 @@ export default function HomePage() {
       if (dragIndex === null) return
       const offset = dragOffsetRef.current
       setStickers((current) =>
-        current.map((item, index) =>
-          index === dragIndex
-            ? {
-                ...item,
-                x: clampStickerPos((point.x - offset.x) / platform.width),
-                y: clampStickerPos((point.y - offset.y) / platform.height),
-              }
-            : item,
-        ),
+        current.map((item, index) => {
+          if (index !== dragIndex) return item
+          const raw = {
+            x: (point.x - offset.x) / platform.width,
+            y: (point.y - offset.y) / platform.height,
+          }
+          const snapped = snapNormalized(raw)
+          setSnapGuides(snapped.guides)
+          return {
+            ...item,
+            x: clampStickerPos(snapped.point.x),
+            y: clampStickerPos(snapped.point.y),
+          }
+        }),
       )
       event.currentTarget.style.cursor = 'grabbing'
       return
     }
     if (target === 'text') {
       const offset = dragOffsetRef.current
-      setTextPos(
-        clampTextPosition(platform, layout, {
-          x: (point.x - offset.x) / platform.width,
-          y: (point.y - offset.y) / platform.height,
-        }),
-      )
+      const raw = {
+        x: (point.x - offset.x) / platform.width,
+        y: (point.y - offset.y) / platform.height,
+      }
+      const snapped = snapNormalized(raw)
+      setSnapGuides(snapped.guides)
+      setTextPos(clampTextPosition(platform, layout, snapped.point))
       event.currentTarget.style.cursor = 'grabbing'
       return
     }
@@ -615,8 +680,40 @@ export default function HomePage() {
     dragTargetRef.current = null
     dragIndexRef.current = null
     setDragging(false)
+    setSnapGuides({})
     event.currentTarget.style.cursor = 'grab'
     setStatus('Placed. Drag text or stickers anytime on the preview.')
+  }
+
+  function applyBrandToCanvas() {
+    setAccentOverride(creatorKit.accent)
+    setFontId(creatorKit.fontId)
+    saveCreatorKit(creatorKit)
+    setStatus('Brand colors and font applied. Logo renders when uploaded in Creator kit.')
+  }
+
+  async function onBrandLogoFile(file: File) {
+    const dataUrl = await fileToDataUrl(file)
+    const next = { ...creatorKit, logoDataUrl: dataUrl }
+    setCreatorKit(next)
+    saveCreatorKit(next)
+  }
+
+  function recordDownloadPreview(clean: boolean) {
+    try {
+      const previewDataUrl = createThumbnailDataUrl({
+        ...previewInput,
+        watermark: !clean,
+      })
+      pushThumbnailHistory({
+        title: title.trim() || 'Untitled',
+        platform: platform.label,
+        previewDataUrl,
+        clean,
+      })
+    } catch {
+      /* ignore history if canvas tainted */
+    }
   }
 
   function onPickPhoto(file: File | undefined) {
@@ -1094,6 +1191,7 @@ export default function HomePage() {
   function saveMarked() {
     try {
       downloadThumbnail({ ...previewInput, watermark: true })
+      recordDownloadPreview(false)
       setStatus(`Saved free preview. Look in Downloads for ${DOWNLOAD_PREFIX}-${platform.id}.png`)
       track('thumbnail_downloaded', { tool: 'editor', watermark: true })
     } catch (error) {
@@ -1117,6 +1215,7 @@ export default function HomePage() {
   function saveClean(current: Entitlement = entitlement) {
     try {
       downloadThumbnail({ ...previewInput, watermark: false })
+      recordDownloadPreview(true)
       track('thumbnail_downloaded', { tool: 'editor', watermark: false })
       const next = consumeCleanDownload(current)
       setEntitlement(next)
@@ -1392,8 +1491,8 @@ export default function HomePage() {
                   </p>
                 </div>
                 <div className="photo-actions">
-                  <Link className="chip solid ai-generate" to="/youtube-thumbnail-score">
-                    Open Thumbnail Score →
+                  <Link className="chip solid ai-generate" to="/thumbnail-doctor">
+                    Open Thumbnail Doctor →
                   </Link>
                   <button
                     type="button"
@@ -1627,8 +1726,22 @@ export default function HomePage() {
                   </p>
                   {photoName ? <p className="photo-name">Selected: {photoName}</p> : null}
                 </div>
+                <div className="template-category-row" role="tablist" aria-label="Template category">
+                  {TEMPLATE_CATEGORIES.map((cat) => (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={templateCategory === cat.id}
+                      className={templateCategory === cat.id ? 'chip solid' : 'chip'}
+                      onClick={() => setTemplateCategory(cat.id)}
+                    >
+                      {cat.label}
+                    </button>
+                  ))}
+                </div>
                 <div className="template-gallery" role="list">
-                  {THUMB_TEMPLATES.map((item) => {
+                  {templatesForCategory(templateCategory).map((item) => {
                     const tplPlatform = getPlatform(item.platform)
                     return (
                       <button
@@ -1915,7 +2028,44 @@ export default function HomePage() {
                 stay on the Title tab.
               </p>
 
+              <LayersPanel
+                state={layerState}
+                onChange={setLayerState}
+                stickerCount={stickers.length}
+                hasLogo={Boolean(creatorKit.logoDataUrl)}
+              />
+
+              <CreatorKitPanel
+                kit={creatorKit}
+                onChange={setCreatorKit}
+                onApply={applyBrandToCanvas}
+                onLogoFile={onBrandLogoFile}
+              />
+
               <div className="fold-body">
+                  <fieldset>
+                    <legend>Photo / backdrop</legend>
+                    <div className="choice-row">
+                      {(
+                        [
+                          ['normal', 'Standard'],
+                          ['blur-background', 'Blur background'],
+                          ['brand-backdrop', 'Brand backdrop'],
+                        ] as const
+                      ).map(([id, label]) => (
+                        <button
+                          key={id}
+                          type="button"
+                          className={photoTreatment === id ? 'choice is-selected' : 'choice'}
+                          onClick={() => setPhotoTreatment(id)}
+                        >
+                          <span>{label}</span>
+                          <small>{id === 'blur-background' ? 'Full-bleed blur' : id === 'brand-backdrop' ? 'Kit colors' : 'Default'}</small>
+                        </button>
+                      ))}
+                    </div>
+                  </fieldset>
+
                   <fieldset>
                     <legend>Photo placement</legend>
                     <div className="choice-row">
@@ -2093,6 +2243,13 @@ export default function HomePage() {
                 >
                   Mobile
                 </button>
+                <button
+                  type="button"
+                  className={feedPreview ? 'preview-tool is-on' : 'preview-tool'}
+                  onClick={() => setFeedPreview((v) => !v)}
+                >
+                  YouTube feed
+                </button>
               </div>
             </div>
             <div className="preview-viewport">
@@ -2145,6 +2302,13 @@ export default function HomePage() {
               ) : null}
             </div>
             </div>
+            {feedPreview && mobilePreviewUrl ? (
+              <YouTubeFeedPreview
+                thumbUrl={mobilePreviewUrl}
+                title={title}
+                channelName={creatorKit.channelName}
+              />
+            ) : null}
             {mobilePreview && mobilePreviewUrl ? (
               <div className="mobile-preview-strip" aria-label="Simulated mobile sizes">
                 <figure>
@@ -2155,7 +2319,7 @@ export default function HomePage() {
                   <img src={mobilePreviewUrl} alt="" width={320} height={180} />
                   <figcaption>320×180 · larger card</figcaption>
                 </figure>
-                <p className="mobile-preview-note">Simulated preview — not a live YouTube feed.</p>
+                <p className="mobile-preview-note">Simulated preview — toggle YouTube feed for home-layout chrome.</p>
               </div>
             ) : null}
             <p className="preview-hint">
@@ -2198,6 +2362,16 @@ export default function HomePage() {
                 onChange={(event) =>
                   setTitleFontSizePx(clampTitleFontSize(Number(event.target.value)))
                 }
+              />
+            </label>
+            <label className="inspector-field">
+              Rotation {textRotationDeg}°
+              <input
+                type="range"
+                min={-12}
+                max={12}
+                value={textRotationDeg}
+                onChange={(event) => setTextRotationDeg(Number(event.target.value))}
               />
             </label>
             <div className="inspector-row">
