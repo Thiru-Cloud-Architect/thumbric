@@ -1,27 +1,26 @@
 :root {
   color-scheme: dark;
-  /* Warm ink + coral→violet — coral primary, purple a clear secondary stop */
-  --bg: #0d0a0a;
-  --bg-soft: #161010;
-  --raise: #1c1515;
-  --raise-2: #241b1b;
-  --ink: #fffaf7;
-  --muted: #d5c6bd;
-  --accent: #ff7f8a;
-  --accent-bright: #ffc2c8;
-  --accent-2: #c084fc;
-  --accent-ink: #1a0c0e;
-  --cta: #f05d6a;
-  --cta-hover: #dc4a58;
-  --line: rgba(255, 255, 255, 0.12);
-  --shadow: 0 32px 90px rgba(0, 0, 0, 0.55);
-  --preview-glow: 0 0 0 1px rgba(255, 127, 138, 0.28), 0 24px 80px rgba(240, 93, 106, 0.12),
-    0 18px 56px rgba(192, 132, 252, 0.22);
-  --glow-accent: rgba(255, 127, 138, 0.22);
-  --glow-warm: rgba(255, 194, 200, 0.14);
-  --glow-purple: rgba(192, 132, 252, 0.28);
-  --glow-purple-mid: rgba(192, 132, 252, 0.18);
-  font-family: 'Plus Jakarta Sans', 'DM Sans', system-ui, sans-serif;
+  /* Calm studio — charcoal + one blue accent (vidIQ / Canva-tool quiet) */
+  --bg: #0b0d10;
+  --bg-soft: #12151a;
+  --raise: #161a21;
+  --raise-2: #1c222b;
+  --ink: #f3f5f7;
+  --muted: #9aa3af;
+  --accent: #5b8def;
+  --accent-bright: #8eb6ff;
+  --accent-2: #5b8def;
+  --accent-ink: #0b0d10;
+  --cta: #3d7eff;
+  --cta-hover: #2f6ae6;
+  --line: rgba(255, 255, 255, 0.08);
+  --shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+  --preview-glow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 16px 40px rgba(0, 0, 0, 0.35);
+  --glow-accent: rgba(61, 126, 255, 0.12);
+  --glow-warm: rgba(255, 255, 255, 0.04);
+  --glow-purple: rgba(61, 126, 255, 0.08);
+  --glow-purple-mid: rgba(61, 126, 255, 0.06);
+  font-family: 'DM Sans', 'Plus Jakarta Sans', system-ui, sans-serif;
 }
 
 * {
@@ -71,13 +70,13 @@ a {
 .brand-mark {
   width: 1.65rem;
   height: 1.65rem;
-  border-radius: 8px;
+  border-radius: 6px;
   display: grid;
   place-items: center;
   font-size: 0.72rem;
-  background: linear-gradient(135deg, var(--cta), var(--accent) 42%, #e879f9 72%, var(--accent-2));
-  color: #1a0c0e;
-  box-shadow: 0 6px 20px var(--glow-accent), 0 4px 16px var(--glow-purple);
+  background: var(--cta);
+  color: #fff;
+  box-shadow: none;
 }
 
 .top-nav {
@@ -1212,25 +1211,16 @@ main {
 }
 
 .gradient-text {
-  background: linear-gradient(95deg, #ffc2c8, #ff7f8a 28%, #e879f9 58%, #c084fc 88%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--ink);
+  background: none;
+  -webkit-background-clip: unset;
+  background-clip: unset;
 }
 
 .gradient-text-motion {
-  background-size: 220% 220%;
-  animation: gradient-x 5.5s ease-in-out infinite;
-}
-
-@keyframes gradient-x {
-  0%,
-  to {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
+  animation: none;
+  background: none;
+  color: var(--ink);
 }
 
 .btn-gradient {
@@ -1240,12 +1230,12 @@ main {
   align-items: center;
   justify-content: center;
   gap: 0.35rem;
-  background: linear-gradient(105deg, #f05d6a, #ff7f8a 34%, #e879f9 66%, #c084fc);
-  color: #1a0c0e;
-  font: 700 1.05rem/1 'Plus Jakarta Sans', sans-serif;
-  padding: 1rem 1.65rem;
-  border-radius: 999px;
-  box-shadow: 0 12px 36px var(--glow-accent), 0 10px 28px var(--glow-purple);
+  background: var(--cta);
+  color: #fff;
+  font: 650 1rem/1 'DM Sans', system-ui, sans-serif;
+  padding: 0.9rem 1.4rem;
+  border-radius: 10px;
+  box-shadow: none;
   cursor: pointer;
   text-decoration: none;
   position: relative;
@@ -1253,34 +1243,25 @@ main {
 }
 
 .btn-pulse {
-  animation: cta-breathe 2.8s ease-in-out infinite;
-}
-
-@keyframes cta-breathe {
-  0%,
-  to {
-    box-shadow: 0 12px 36px var(--glow-accent), 0 10px 28px var(--glow-purple);
-  }
-  50% {
-    box-shadow: 0 14px 42px rgba(255, 127, 138, 0.45), 0 12px 36px rgba(192, 132, 252, 0.4);
-  }
+  animation: none;
 }
 
 .btn-gradient:hover {
-  filter: brightness(1.06);
-  transform: translateY(-1px);
+  background: var(--cta-hover);
+  filter: none;
+  transform: none;
 }
 
 .btn-outline {
   appearance: none;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--line);
+  background: transparent;
   color: var(--ink);
-  font: 700 0.98rem/1 'Plus Jakarta Sans', sans-serif;
-  padding: 0.95rem 1.35rem;
-  border-radius: 999px;
+  font: 650 0.95rem/1 'DM Sans', system-ui, sans-serif;
+  padding: 0.85rem 1.25rem;
+  border-radius: 10px;
   cursor: pointer;
-  backdrop-filter: blur(8px);
+  backdrop-filter: none;
 }
 
 .hero-fine {

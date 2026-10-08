@@ -45,7 +45,6 @@ import {
   Testimonials,
 } from './LandingSections'
 import { LazyReveal } from './LazyReveal'
-import { PlushInfoSection } from './PlushInfoSection'
 import { SiteHeader } from './SiteHeader'
 import { planPriceLabel } from './plans'
 import { LAYOUTS, PHOTO_SHAPES, type LayoutId, type PhotoShapeId } from './layout'
@@ -91,7 +90,6 @@ import { styleHintFromKit } from './creatorKit'
 import { autosaveAgeLabel, loadAutosave, saveAutosave } from './autosave'
 import { hasBlockingExportIssue, validateExport, type ExportCheck } from './exportValidation'
 import { ShortcutsModal } from './ShortcutsModal'
-import { OnboardingTips } from './OnboardingTips'
 import { loadVersions, pushVersion } from './versionHistory'
 import {
   DEFAULT_STICKER_SLOTS,
@@ -1729,46 +1727,28 @@ export default function HomePage() {
         }}
       />
 
-      <main id="top" className="page-main">
+      <main id="top" className="page-main page-main-calm">
         <HeroFlashy onStartTrial={startTrialFlow} />
-        <PlushInfoSection />
-        <LazyReveal staggerMs={75} variant="soft-rise">
-          <StatsStrip />
-        </LazyReveal>
-        <LazyReveal staggerMs={90} variant="rise">
-          <ProblemSection />
-        </LazyReveal>
-        <LazyReveal staggerMs={85} variant="fade-scale">
-          <HowItWorks />
-        </LazyReveal>
-        <LazyReveal staggerMs={70} variant="soft-rise">
-          <FeaturesSection />
-        </LazyReveal>
-        <LazyReveal staggerMs={70} variant="soft-rise">
-          <FreeToolsSection />
-        </LazyReveal>
-        <LazyReveal variant="slide-left">
-          <PricingTeaser />
-        </LazyReveal>
 
-        <section id="editor" className="editor-section editor-section-plush" aria-label="Thumbnail editor">
-          <OnboardingTips />
-          <div className="editor-head editor-head-slim">
-            <h2 className="editor-title">Editor</h2>
-            <p className="editor-lede">
-              Photo → title → download. Need AI?{' '}
-              <Link to="/ai-thumbnail-maker">AI Thumbnail Maker</Link>
-            </p>
+        <section id="editor" className="editor-section editor-section-calm" aria-label="Thumbnail editor">
+          <div className="editor-head editor-head-calm">
+            <div>
+              <h2 className="editor-title">Editor</h2>
+              <p className="editor-lede">Upload · title · download</p>
+            </div>
+            <Link className="chip quiet-link" to="/ai-thumbnail-maker">
+              Try AI instead
+            </Link>
           </div>
-        <section className="workbench editor-workbench studio-grid studio-grid-plush" aria-label="Thumbnail studio">
+        <section className="workbench editor-workbench studio-grid studio-grid-calm" aria-label="Thumbnail studio">
           <form
-            className="controls studio-tools studio-tools-plush"
+            className="controls studio-tools studio-tools-calm"
             onSubmit={(event) => {
               event.preventDefault()
               requestExportWithChecks(false)
             }}
           >
-            <div className="editor-tabs editor-tabs-plush" role="tablist" aria-label="Editor steps">
+            <div className="editor-tabs editor-tabs-calm" role="tablist" aria-label="Editor steps">
               <button
                 id="editor-tab-create"
                 type="button"
@@ -2304,11 +2284,10 @@ export default function HomePage() {
             </p>
           </div>
 
-          <aside className="studio-inspector" aria-label="Title inspector">
-            <p className="studio-inspector-kicker">Inspector</p>
-            <h3 className="studio-inspector-title">{textSelected ? 'Title selected' : 'Title'}</h3>
+          <aside className="studio-inspector studio-inspector-calm" aria-label="Title inspector">
+            <h3 className="studio-inspector-title">Title</h3>
             {!textSelected && !photo ? (
-              <p className="inspector-empty">Select the title on the canvas, or generate a concept first.</p>
+              <p className="inspector-empty">Click the title on the canvas to edit it.</p>
             ) : null}
             <div className="inspector-row">
               <span className="inspector-label">Align</span>
@@ -2477,10 +2456,27 @@ export default function HomePage() {
                 </div>
               </div>
             ) : null}
-            <div className="inspector-improve">
-              <span className="inspector-label">Improve</span>
-              <button type="button" className="chip solid ai-generate" onClick={runImproveAnalysis}>
-                ✨ Improve this thumbnail
+            <details className="editor-advanced inspector-more">
+              <summary>More tools</summary>
+              <label className="inspector-field refine-field">
+                Refine
+                <input
+                  value={refineDraft}
+                  onChange={(event) => setRefineDraft(event.target.value)}
+                  placeholder="make title bigger"
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault()
+                      runRefineDraft()
+                    }
+                  }}
+                />
+              </label>
+              <button type="button" className="chip" onClick={runRefineDraft}>
+                Apply
+              </button>
+              <button type="button" className="chip" onClick={runImproveAnalysis}>
+                Check thumbnail
               </button>
               {designIssues.length > 0 ? (
                 <ul className="inspector-issues">
@@ -2499,67 +2495,68 @@ export default function HomePage() {
                   Fix all
                 </button>
               ) : null}
-              <label className="inspector-field refine-field">
-                Refine with words
-                <input
-                  value={refineDraft}
-                  onChange={(event) => setRefineDraft(event.target.value)}
-                  placeholder='e.g. “make it more dramatic”'
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') {
-                      event.preventDefault()
-                      runRefineDraft()
-                    }
-                  }}
-                />
-              </label>
-              <button type="button" className="chip" onClick={runRefineDraft}>
-                Apply refine
-              </button>
-            </div>
-            <div className="inspector-polish" role="group" aria-label="One-tap refine">
-              {refineChipList().map((chip) => (
-                <button
-                  key={chip.id}
-                  type="button"
-                  className="inspector-pill"
-                  onClick={() => commitRefine(chip.id)}
-                >
-                  {chip.label}
-                </button>
-              ))}
-            </div>
-            {aiVariants.length > 0 ? (
-              <div className="inspector-looks">
-                <span className="inspector-label">Looks</span>
-                <div className="inspector-look-row">
-                  {aiVariants.map((item, index) => (
-                    <button
-                      key={`${item.seed}-${index}`}
-                      type="button"
-                      className={index === aiPick ? 'inspector-look is-selected' : 'inspector-look'}
-                      onClick={() => pickAiVariant(index)}
-                    >
-                      <img src={item.objectUrl} alt="" />
-                      <span>{item.lookLabel || index + 1}</span>
-                    </button>
-                  ))}
-                </div>
+              <div className="inspector-polish" role="group" aria-label="One-tap refine">
+                {refineChipList().map((chip) => (
+                  <button
+                    key={chip.id}
+                    type="button"
+                    className="inspector-pill"
+                    onClick={() => commitRefine(chip.id)}
+                  >
+                    {chip.label}
+                  </button>
+                ))}
               </div>
-            ) : null}
+              {aiVariants.length > 0 ? (
+                <div className="inspector-looks">
+                  <span className="inspector-label">Looks</span>
+                  <div className="inspector-look-row">
+                    {aiVariants.map((item, index) => (
+                      <button
+                        key={`${item.seed}-${index}`}
+                        type="button"
+                        className={index === aiPick ? 'inspector-look is-selected' : 'inspector-look'}
+                        onClick={() => pickAiVariant(index)}
+                      >
+                        <img src={item.objectUrl} alt="" />
+                        <span>{item.lookLabel || index + 1}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </details>
           </aside>
         </section>
         </section>
 
         <div className="mobile-save-dock" aria-label="Quick save">
           <button type="button" className="primary" onClick={() => requestExportWithChecks(false)}>
-            Save preview
+            Download
           </button>
           <button type="button" className="chip solid" onClick={() => requestExportWithChecks(true)}>
-            Clean save
+            Clean
           </button>
         </div>
 
+        <LazyReveal staggerMs={75} variant="soft-rise">
+          <StatsStrip />
+        </LazyReveal>
+        <LazyReveal staggerMs={90} variant="rise">
+          <ProblemSection />
+        </LazyReveal>
+        <LazyReveal staggerMs={85} variant="fade-scale">
+          <HowItWorks />
+        </LazyReveal>
+        <LazyReveal staggerMs={70} variant="soft-rise">
+          <FeaturesSection />
+        </LazyReveal>
+        <LazyReveal staggerMs={70} variant="soft-rise">
+          <FreeToolsSection />
+        </LazyReveal>
+        <LazyReveal variant="slide-left">
+          <PricingTeaser />
+        </LazyReveal>
         <LazyReveal staggerMs={60} variant="blur-up">
           <Testimonials />
         </LazyReveal>

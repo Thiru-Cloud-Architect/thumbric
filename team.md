@@ -18,7 +18,7 @@ Missing: live Supabase project credentials in prod, Stripe checkout, paid fal AI
 
 ## Current stamp
 
-`UI_BUILD=2026.10.08-plush-auth`
+`UI_BUILD=2026.10.08-calm-studio`
 
 ## Open threads
 

@@ -110,23 +110,17 @@ export function HeroFlashy({ onStartTrial }: HeroFlashyProps) {
         <ThumbStrip offset={5} stripIndex={2} />
       </div>
       <div className="hero-scrim" aria-hidden />
-      <div className="hero-aura hero-aura-a" aria-hidden />
-      <div className="hero-aura hero-aura-b" aria-hidden />
       <div className="hero-inner">
-        <p className="hero-badge">
-          <span className="hero-badge-pulse" aria-hidden />
-          Free AI YouTube thumbnail maker
-        </p>
+        <p className="hero-badge hero-badge-quiet">Free YouTube thumbnail maker</p>
         <h1 id="hero-title">
-          Thumbnails that <span className="gradient-text gradient-text-motion">earn the click.</span>
+          Thumbnails that earn the click.
         </h1>
         <p className="hero-sub">
-          Describe your video or paste a YouTube URL — or start from scratch in the clean editor. No design skills needed.
+          Describe your video, paste a YouTube URL, or open the editor. Simple tools — no design skills needed.
         </p>
         <div className="hero-cta-row">
-          <Link className="btn-gradient hero-cta hero-cta-ai btn-pulse" to="/ai-thumbnail-maker">
+          <Link className="btn-gradient hero-cta hero-cta-ai" to="/ai-thumbnail-maker">
             Create with AI
-            <span aria-hidden> →</span>
           </Link>
           <a
             className="btn-outline hero-cta-secondary"
@@ -135,16 +129,12 @@ export function HeroFlashy({ onStartTrial }: HeroFlashyProps) {
           >
             Open editor
           </a>
-          <Link className="hero-cta-quiet" to="/thumbnail-doctor">
-            Analyze a thumbnail
-          </Link>
         </div>
         <p className="hero-fine">
-          Free in the browser · photo stays on device ·{' '}
+          Free in browser · photo stays on device ·{' '}
           <button type="button" className="hero-trial-link" onClick={onStartTrial}>
             {TRIAL_DAYS}-day trial
-          </button>{' '}
-          for clean exports
+          </button>
         </p>
       </div>
     </section>
