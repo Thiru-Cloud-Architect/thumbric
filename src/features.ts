@@ -31,12 +31,12 @@ export const FEATURES: FeatureItem[] = [
     available: true,
   },
   {
-    id: 'quick-idea',
-    title: 'Quick idea shuffle',
-    description: 'Stuck? Random mood, layout, font, and title style in one tap.',
-    href: '#editor',
-    where: 'Editor · Setup',
-    cta: 'Try Quick idea',
+    id: 'thumb-score',
+    title: 'Thumbnail Score',
+    description: 'Upload a thumb. Get a 0–100 heuristic for attention, mobile readability, and text.',
+    href: '/youtube-thumbnail-score',
+    where: 'Free tools',
+    cta: 'Score a thumbnail',
     available: true,
   },
   {
@@ -81,7 +81,7 @@ export const AI_FEATURE = {
   nowLabel: 'Works now',
   nowItems: [
     'Tap Try AI Thumbnail creator, then type a short scene (person, setting, mood)',
-    'Generate 3 looks every time — first lands on the canvas; if free AI is busy, studio looks still fill',
+    'Generate 3 looks (Punch / Warm / Cinematic) — if free AI is busy, studio looks still fill',
     'Pick a favorite look, then style the title on the live canvas',
   ],
   notYetLabel: 'Not yet',

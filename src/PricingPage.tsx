@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { PRODUCT_NAME_FULL, UI_BUILD } from './brand'
+import { DocumentHead } from './DocumentHead'
 import {
   CREATOR_CLEAN_DOWNLOADS_PER_MONTH,
   TRIAL_DAYS,
@@ -56,6 +57,7 @@ export default function PricingPage() {
 
   return (
     <div className="page">
+      <DocumentHead path="/pricing" />
       <SiteHeader />
       <main className="pricing-page-main">
         <section className="pricing-hero" aria-labelledby="pricing-page-title">

@@ -5,6 +5,7 @@ import { PRODUCT_NAME, PRODUCT_NAME_FULL, PRODUCT_TAGLINE, SITE_URL, UI_BUILD } 
 import { CREATOR_CLEAN_DOWNLOADS_PER_MONTH, TRIAL_DAYS } from './entitlement'
 import { planPriceLabel } from './plans'
 import { FEATURES, AI_FEATURE } from './features'
+import { TOOL_NAV } from './toolsCatalog'
 import { HERO_THUMBS, type HeroThumb } from './heroThumbs'
 import { CountUpValue, RevealItem } from './LazyReveal'
 
@@ -24,7 +25,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'How does the AI thumbnail work?',
-    a: 'Tap “Try AI Thumbnail creator” in the hero. Describe the visual scene, pick a style, and generate 3 looks. If free AI is busy, studio looks still fill so you can keep editing. Pick a favorite, then finish the title on the live canvas. It does not paste a YouTube URL or analyze your video file.',
+    a: 'Tap “Try AI Thumbnail creator” in the hero. Describe the visual scene, pick a style, and generate 3 looks. If free AI is busy, cinematic studio looks still fill so you can keep editing. Pick a favorite, then finish the title on the live canvas. It does not paste a YouTube URL or analyze your video file. Photoreal Canva-grade faces need a paid fal key on the Worker.',
   },
   {
     q: 'How long does it take?',
@@ -33,6 +34,10 @@ const FAQ_ITEMS = [
   {
     q: 'Why not Canva or Photoshop?',
     a: `${PRODUCT_NAME} is built only for social thumbnails: correct dimensions, drag text on canvas, title styles, stickers, one-click PNG download.`,
+  },
+  {
+    q: 'What is Thumbric Score?',
+    a: 'A free heuristic 0–100 for attention, mobile readability, emotion, text clarity, and focus. It is not a CTR prediction. Upload a thumb, then generate 3 alternatives. Share a result page if you want.',
   },
   {
     q: 'Do I need an account?',
@@ -463,19 +468,58 @@ export function FeaturesSection() {
         <div className="features-grid">
           {core.map((item, index) => (
             <RevealItem key={item.id} index={index + 3}>
-              <a
-                href={item.href}
-                className="feature-card"
-                onClick={(event) => onEditorHashClick(event, item.href)}
-              >
-                {item.where ? <p className="feature-where">{item.where}</p> : null}
-                <h3>{item.title}</h3>
-                <p>{item.description}</p>
-                <span className="feature-card-link">{item.cta ?? 'Open editor'} →</span>
-              </a>
+              {item.href.startsWith('/') ? (
+                <Link className="feature-card" to={item.href}>
+                  {item.where ? <p className="feature-where">{item.where}</p> : null}
+                  <h3>{item.title}</h3>
+                  <p>{item.description}</p>
+                  <span className="feature-card-link">{item.cta ?? 'Open editor'} →</span>
+                </Link>
+              ) : (
+                <a
+                  href={item.href}
+                  className="feature-card"
+                  onClick={(event) => onEditorHashClick(event, item.href)}
+                >
+                  {item.where ? <p className="feature-where">{item.where}</p> : null}
+                  <h3>{item.title}</h3>
+                  <p>{item.description}</p>
+                  <span className="feature-card-link">{item.cta ?? 'Open editor'} →</span>
+                </a>
+              )}
             </RevealItem>
           ))}
         </div>
+      </div>
+    </section>
+  )
+}
+
+export function FreeToolsSection() {
+  return (
+    <section id="tools" className="features-section tools-strip" aria-labelledby="tools-title">
+      <RevealItem index={0}>
+        <div className="features-head">
+          <p className="section-eyebrow">Free tools</p>
+          <h2 id="tools-title" className="section-title center">
+            Score it. Test it. <span className="gradient-text">Then generate 3 looks.</span>
+          </h2>
+          <p className="section-lede center">
+            No signup to try. Thumbnail Score is a visual heuristic — not a CTR prediction.
+          </p>
+        </div>
+      </RevealItem>
+      <div className="features-grid">
+        {TOOL_NAV.map((item, index) => (
+          <RevealItem key={item.id} index={index + 1}>
+            <Link className="feature-card" to={item.path}>
+              <p className="feature-where">Free tool</p>
+              <h3>{item.label}</h3>
+              <p>{item.blurb}</p>
+              <span className="feature-card-link">Open {item.label} →</span>
+            </Link>
+          </RevealItem>
+        ))}
       </div>
     </section>
   )
@@ -518,14 +562,25 @@ export function SiteFooter({ buildLabel }: { buildLabel?: string }) {
           <div className="footer-nav-group" role="navigation" aria-label="Footer">
             <div className="footer-col">
               <p className="footer-head">Product</p>
-              <NavHashLink hash="editor">Open editor</NavHashLink>
+              <NavHashLink hash="editor-ai">AI thumbnail creator</NavHashLink>
               <NavHashLink hash="how">How it works</NavHashLink>
               <NavHashLink hash="features">Feature list</NavHashLink>
               <Link to="/pricing">Plans &amp; pricing</Link>
               <NavHashLink hash="faq">FAQ</NavHashLink>
             </div>
             <div className="footer-col">
+              <p className="footer-head">Free tools</p>
+              <Link to="/youtube-thumbnail-score">Thumbnail Score</Link>
+              <Link to="/youtube-thumbnail-tester">A/B Tester</Link>
+              <Link to="/youtube-thumbnail-resizer">Resizer</Link>
+              <Link to="/youtube-ctr-calculator">CTR Calculator</Link>
+              <Link to="/youtube-title-analyzer">Title Analyzer</Link>
+              <Link to="/tools">All tools</Link>
+            </div>
+            <div className="footer-col">
               <p className="footer-head">Resources</p>
+              <Link to="/learn">Lessons</Link>
+              <Link to="/legal">Privacy &amp; terms</Link>
               <Link to="/career">Careers</Link>
               <a
                 href="https://github.com/Thiru-Cloud-Architect/thumbric"

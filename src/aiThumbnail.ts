@@ -1,5 +1,5 @@
 import { apiBaseUrl, apiLookBudget, clientFalKey, resolveAiBackend } from './aiConfig'
-import { fillLooksToTarget } from './aiLooks'
+import { fillLooksToTarget, looksLikeCollage } from './aiLooks'
 import { composeStudioLooks } from './studioLooks'
 import type { Niche } from './niches'
 import type { Platform } from './platforms'
@@ -258,9 +258,9 @@ function aspectFraming(platform: Platform) {
 
 function compositionForVariant(index: number) {
   const variants = [
-    'ONE hero subject on the LEFT third, empty negative space on the RIGHT for a later title — one photo, never a split',
-    'ONE hero subject on the RIGHT third, empty negative space on the LEFT for a later title — one photo, never a split',
-    'tight centered hero close-up in ONE photograph, simpler LOWER third for a later title',
+    'ONE oversized hero subject on the LEFT third, empty negative space on the RIGHT for a later title — one photo, never a split',
+    'ONE oversized hero subject on the RIGHT third, empty negative space on the LEFT for a later title — one photo, never a split',
+    'tight centered hero close-up filling ~70% of the frame in ONE photograph, simpler LOWER third for a later title',
   ]
   return variants[((index % variants.length) + variants.length) % variants.length]!
 }
@@ -286,7 +286,7 @@ export function visualSceneFromHint(raw: string) {
   scene = scene.replace(/\bcouple goals?\b/gi, 'romantic couple in a cinematic embrace')
 
   const hasVisualNoun =
-    /\b(couple|person|people|face|man|woman|girl|boy|singer|dog|cat|animals?|puppy|kitten|stage|forest|woods?|studio|portrait|photo|cinematic|light|city|beach|car|phone|laptop|gamer|creator)\b/i.test(
+    /\b(couple|person|people|face|man|woman|girl|boy|singer|dog|cat|animals?|puppy|kitten|stage|forest|woods?|studio|portrait|photo|cinematic|light|city|beach|car|phone|laptop|gamer|creator|fox|jungle|concert|gadget|silhouette)\b/i.test(
       scene,
     )
   if (!hasVisualNoun) {
@@ -344,17 +344,17 @@ export function buildAiThumbnailPrompt(options: AiThumbOptions) {
     'expressive creator looking at camera, dramatic key light, shallow depth of field'
 
   const negative = cues.nonHumanSubject
-    ? 'no text, no letters, no captions, no title cards, no typography, no logos, no watermarks, no collage, no grid, no 2x2, no four panels, no split screen, no frames, no human, no person, no anime girl, no kemonomimi, no singer, no idol'
-    : 'no text, no letters, no title cards, no logos, no watermarks, no collage, no grid, no 2x2, no split screen, no diptych, no frames'
+    ? 'no text, no letters, no captions, no title cards, no typography, no logos, no watermarks, no collage, no grid, no 2x2, no four panels, no split screen, no frames, no polaroid stack, no comic panels, no magazine cover, no human, no person, no anime girl, no kemonomimi, no singer, no idol'
+    : 'no text, no letters, no title cards, no logos, no watermarks, no collage, no grid, no 2x2, no split screen, no diptych, no triptych, no frames, no polaroid stack, no comic panels, no storyboard'
 
   const medium =
     style.id === 'cartoon' || style.id === 'kids-fun' || cues.cartoon
-      ? 'Bold YouTube thumbnail illustration, ONE stylized still, single frame'
-      : 'Cinematic YouTube thumbnail photograph, ONE camera, ONE moment'
+      ? 'Bold YouTube thumbnail illustration, ONE stylized still, single frame, click-stopping color'
+      : 'Cinematic YouTube thumbnail photograph, ONE camera, ONE moment, 85mm shallow depth of field, rim light, catchlights'
 
   const focal = cues.nonHumanSubject
-    ? 'clear animal silhouette, readable at phone-tile size, follow the scene literally'
-    : 'one clear focal subject filling the frame, readable at phone-tile size, follow the scene literally'
+    ? 'clear animal silhouette oversized in frame, readable at phone-tile size, follow the scene literally'
+    : 'one clear focal subject oversized in the frame, readable at phone-tile size, follow the scene literally'
 
   return clampAiPrompt([
     medium,
@@ -368,7 +368,7 @@ export function buildAiThumbnailPrompt(options: AiThumbOptions) {
     `style (${style.label}): ${styleBoostForScene(style, cues)}`,
     `niche mood: ${options.niche.label} — ${options.niche.hint}`,
     focal,
-    'high contrast, saturated cinematic color, sharp focus, phone-tile readability',
+    'ultra-high contrast, saturated cinematic color, razor sharp focus, phone-tile readability, poster-grade lighting',
   ])
 }
 
@@ -397,6 +397,10 @@ const POLLINATIONS_VARIANTS: PollinationsVariant[] = [
   },
 ]
 
+/** Query-string negative for free hosts that honor it — never shown in the UI. */
+export const POLLINATIONS_NEGATIVE =
+  'text, letters, watermark, logo, collage, grid, split screen, 2x2, comic panel, magazine cover, title card, blurry, extra fingers, deformed face'
+
 /**
  * Build candidate Pollinations image URLs (primary + fallbacks).
  * Exported for unit tests.
@@ -409,9 +413,10 @@ export function buildPollinationsCandidateUrls(
   bust = Date.now().toString(36),
 ) {
   const encoded = encodeURIComponent(prompt.slice(0, AI_PROMPT_MAX_CHARS))
+  const negative = encodeURIComponent(POLLINATIONS_NEGATIVE)
   return POLLINATIONS_VARIANTS.map((variant) => ({
     label: variant.label,
-    url: `https://image.pollinations.ai/prompt/${encoded}?width=${width}&height=${height}&seed=${seed}&${variant.query}&t=${bust}`,
+    url: `https://image.pollinations.ai/prompt/${encoded}?width=${width}&height=${height}&seed=${seed}&${variant.query}&negative=${negative}&t=${bust}`,
   }))
 }
 
@@ -621,6 +626,7 @@ async function generateViaFalClient(
       output_format: 'jpeg',
       num_inference_steps: 4,
       enable_safety_checker: true,
+      guidance_scale: 3.5,
     }),
   })
   if (!response.ok) {
@@ -847,15 +853,22 @@ export async function generateAiThumbnailVariants(
     onProgress?.(results.length, AI_LOOK_TARGET)
   }
 
+  let isolateCollage = false
+  try {
+    isolateCollage = looksLikeCollage(results[0]!.image)
+  } catch {
+    isolateCollage = false
+  }
   const filled = await fillLooksToTarget(results, AI_LOOK_TARGET, {
     width,
     height,
     prompt: results[0]!.prompt,
     seed: results[0]!.seed,
     styleId: results[0]!.styleId,
-    // One model image (typical free path) is restyled into 3 framed looks so a
-    // collage/grid never sits on the canvas as "Look 1".
-    keepOriginal: results.length >= AI_LOOK_TARGET,
+    // Restyle a single still into Punch / Warm / Cinematic. Isolate quadrants
+    // only when the model actually returned a collage.
+    keepOriginal: false,
+    isolateCollage,
   })
   for (let i = 0; i < filled.length; i++) {
     onItem?.(filled[i]!, i)

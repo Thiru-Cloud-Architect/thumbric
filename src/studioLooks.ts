@@ -24,6 +24,7 @@ export function studioPaletteForScene(
   if (/\b(jungle|forest|woods|animal|puppy|kitten)\b/.test(h)) glow = '#9CFF7A'
   if (/\b(neon|gamer|rgb|cyber)\b/.test(h)) glow = '#7CFFF0'
   if (/\b(sunset|warm|golden|concert)\b/.test(h)) glow = '#FFB070'
+  if (/\b(couple|romance|love)\b/.test(h)) glow = '#FF8AAE'
   return { sky, mid, deep, glow, rim: '#F7F4EE' }
 }
 
@@ -40,16 +41,218 @@ function rgba(hex: string, a: number) {
   return `rgba(${r},${g},${b},${a})`
 }
 
+function mixHex(a: string, b: string, t: number) {
+  const [ar, ag, ab] = hexToRgb(a)
+  const [br, bg, bb] = hexToRgb(b)
+  const r = Math.round(ar + (br - ar) * t)
+  const g = Math.round(ag + (bg - ag) * t)
+  const bl = Math.round(ab + (bb - ab) * t)
+  return `#${[r, g, bl].map((n) => n.toString(16).padStart(2, '0')).join('')}`
+}
+
 function focalForVariant(index: number) {
   const variants = [
-    { x: 0.28, y: 0.42, scale: 1 },
-    { x: 0.72, y: 0.4, scale: 1 },
-    { x: 0.5, y: 0.36, scale: 1.18 },
+    { x: 0.3, y: 0.44, scale: 1 },
+    { x: 0.7, y: 0.42, scale: 1 },
+    { x: 0.5, y: 0.38, scale: 1.16 },
   ]
   return variants[((index % variants.length) + variants.length) % variants.length]!
 }
 
-/** Soft cinematic mass — a poster plate, not clip-art silhouettes. */
+function fillAtmosphere(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  palette: StudioPalette,
+  focal: { x: number; y: number },
+) {
+  ctx.fillStyle = palette.deep
+  ctx.fillRect(0, 0, width, height)
+
+  const sky = ctx.createLinearGradient(0, 0, 0, height)
+  sky.addColorStop(0, mixHex(palette.sky, palette.glow, 0.12))
+  sky.addColorStop(0.38, palette.mid)
+  sky.addColorStop(1, palette.deep)
+  ctx.fillStyle = sky
+  ctx.fillRect(0, 0, width, height)
+
+  const gx = width * focal.x
+  const gy = height * focal.y
+  const key = ctx.createRadialGradient(gx, gy, 6, gx, gy, Math.max(width, height) * 0.62)
+  key.addColorStop(0, rgba(palette.glow, 0.62))
+  key.addColorStop(0.4, rgba(palette.glow, 0.16))
+  key.addColorStop(1, rgba(palette.deep, 0))
+  ctx.fillStyle = key
+  ctx.fillRect(0, 0, width, height)
+
+  const rimX = width * (1 - focal.x)
+  const rim = ctx.createRadialGradient(rimX, height * 0.12, 2, rimX, height * 0.12, width * 0.46)
+  rim.addColorStop(0, rgba(palette.rim, 0.34))
+  rim.addColorStop(1, rgba(palette.rim, 0))
+  ctx.fillStyle = rim
+  ctx.fillRect(0, 0, width, height)
+
+  ctx.save()
+  ctx.globalCompositeOperation = 'screen'
+  const streak = ctx.createLinearGradient(gx - width * 0.4, gy - 8, gx + width * 0.45, gy + 8)
+  streak.addColorStop(0, 'rgba(255,255,255,0)')
+  streak.addColorStop(0.5, rgba(palette.rim, 0.18))
+  streak.addColorStop(1, 'rgba(255,255,255,0)')
+  ctx.fillStyle = streak
+  ctx.fillRect(0, gy - height * 0.035, width, height * 0.07)
+  ctx.restore()
+}
+
+function paintBokeh(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  palette: StudioPalette,
+  variantIndex: number,
+  count: number,
+) {
+  ctx.save()
+  ctx.globalCompositeOperation = 'screen'
+  for (let i = 0; i < count; i++) {
+    const ox = ((i * 97 + variantIndex * 53) % 1000) / 1000
+    const oy = ((i * 61 + variantIndex * 29) % 1000) / 1000
+    const r = (10 + ((i * 17) % 36)) * (width / 1280)
+    ctx.fillStyle = rgba(i % 2 ? palette.glow : palette.rim, 0.07 + (i % 5) * 0.018)
+    ctx.beginPath()
+    ctx.arc(ox * width, oy * height * 0.74, r, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  ctx.restore()
+}
+
+function paintPortrait(
+  ctx: CanvasRenderingContext2D,
+  fx: number,
+  fy: number,
+  size: number,
+  palette: StudioPalette,
+) {
+  ctx.save()
+  const shoulder = ctx.createRadialGradient(fx, fy + size * 0.42, size * 0.04, fx, fy + size * 0.5, size * 0.7)
+  shoulder.addColorStop(0, rgba(palette.mid, 0.7))
+  shoulder.addColorStop(1, rgba(palette.deep, 0))
+  ctx.fillStyle = shoulder
+  ctx.beginPath()
+  ctx.ellipse(fx, fy + size * 0.48, size * 0.52, size * 0.28, 0, 0, Math.PI * 2)
+  ctx.fill()
+
+  const head = ctx.createRadialGradient(fx - size * 0.08, fy - size * 0.12, size * 0.04, fx, fy, size * 0.42)
+  head.addColorStop(0, rgba(palette.rim, 0.8))
+  head.addColorStop(0.28, rgba(palette.glow, 0.45))
+  head.addColorStop(1, rgba(palette.deep, 0.05))
+  ctx.fillStyle = head
+  ctx.beginPath()
+  ctx.ellipse(fx, fy - size * 0.04, size * 0.28, size * 0.36, -0.08, 0, Math.PI * 2)
+  ctx.fill()
+
+  ctx.globalCompositeOperation = 'screen'
+  ctx.fillStyle = rgba(palette.rim, 0.55)
+  ctx.beginPath()
+  ctx.arc(fx - size * 0.08, fy - size * 0.1, size * 0.045, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.restore()
+}
+
+function paintCreature(
+  ctx: CanvasRenderingContext2D,
+  fx: number,
+  fy: number,
+  size: number,
+  palette: StudioPalette,
+) {
+  ctx.save()
+  const body = ctx.createRadialGradient(fx, fy + size * 0.08, size * 0.05, fx, fy, size * 0.5)
+  body.addColorStop(0, rgba(palette.rim, 0.55))
+  body.addColorStop(0.3, rgba(palette.glow, 0.4))
+  body.addColorStop(1, rgba(palette.deep, 0))
+  ctx.fillStyle = body
+  ctx.beginPath()
+  ctx.ellipse(fx, fy + size * 0.06, size * 0.38, size * 0.28, 0.2, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.beginPath()
+  ctx.ellipse(fx - size * 0.22, fy - size * 0.12, size * 0.2, size * 0.22, -0.4, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.globalCompositeOperation = 'screen'
+  ctx.fillStyle = rgba(palette.rim, 0.35)
+  ctx.beginPath()
+  ctx.ellipse(fx - size * 0.28, fy - size * 0.28, size * 0.08, size * 0.14, -0.5, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.beginPath()
+  ctx.ellipse(fx - size * 0.12, fy - size * 0.32, size * 0.07, size * 0.13, 0.2, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.restore()
+}
+
+function paintProduct(
+  ctx: CanvasRenderingContext2D,
+  fx: number,
+  fy: number,
+  size: number,
+  palette: StudioPalette,
+) {
+  ctx.save()
+  const floor = ctx.createRadialGradient(fx, fy + size * 0.28, 4, fx, fy + size * 0.28, size * 0.55)
+  floor.addColorStop(0, rgba(palette.rim, 0.28))
+  floor.addColorStop(1, rgba(palette.deep, 0))
+  ctx.fillStyle = floor
+  ctx.beginPath()
+  ctx.ellipse(fx, fy + size * 0.32, size * 0.42, size * 0.1, 0, 0, Math.PI * 2)
+  ctx.fill()
+
+  const body = ctx.createLinearGradient(fx - size * 0.16, fy - size * 0.28, fx + size * 0.2, fy + size * 0.22)
+  body.addColorStop(0, rgba(palette.rim, 0.7))
+  body.addColorStop(0.45, rgba(palette.glow, 0.55))
+  body.addColorStop(1, rgba(palette.deep, 0.2))
+  ctx.fillStyle = body
+  ctx.fillRect(fx - size * 0.16, fy - size * 0.22, size * 0.32, size * 0.42)
+
+  ctx.globalAlpha = 0.28
+  ctx.scale(1, -0.28)
+  ctx.translate(0, -(fy + size * 0.32) * 2)
+  ctx.fillStyle = rgba(palette.glow, 0.5)
+  ctx.fillRect(fx - size * 0.16, fy - size * 0.22, size * 0.32, size * 0.42)
+  ctx.restore()
+}
+
+function paintStage(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  fx: number,
+  fy: number,
+  size: number,
+  palette: StudioPalette,
+) {
+  ctx.save()
+  const cone = ctx.createLinearGradient(fx, fy - size * 0.85, fx, fy + size * 0.4)
+  cone.addColorStop(0, rgba(palette.rim, 0.0))
+  cone.addColorStop(0.25, rgba(palette.glow, 0.32))
+  cone.addColorStop(1, rgba(palette.glow, 0))
+  ctx.fillStyle = cone
+  ctx.beginPath()
+  ctx.moveTo(fx - size * 0.06, fy - size * 0.82)
+  ctx.lineTo(fx + size * 0.06, fy - size * 0.82)
+  ctx.lineTo(fx + size * 0.38, fy + size * 0.4)
+  ctx.lineTo(fx - size * 0.38, fy + size * 0.4)
+  ctx.closePath()
+  ctx.fill()
+
+  ctx.globalCompositeOperation = 'multiply'
+  const floor = ctx.createLinearGradient(0, height * 0.62, 0, height)
+  floor.addColorStop(0, rgba(palette.deep, 0))
+  floor.addColorStop(1, rgba(palette.deep, 0.85))
+  ctx.fillStyle = floor
+  ctx.fillRect(0, height * 0.58, width, height * 0.42)
+  ctx.restore()
+
+  paintPortrait(ctx, fx, fy + size * 0.04, size * 0.82, palette)
+}
+
 function paintHeroVolume(
   ctx: CanvasRenderingContext2D,
   fx: number,
@@ -59,8 +262,8 @@ function paintHeroVolume(
 ) {
   ctx.save()
   const core = ctx.createRadialGradient(fx, fy, size * 0.04, fx, fy, size * 0.55)
-  core.addColorStop(0, rgba(palette.rim, 0.55))
-  core.addColorStop(0.22, rgba(palette.glow, 0.42))
+  core.addColorStop(0, rgba(palette.rim, 0.58))
+  core.addColorStop(0.22, rgba(palette.glow, 0.44))
   core.addColorStop(0.58, rgba(palette.mid, 0.22))
   core.addColorStop(1, rgba(palette.deep, 0))
   ctx.fillStyle = core
@@ -71,7 +274,7 @@ function paintHeroVolume(
   ctx.globalCompositeOperation = 'screen'
   const shaft = ctx.createLinearGradient(fx - size * 0.05, fy - size * 0.7, fx + size * 0.2, fy + size * 0.6)
   shaft.addColorStop(0, rgba(palette.rim, 0))
-  shaft.addColorStop(0.45, rgba(palette.glow, 0.28))
+  shaft.addColorStop(0.45, rgba(palette.glow, 0.3))
   shaft.addColorStop(1, rgba(palette.glow, 0))
   ctx.fillStyle = shaft
   ctx.beginPath()
@@ -99,55 +302,30 @@ export function paintStudioLook(
     styleId: AiStyleId
   },
 ) {
-  const { width, height, palette, variantIndex } = options
+  const { width, height, palette, variantIndex, cues, styleId } = options
   const focal = focalForVariant(variantIndex)
-
-  ctx.fillStyle = palette.deep
-  ctx.fillRect(0, 0, width, height)
-
-  const sky = ctx.createLinearGradient(0, 0, 0, height)
-  sky.addColorStop(0, palette.sky)
-  sky.addColorStop(0.45, palette.mid)
-  sky.addColorStop(1, palette.deep)
-  ctx.fillStyle = sky
-  ctx.fillRect(0, 0, width, height)
+  fillAtmosphere(ctx, width, height, palette, focal)
+  paintBokeh(ctx, width, height, palette, variantIndex, 14 + (variantIndex % 4))
 
   const gx = width * focal.x
   const gy = height * focal.y
-  const key = ctx.createRadialGradient(gx, gy, 8, gx, gy, Math.max(width, height) * 0.55)
-  key.addColorStop(0, rgba(palette.glow, 0.55))
-  key.addColorStop(0.45, rgba(palette.glow, 0.12))
-  key.addColorStop(1, rgba(palette.deep, 0))
-  ctx.fillStyle = key
-  ctx.fillRect(0, 0, width, height)
+  const size = Math.min(width, height) * 0.8 * focal.scale
 
-  const rimX = width * (1 - focal.x)
-  const rim = ctx.createRadialGradient(rimX, height * 0.18, 4, rimX, height * 0.18, width * 0.4)
-  rim.addColorStop(0, rgba(palette.rim, 0.28))
-  rim.addColorStop(1, rgba(palette.rim, 0))
-  ctx.fillStyle = rim
-  ctx.fillRect(0, 0, width, height)
-
-  ctx.save()
-  ctx.globalCompositeOperation = 'screen'
-  const orbs = 10 + (variantIndex % 3)
-  for (let i = 0; i < orbs; i++) {
-    const ox = ((i * 97 + variantIndex * 53) % 1000) / 1000
-    const oy = ((i * 61 + variantIndex * 29) % 1000) / 1000
-    const r = (12 + ((i * 13) % 28)) * (width / 1280)
-    ctx.fillStyle = rgba(i % 2 ? palette.glow : palette.rim, 0.08 + (i % 5) * 0.02)
-    ctx.beginPath()
-    ctx.arc(ox * width, oy * height * 0.72, r, 0, Math.PI * 2)
-    ctx.fill()
+  if (cues.nonHumanSubject || cues.animals) {
+    paintCreature(ctx, gx, gy, size, palette)
+  } else if (styleId === 'product-hero') {
+    paintProduct(ctx, gx, gy, size, palette)
+  } else if (styleId === 'music-stage') {
+    paintStage(ctx, width, height, gx, gy, size, palette)
+  } else if (styleId === 'face-reaction' || cues.wantsHuman) {
+    paintPortrait(ctx, gx, gy, size, palette)
+  } else {
+    paintHeroVolume(ctx, gx, gy, size, palette)
   }
-  ctx.restore()
-
-  const size = Math.min(width, height) * 0.78 * focal.scale
-  paintHeroVolume(ctx, gx, gy, size, palette)
 
   const floor = ctx.createLinearGradient(0, height * 0.62, 0, height)
   floor.addColorStop(0, rgba(palette.deep, 0))
-  floor.addColorStop(1, rgba(palette.deep, 0.82))
+  floor.addColorStop(1, rgba(palette.deep, 0.78))
   ctx.fillStyle = floor
   ctx.fillRect(0, height * 0.55, width, height * 0.45)
 
@@ -162,7 +340,7 @@ export function paintStudioLook(
       pixels.data[i] = v
       pixels.data[i + 1] = v
       pixels.data[i + 2] = v
-      pixels.data[i + 3] = 28
+      pixels.data[i + 3] = 26
     }
     gctx.putImageData(pixels, 0, 0)
     ctx.save()
@@ -174,13 +352,13 @@ export function paintStudioLook(
   const vig = ctx.createRadialGradient(
     width / 2,
     height / 2,
-    Math.min(width, height) * 0.18,
+    Math.min(width, height) * 0.2,
     width / 2,
     height / 2,
-    Math.max(width, height) * 0.72,
+    Math.max(width, height) * 0.74,
   )
   vig.addColorStop(0, 'rgba(0,0,0,0)')
-  vig.addColorStop(1, `rgba(0,0,0,${0.28 + variantIndex * 0.06})`)
+  vig.addColorStop(1, `rgba(0,0,0,${0.3 + variantIndex * 0.05})`)
   ctx.fillStyle = vig
   ctx.fillRect(0, 0, width, height)
 }
@@ -206,11 +384,11 @@ function canvasToObjectUrl(canvas: HTMLCanvasElement) {
       resolve(URL.createObjectURL(blob))
     }
     if (typeof canvas.toBlob === 'function') {
-      canvas.toBlob(finish, 'image/jpeg', 0.9)
+      canvas.toBlob(finish, 'image/jpeg', 0.92)
       return
     }
     try {
-      finish(dataUrlToBlob(canvas.toDataURL('image/jpeg', 0.9)))
+      finish(dataUrlToBlob(canvas.toDataURL('image/jpeg', 0.92)))
     } catch (error) {
       reject(error instanceof Error ? error : new Error('Could not export a studio look.'))
     }

@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import react from '@vitejs/plugin-react'
 import { defineConfig, type Plugin } from 'vite'
+import { SITE_ROUTES } from './src/siteRoutes.ts'
 
 /** Custom domain defaults to /. Local project-path builds: VITE_BASE_PATH=/thumbric/ */
 const base = process.env.VITE_BASE_PATH || '/'
@@ -11,6 +12,14 @@ const siteUrl = (
 ).replace(/\/?$/, '/')
 // So Vite's HTML `%VITE_SITE_URL%` replacement (and client import.meta.env) see a default.
 process.env.VITE_SITE_URL = siteUrl
+
+function escapeHtml(value: string) {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+}
 
 /** Emit sitemap / robots / SPA 404 from SITE_URL + base so custom domain is a workflow env flip. */
 function siteFilesPlugin(): Plugin {
@@ -25,13 +34,12 @@ function siteFilesPlugin(): Plugin {
       const outDir = path.resolve('dist')
       if (!fs.existsSync(outDir)) return
 
-      const paths = ['', 'pricing', 'career']
-      const urls = paths
+      const urls = SITE_ROUTES.filter((route) => route.path !== '/roast')
         .map(
-          (p) => `  <url>
-    <loc>${siteUrl}${p}</loc>
-    <changefreq>${p === 'career' ? 'monthly' : 'weekly'}</changefreq>
-    <priority>${p === '' ? '1.0' : p === 'pricing' ? '0.8' : '0.5'}</priority>
+          (route) => `  <url>
+    <loc>${siteUrl}${route.path === '/' ? '' : route.path.replace(/^\//, '')}</loc>
+    <changefreq>${route.changefreq}</changefreq>
+    <priority>${route.priority}</priority>
   </url>`,
         )
         .join('\n')
@@ -53,6 +61,27 @@ Allow: ${base}
 Sitemap: ${siteUrl}sitemap.xml
 `,
       )
+
+      const indexPath = path.join(outDir, 'index.html')
+      if (fs.existsSync(indexPath)) {
+        const indexHtml = fs.readFileSync(indexPath, 'utf8')
+        for (const route of SITE_ROUTES) {
+          if (route.path === '/' || route.path === '/roast') continue
+          const dir = path.join(outDir, route.path.replace(/^\//, ''))
+          fs.mkdirSync(dir, { recursive: true })
+          const pageHtml = indexHtml
+            .replace(/<title>[\s\S]*?<\/title>/, `<title>${escapeHtml(route.title)}</title>`)
+            .replace(
+              /<meta\s+name="description"\s+content="[^"]*"\s*\/>/,
+              `<meta name="description" content="${escapeHtml(route.description)}" />`,
+            )
+            .replace(
+              /<link rel="canonical" href="[^"]*" \/>/,
+              `<link rel="canonical" href="${siteUrl}${route.path.replace(/^\//, '')}" />`,
+            )
+          fs.writeFileSync(path.join(dir, 'index.html'), pageHtml)
+        }
+      }
 
       fs.writeFileSync(
         path.join(outDir, '404.html'),

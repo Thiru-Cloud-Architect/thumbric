@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { PRODUCT_NAME_FULL, UI_BUILD } from './brand'
+import { DocumentHead } from './DocumentHead'
 import { SiteFooter } from './LandingSections'
 import { SiteHeader } from './SiteHeader'
 import './App.css'
@@ -7,6 +8,7 @@ import './App.css'
 export default function CareerPage() {
   return (
     <div className="page">
+      <DocumentHead path="/career" />
       <SiteHeader />
       <main className="career-page-main">
         <section className="career-hero" aria-labelledby="career-title">

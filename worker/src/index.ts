@@ -118,6 +118,7 @@ async function generateWithFal(env: Env, prompt: string, width: number, height: 
       output_format: 'jpeg',
       num_inference_steps: 4,
       enable_safety_checker: true,
+      guidance_scale: 3.5,
     }),
   })
   if (!response.ok) {
@@ -189,6 +190,35 @@ export default {
       return handleAiImage(request, env)
     }
 
+    if (request.method === 'POST' && (path === '/api/events' || path === '/events')) {
+      let body: { name?: string; props?: Record<string, unknown>; ts?: number }
+      try {
+        body = (await request.json()) as { name?: string; props?: Record<string, unknown>; ts?: number }
+      } catch {
+        return json({ error: 'Invalid JSON' }, 400)
+      }
+      const name = String(body.name || '').trim().slice(0, 80)
+      if (!name) return json({ error: 'event name required' }, 400)
+      if (!env.THUMBRIC_USERS) return json({ ok: true, stored: false })
+      const row = {
+        name,
+        props: body.props && typeof body.props === 'object' ? body.props : {},
+        ts: Number(body.ts) || Date.now(),
+      }
+      const raw = (await env.THUMBRIC_USERS.get('events.json')) || '[]'
+      let events: unknown[] = []
+      try {
+        const parsed = JSON.parse(raw) as unknown
+        events = Array.isArray(parsed) ? parsed : []
+      } catch {
+        events = []
+      }
+      events.push(row)
+      if (events.length > 400) events = events.slice(events.length - 400)
+      await env.THUMBRIC_USERS.put('events.json', JSON.stringify(events))
+      return json({ ok: true, stored: true })
+    }
+
     if (request.method === 'POST' && (path === '/api/register' || path === '/register')) {
       if (!env.THUMBRIC_USERS) return json({ error: 'KV is not bound' }, 501)
       let body: Partial<UserRow>
@@ -229,7 +259,7 @@ export default {
     if (path === '/' || path === '/api') {
       return json({
         service: 'thumbric-api',
-        endpoints: ['POST /api/register', 'GET /api/users', 'POST /api/ai/image'],
+        endpoints: ['POST /api/register', 'GET /api/users', 'POST /api/ai/image', 'POST /api/events'],
         premiumAi: Boolean(env.FAL_KEY || env.AI),
       })
     }

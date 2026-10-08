@@ -1,6 +1,6 @@
 # Thumbric.ai
 
-Free browser thumbnail maker for **YouTube**, Shorts/Reels, Instagram, LinkedIn, and Facebook — plus **AI image** generation in the editor.
+Free browser thumbnail maker for **YouTube**, Shorts/Reels, Instagram, LinkedIn, and Facebook — plus **AI image** generation and free creator tools (score, A/B tester, resizer, CTR, title).
 
 **Live site:** https://thumbric.app/  
 **Fallback:** https://thiru-cloud-architect.github.io/thumbric/
@@ -19,9 +19,28 @@ Connect steps and DNS records: see **[DEPLOY.md](./DEPLOY.md)**. Optional later:
 - Studio editor: left tools / center canvas / right title inspector
 - Platform sizes, moods, drag title/stickers, YouTube-style templates
 - **Title kit:** size, fill color, outline, shadow, left/center/right, 2-line titles
-- **Generate 3 looks** — first still lands on the canvas; remaining looks always fill (studio stills if free AI is busy)
+- **Generate 3 looks** — Punch / Warm / Cinematic restyles; if free AI is busy, cinematic studio stills still fill
+- Free tools (header **Tools** menu): Thumbnail Score, A/B Tester, Resizer, CTR Calculator, Title Analyzer
+- Shareable score pages at `/roast/…` (heuristic, not CTR)
 - Light **Sign in** (name + email on device; optional sync to Cloudflare Worker JSON)
 - Pricing page (demo unlock until Stripe/Razorpay)
+
+## Routes
+
+| Path | What |
+|------|------|
+| `/` | Home + studio editor (`#editor-ai`) |
+| `/tools` | Free-tools hub |
+| `/youtube-thumbnail-score` | Analyzer / 0–100 heuristic score |
+| `/youtube-thumbnail-tester` | A/B compare |
+| `/youtube-thumbnail-resizer` | 1280×720 / Shorts / square |
+| `/youtube-ctr-calculator` | Impressions → CTR |
+| `/youtube-title-analyzer` | Title length & hook |
+| `/youtube-thumbnail-maker` and niche makers | SEO landings → editor |
+| `/learn` | Short thumbnail lessons |
+| `/legal` | Privacy & terms |
+| `/pricing` | Plans |
+| `/career` | Careers (footer only) |
 
 ## AI backends
 
@@ -30,9 +49,9 @@ Connect steps and DNS records: see **[DEPLOY.md](./DEPLOY.md)**. Optional later:
 | **Premium (recommended)** | Deploy `worker/`, `npx wrangler secret put FAL_KEY`, build with `VITE_API_BASE` | **fal.ai Flux Schnell** via Worker proxy — keys never in the client |
 | **Workers AI fallback** | Bind `[ai]` in `worker/wrangler.toml` if `FAL_KEY` is unset | Cloudflare Flux Schnell on the same `/api/ai/image` route |
 | **Local demo key** | `VITE_FAL_KEY` (insecure — baked into JS) | Direct fal.run from the browser; CORS may block it |
-| **Free (default)** | nothing | One model call, then 2 crop/grade looks. If the model is busy, **3 studio stills** still fill the picker |
+| **Free (default)** | nothing | One model call, then Punch/Warm/Cinematic grades. If the model is busy, **3 studio stills** still fill the picker |
 
-See `.env.example`. **Canva-level photoreal faces, text-in-image, and URL-from-video still need a paid fal (or similar) key** — the free path is a scene still + editor overlays.
+See `.env.example`. **Canva-level photoreal faces, identity lock, and URL-from-video still need a paid fal (or similar) key** — set `FAL_KEY` on the Worker and `VITE_API_BASE` on the Pages build. The free path is a scene still + editor overlays.
 
 ## Simple login (no Auth0 / Supabase yet)
 
@@ -58,8 +77,8 @@ npm test
 npm run dev
 ```
 
-Open http://127.0.0.1:43201/thumbric/
+Open http://127.0.0.1:43201/ (or http://127.0.0.1:43201/thumbric/ if you set `VITE_BASE_PATH=/thumbric/`).
 
 ## Stack
 
-React 19, TypeScript, Vite, canvas renderer (`src/render.ts`). Optional Cloudflare Worker for user JSON + premium AI proxy.
+React 19, TypeScript, Vite, canvas renderer (`src/render.ts`). Optional Cloudflare Worker for user JSON + premium AI proxy + optional event ingest.

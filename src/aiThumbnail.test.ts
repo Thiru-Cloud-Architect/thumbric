@@ -96,6 +96,7 @@ describe('buildAiThumbnailPrompt', () => {
     expect(prompt).toMatch(/never a collage/i)
     expect(prompt).toMatch(/do not paint any words/i)
     expect(prompt).toMatch(/phone-tile/i)
+    expect(prompt).toMatch(/oversized|85mm|catchlights/i)
     expect(prompt.length).toBeLessThanOrEqual(AI_PROMPT_MAX_CHARS)
   })
 
@@ -237,6 +238,7 @@ describe('buildPollinationsCandidateUrls', () => {
       expect(item.url).toMatch(/seed=42/)
       expect(item.url).toMatch(/t=bust1/)
       expect(item.url).toMatch(/nologo=true/)
+      expect(item.url).toMatch(/negative=/)
     }
     expect(urls[0]?.url).toMatch(/model=flux/)
     expect(urls[0]?.url).not.toMatch(/enhance=true/)

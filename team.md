@@ -13,14 +13,15 @@ When someone says `@team.md can you help here`, treat these as the open threads:
 2. **Custom domain `thumbric.ai`** — Preferred later; **live is `thumbric.app`**. `.ai` still needs paid registration.
 3. **Stale UI** — Footer stamp must match `UI_BUILD` in `src/brand.ts`. Hard-refresh if cache shows an older stamp.
 
-## Status (2026-10-07)
+## Status (2026-10-08)
 
 | Thread | State |
 |--------|--------|
 | Features AI-first section | **Live** — banner: “Describe the scene…”, Works now / Not yet, `#editor-ai` deep link. |
 | Selling-point CTA | **Live** — hero primary “Try AI Thumbnail creator” → `#editor-ai`; header **Start free** opens AI editor; hero **Start 7-day trial**. Careers is footer-only. |
 | Editor AI + classic | **Live** — studio layout (tools / canvas / inspector), title kit, templates, one-tap Bigger / Punchier / Cleaner. |
-| AI looks | **Live** — 3 looks always fill. Free path: 1 model call + framed crops. If the model is busy/unreachable, **3 cinematic studio plates** still land on the picker (stamp `UI_BUILD=2026.10.07-verify`). |
+| AI looks | **Live** — 3 looks (Punch / Warm / Cinematic). Free path: 1 model call + full-bleed restyles (quadrant isolate only if a collage is detected). If the model is busy, **3 cinematic studio plates** still land on the picker (stamp `UI_BUILD=2026.10.08-growth`). |
+| Growth tools | **Live** — header **Tools** menu: Score, A/B Tester, Resizer, CTR, Title, AI maker. Shareable `/roast/:code`. SEO maker landings + `/learn` + `/legal`. |
 | Title drag | **Fixed** — titles can sit in the upper third. |
 | Accents | **Live** — coral→soft magenta (`#ff7f8a` / `#d4a6f0`). |
 | Pricing | **Live** — Creator $19 / Pro $49; INR ₹999 / ₹2499. |
@@ -37,5 +38,5 @@ When someone says `@team.md can you help here`, treat these as the open threads:
 ```bash
 curl -sL https://thumbric.app/ | rg -o '/assets/index-[^"]+\.js'
 # Expect UI_BUILD string inside that bundle:
-# 2026.10.07-verify
+# 2026.10.08-growth
 ```

@@ -35,6 +35,7 @@ import {
 import {
   FaqAccordion,
   FeaturesSection,
+  FreeToolsSection,
   HeroFlashy,
   HowItWorks,
   PricingTeaser,
@@ -103,6 +104,9 @@ import {
   simpleAuthIsDeviceOnly,
   type SimpleUser,
 } from './simpleAuth'
+import { consumeAiHandoff, loadImageFromUrl } from './aiHandoff'
+import { track } from './analytics'
+import { DocumentHead } from './DocumentHead'
 import { DOWNLOAD_PREFIX, PRODUCT_NAME_FULL, UI_BUILD } from './brand'
 import {
   HASH_NAV_EVENT,
@@ -334,6 +338,25 @@ export default function HomePage() {
         document.fonts.load(`${item.weight} 18px ${item.css}`).catch(() => undefined),
       ),
     )
+  }, [])
+
+  useEffect(() => {
+    const handoff = consumeAiHandoff()
+    if (!handoff) return
+    if (handoff.hint) setAiHint(handoff.hint)
+    if (handoff.title) setTitle(handoff.title)
+    if (handoff.styleId) setAiStyleId(handoff.styleId)
+    setEditorMode('ai')
+    setEditorTab('create')
+    if (handoff.photoDataUrl) {
+      void loadImageFromUrl(handoff.photoDataUrl)
+        .then((image) => {
+          setPhoto(image)
+          setPhotoUrl(handoff.photoDataUrl!)
+          setPhotoName('Imported thumbnail')
+        })
+        .catch(() => undefined)
+    }
   }, [])
 
   useEffect(() => {
@@ -714,6 +737,12 @@ export default function HomePage() {
           : `Pick 1 of ${merged.length} — tap a look to put it on the canvas.`
       setAiStatus({ kind: 'ok', text: okMsg })
       setStatus(okMsg)
+      track('generation_completed', {
+        tool: 'editor-ai',
+        looks: merged.length,
+        studio: batch.usedStudioFallback,
+      })
+      track('thumbnail_generated', { tool: 'editor-ai', looks: merged.length })
     } catch (error) {
       if (runId !== aiRunIdRef.current) return
       if (error instanceof DOMException && error.name === 'AbortError' && controller.signal.aborted) {
@@ -724,6 +753,7 @@ export default function HomePage() {
       const rateLimited = isAiRateLimitedError(error) || /busy|try again in a minute/i.test(message)
       setAiStatus({ kind: 'err', text: message })
       setStatus(message)
+      track('generation_failed', { tool: 'editor-ai', rateLimited })
       if (rateLimited) {
         setAiCooldownSec(AI_RATE_LIMIT_COOLDOWN_SEC)
         setAiAwaitingRetry(false)
@@ -759,10 +789,12 @@ export default function HomePage() {
   async function onSimpleLogin(event: FormEvent) {
     event.preventDefault()
     try {
+      track('signup_started', { tool: 'header' })
       const user = await registerSimpleUser(nameDraft, emailDraft)
       setSimpleUser(user)
       setModal('none')
       setStatus(`Signed in as ${user.name} (${user.email}).`)
+      track('signup_completed', { tool: 'header' })
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Could not sign in.')
     }
@@ -772,6 +804,7 @@ export default function HomePage() {
     try {
       downloadThumbnail({ ...previewInput, watermark: true })
       setStatus(`Saved free preview. Look in Downloads for ${DOWNLOAD_PREFIX}-${platform.id}.png`)
+      track('thumbnail_downloaded', { tool: 'editor', watermark: true })
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Could not save the image.')
     }
@@ -793,6 +826,7 @@ export default function HomePage() {
   function saveClean(current: Entitlement = entitlement) {
     try {
       downloadThumbnail({ ...previewInput, watermark: false })
+      track('thumbnail_downloaded', { tool: 'editor', watermark: false })
       const next = consumeCleanDownload(current)
       setEntitlement(next)
       const left = cleanDownloadsLeft(next)
@@ -813,10 +847,13 @@ export default function HomePage() {
       setStatus('Enter a valid email to register.')
       return
     }
+    track('signup_started', { tool: 'register' })
     const next = registerEmail(emailDraft)
     setEntitlement(next)
     setStatus(`Registered as ${next.email}. Pick Creator or Pro to unlock clean exports.`)
     setModal('pay')
+    track('signup_completed', { tool: 'register' })
+    track('subscription_started', { tool: 'register' })
   }
 
   function onDemoPlan(plan: 'creator' | 'pro') {
@@ -827,6 +864,7 @@ export default function HomePage() {
     const next = activateDemoPlan(entitlement, plan)
     setEntitlement(next)
     setModal('none')
+    track('subscription_completed', { plan })
     setStatus(
       plan === 'pro'
         ? `Pro unlocked (demo). Unlimited clean downloads for 30 days.`
@@ -861,6 +899,7 @@ export default function HomePage() {
     const next = activateDemoTrial(registered)
     setEntitlement(next)
     setModal('none')
+    track('subscription_completed', { plan: 'trial' })
     setStatus(
       `${TRIAL_DAYS}-day trial started on this device. Clean exports are unlocked — create a thumbnail.`,
     )
@@ -869,6 +908,7 @@ export default function HomePage() {
 
   return (
     <div className="page">
+      <DocumentHead path="/" />
       <SiteHeader
         userLabel={simpleUser ? simpleUser.name : null}
         onLoginClick={() => {
@@ -892,6 +932,9 @@ export default function HomePage() {
         </LazyReveal>
         <LazyReveal staggerMs={70} variant="soft-rise">
           <FeaturesSection />
+        </LazyReveal>
+        <LazyReveal staggerMs={70} variant="soft-rise">
+          <FreeToolsSection />
         </LazyReveal>
         <LazyReveal variant="slide-left">
           <PricingTeaser />
