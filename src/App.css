@@ -6898,8 +6898,10 @@ body {
   }
 
   .home-lock {
+    min-height: calc(100dvh - 3.75rem);
     display: flex;
     flex-direction: column;
+    justify-content: center;
     box-sizing: border-box;
   }
 
@@ -6969,8 +6971,10 @@ body {
 
   #editor.editor-fit {
     /* html already has scroll-padding-top, so no extra margin or the bar lands too low.
-       Stay a block so the bar and the three columns share the same width. */
+       Stay a block so the bar and the three columns share the same width.
+       One viewport tall so the next strip does not start under a chopped canvas. */
     scroll-margin-top: 0;
+    min-height: calc(100dvh - 3.75rem);
     box-sizing: border-box;
     padding-top: 0.65rem;
     padding-bottom: 0.65rem;
