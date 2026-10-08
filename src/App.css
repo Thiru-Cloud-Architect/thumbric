@@ -2469,12 +2469,13 @@ footer {
 
 .mobile-save-dock {
   display: none;
-  position: fixed;
+  position: sticky;
   left: 0;
   right: 0;
   bottom: 0;
   z-index: 12;
   gap: 0.5rem;
+  margin-inline: calc(-1 * clamp(1rem, 4vw, 3rem));
   padding: 0.55rem max(1rem, 4vw) calc(0.55rem + env(safe-area-inset-bottom, 0px));
   background: rgba(6, 8, 15, 0.94);
   border-top: 1px solid var(--line);

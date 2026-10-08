@@ -2459,8 +2459,6 @@ export default function HomePage() {
             </details>
           </aside>
         </section>
-        </section>
-
         <div className="mobile-save-dock" aria-label="Quick save">
           <button type="button" className="primary" onClick={() => requestExportWithChecks(false)}>
             Download
@@ -2469,6 +2467,7 @@ export default function HomePage() {
             Clean
           </button>
         </div>
+        </section>
 
         <LazyReveal staggerMs={75} variant="soft-rise">
           <StatsStrip />
