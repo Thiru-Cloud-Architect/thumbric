@@ -41,8 +41,8 @@ export const PLANS: Plan[] = [
     id: 'creator',
     name: 'Creator',
     tagline: 'For weekly uploads',
-    usd: { amount: 3, compareAt: 9, symbol: '$' },
-    inr: { amount: 49, compareAt: 149, symbol: '₹' },
+    usd: { amount: 1, compareAt: 5, symbol: '$' },
+    inr: { amount: 19, compareAt: 99, symbol: '₹' },
     highlight: `${CREATOR_CLEAN_DOWNLOADS_PER_MONTH} clean PNGs / month · includes ${TRIAL_DAYS}-day trial`,
     popular: true,
     features: [
@@ -57,8 +57,8 @@ export const PLANS: Plan[] = [
     id: 'pro',
     name: 'Pro',
     tagline: 'Daily publishers',
-    usd: { amount: 7, compareAt: 15, symbol: '$' },
-    inr: { amount: 149, compareAt: 299, symbol: '₹' },
+    usd: { amount: 3, compareAt: 9, symbol: '$' },
+    inr: { amount: 49, compareAt: 149, symbol: '₹' },
     highlight: 'Unlimited clean downloads',
     features: [
       'Everything in Creator',
