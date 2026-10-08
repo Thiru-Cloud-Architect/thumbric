@@ -2,7 +2,7 @@
 
 **Date:** 2026-10-08  
 **Live:** https://thumbric.app/  
-**Stamp at audit:** `UI_BUILD=2026.10.08-private`  
+**Stamp at audit:** `UI_BUILD=2026.10.08-phase1b` (Phase 1A+B partial shipped after this audit)  
 **Directive:** `docs/THUMBRIC_PHASED_MASTER_PLAN_AI_EDITOR_FIRST.md`  
 **Repo:** `Thiru-Cloud-Architect/thumbric` (public — private broke GH Pages on Free)
 
