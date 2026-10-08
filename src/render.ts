@@ -38,6 +38,7 @@ export type ThumbInput = {
   titleOutlineColor?: string
   titleShadow?: boolean
   showSafeZones?: boolean
+  showGrid?: boolean
   activeStickerIndex?: number
   highlightText?: boolean
   layerVisibility?: Partial<Record<EditorLayerId, boolean>>
@@ -46,6 +47,9 @@ export type ThumbInput = {
   logo?: HTMLImageElement | null
   textRotationDeg?: number
   snapGuides?: { vertical?: number; horizontal?: number }
+  letterSpacing?: number
+  lineHeight?: number
+  titleOpacity?: number
 }
 
 function layerVisible(input: ThumbInput, id: EditorLayerId) {
@@ -599,6 +603,12 @@ function drawTextBlock(ctx: CanvasRenderingContext2D, input: ThumbInput) {
 
   ctx.save()
   const rotation = input.textRotationDeg ?? 0
+  const opacity = typeof input.titleOpacity === 'number' ? input.titleOpacity : 1
+  ctx.globalAlpha = Math.max(0.15, Math.min(1, opacity))
+  if (typeof input.letterSpacing === 'number') {
+    ;(ctx as CanvasRenderingContext2D & { letterSpacing?: string }).letterSpacing =
+      `${input.letterSpacing}px`
+  }
   if (rotation) {
     const cx = box.x + box.w / 2
     const cy = box.y + box.h / 2
@@ -610,6 +620,7 @@ function drawTextBlock(ctx: CanvasRenderingContext2D, input: ThumbInput) {
   ctx.rect(box.x - strokePad, box.y, box.w + strokePad * 2, box.h)
   ctx.clip()
 
+  const lineGap = Math.round(titleSize * (typeof input.lineHeight === 'number' ? input.lineHeight : 1.05))
   let y = box.y + Math.round(titleSize * 0.15) + titleSize
   if (tag) {
     ctx.font = `800 ${tagSize}px "DM Sans", sans-serif`
@@ -626,7 +637,7 @@ function drawTextBlock(ctx: CanvasRenderingContext2D, input: ThumbInput) {
 
   for (const line of lines) {
     drawPunchText(ctx, line, textX, y, '#FFFFFF', styleId, accent, punch)
-    y += titleSize + 8
+    y += lineGap
   }
   ctx.restore()
 
@@ -640,6 +651,28 @@ function drawTextBlock(ctx: CanvasRenderingContext2D, input: ThumbInput) {
     ctx.stroke()
     ctx.restore()
   }
+}
+
+function drawEditorGrid(ctx: CanvasRenderingContext2D, platform: Platform) {
+  const W = platform.width
+  const H = platform.height
+  const step = Math.max(40, Math.round(W / 16))
+  ctx.save()
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)'
+  ctx.lineWidth = 1
+  for (let x = step; x < W; x += step) {
+    ctx.beginPath()
+    ctx.moveTo(x, 0)
+    ctx.lineTo(x, H)
+    ctx.stroke()
+  }
+  for (let y = step; y < H; y += step) {
+    ctx.beginPath()
+    ctx.moveTo(0, y)
+    ctx.lineTo(W, y)
+    ctx.stroke()
+  }
+  ctx.restore()
 }
 
 function drawSafeZones(ctx: CanvasRenderingContext2D, platform: Platform) {
@@ -847,6 +880,10 @@ export function renderThumbnail(ctx: CanvasRenderingContext2D, input: ThumbInput
     drawStickers(ctx, input)
   }
   drawBrandLogo(ctx, input)
+
+  if (input.showGrid) {
+    drawEditorGrid(ctx, platform)
+  }
 
   if (input.showSafeZones) {
     drawSafeZones(ctx, platform)

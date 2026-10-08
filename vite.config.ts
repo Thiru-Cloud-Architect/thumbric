@@ -83,28 +83,11 @@ Sitemap: ${siteUrl}sitemap.xml
         }
       }
 
-      fs.writeFileSync(
-        path.join(outDir, '404.html'),
-        `<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <title>Thumbric.ai</title>
-    <script>
-      ;(function () {
-        var base = ${JSON.stringify(base)}
-        var path = window.location.pathname.replace(base, '')
-        var redirect = base + '?/' + path.replace(/^\\//, '')
-        if (window.location.search) redirect += '&' + window.location.search.slice(1)
-        redirect += window.location.hash
-        window.location.replace(redirect)
-      })()
-    </script>
-  </head>
-  <body></body>
-</html>
-`,
-      )
+      // GitHub Pages serves 404.html for unknown paths (e.g. /roast/:code).
+      // Copy the SPA shell so BrowserRouter can resolve the real pathname.
+      if (fs.existsSync(indexPath)) {
+        fs.copyFileSync(indexPath, path.join(outDir, '404.html'))
+      }
     },
   }
 }

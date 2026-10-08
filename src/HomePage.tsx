@@ -89,6 +89,11 @@ import { snapNormalized } from './snapGuides'
 import { pushThumbnailHistory } from './thumbnailHistory'
 import { upsertProject } from './projects'
 import { styleHintFromKit } from './creatorKit'
+import { autosaveAgeLabel, loadAutosave, saveAutosave } from './autosave'
+import { hasBlockingExportIssue, validateExport, type ExportCheck } from './exportValidation'
+import { ShortcutsModal } from './ShortcutsModal'
+import { OnboardingTips } from './OnboardingTips'
+import { loadVersions, pushVersion } from './versionHistory'
 import {
   DEFAULT_STICKER_SLOTS,
   STICKERS,
@@ -229,6 +234,17 @@ export default function HomePage() {
   const [mobilePreview, setMobilePreview] = useState(false)
   const [mobilePreviewUrl, setMobilePreviewUrl] = useState('')
   const [feedPreview, setFeedPreview] = useState(false)
+  const [showGrid, setShowGrid] = useState(false)
+  const [letterSpacing, setLetterSpacing] = useState(0)
+  const [lineHeight, setLineHeight] = useState(1.05)
+  const [titleOpacity, setTitleOpacity] = useState(1)
+  const [shortcutsOpen, setShortcutsOpen] = useState(false)
+  const [exportChecks, setExportChecks] = useState<ExportCheck[] | null>(null)
+  const [autosaveLabel, setAutosaveLabel] = useState('Autosave on')
+  const [beforeUrl, setBeforeUrl] = useState('')
+  const [compareBefore, setCompareBefore] = useState(false)
+  const [versions, setVersions] = useState(() => loadVersions())
+  const ZOOM_PRESETS = [0.25, 0.5, 0.75, 1, 2] as const
   const [layerState, setLayerState] = useState<LayerState>(() => defaultLayerState())
   const [photoTreatment, setPhotoTreatment] = useState<
     'normal' | 'blur-background' | 'brand-backdrop'
@@ -314,6 +330,10 @@ export default function HomePage() {
       logo: logoImage,
       textRotationDeg,
       snapGuides: dragging ? snapGuides : undefined,
+      showGrid,
+      letterSpacing,
+      lineHeight,
+      titleOpacity,
     }),
     [
       title,
@@ -345,6 +365,10 @@ export default function HomePage() {
       logoImage,
       textRotationDeg,
       snapGuides,
+      showGrid,
+      letterSpacing,
+      lineHeight,
+      titleOpacity,
     ],
   )
 
@@ -416,14 +440,14 @@ export default function HomePage() {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
     renderThumbnail(ctx, previewInput)
-    if (mobilePreview || feedPreview) {
+    if (mobilePreview || feedPreview || compareBefore) {
       try {
         setMobilePreviewUrl(canvas.toDataURL('image/jpeg', 0.82))
       } catch {
         /* tainted canvas — ignore */
       }
     }
-  }, [previewInput, platform.width, platform.height, mobilePreview, feedPreview])
+  }, [previewInput, platform.width, platform.height, mobilePreview, feedPreview, compareBefore])
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -432,17 +456,170 @@ export default function HomePage() {
         return
       }
       const mod = event.metaKey || event.ctrlKey
-      if (mod && event.key.toLowerCase() === 'z' && !event.shiftKey) {
+      const key = event.key.toLowerCase()
+      if (mod && key === 'z' && !event.shiftKey) {
         event.preventDefault()
         undoEdit()
-      } else if (mod && (event.key.toLowerCase() === 'y' || (event.key.toLowerCase() === 'z' && event.shiftKey))) {
+        return
+      }
+      if (mod && (key === 'y' || (key === 'z' && event.shiftKey))) {
         event.preventDefault()
         redoEdit()
+        return
+      }
+      if (mod && key === 's') {
+        event.preventDefault()
+        persistAutosave()
+        setStatus('Draft autosaved on this device.')
+        return
+      }
+      if (mod && key === 'd') {
+        event.preventDefault()
+        duplicateActiveSticker()
+        return
+      }
+      if (event.key === '?' || (event.shiftKey && event.key === '/')) {
+        event.preventDefault()
+        setShortcutsOpen(true)
+        return
+      }
+      if (event.key === 'Escape') {
+        setTextSelected(false)
+        setActiveStickerIndex(null)
+        setShortcutsOpen(false)
+        return
+      }
+      if (key === 't') {
+        setEditorTab('title')
+        setTextSelected(true)
+        return
+      }
+      if (key === 'i') {
+        fileRef.current?.click()
+        return
+      }
+      if (key === '=' || key === '+') {
+        event.preventDefault()
+        setCanvasZoom((z) => Math.min(2, Math.round((z + 0.25) * 100) / 100))
+        return
+      }
+      if (key === '-' || key === '_') {
+        event.preventDefault()
+        setCanvasZoom((z) => Math.max(0.25, Math.round((z - 0.25) * 100) / 100))
+        return
+      }
+      if (key === '0') {
+        setCanvasZoom(1)
+        return
+      }
+      if (event.key === 'Delete' || event.key === 'Backspace') {
+        if (activeStickerIndex != null) {
+          event.preventDefault()
+          setStickers((current) => current.filter((_, i) => i !== activeStickerIndex))
+          setActiveStickerIndex(null)
+          setStatus('Sticker deleted.')
+        }
+        return
+      }
+      const step = event.shiftKey ? 0.05 : 0.01
+      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) {
+        event.preventDefault()
+        const dx = event.key === 'ArrowLeft' ? -step : event.key === 'ArrowRight' ? step : 0
+        const dy = event.key === 'ArrowUp' ? -step : event.key === 'ArrowDown' ? step : 0
+        if (activeStickerIndex != null) {
+          setStickers((current) =>
+            current.map((item, index) =>
+              index === activeStickerIndex
+                ? {
+                    ...item,
+                    x: clampStickerPos(item.x + dx),
+                    y: clampStickerPos(item.y + dy),
+                  }
+                : item,
+            ),
+          )
+        } else if (textSelected || true) {
+          setTextSelected(true)
+          setTextPos((pos) =>
+            clampTextPosition(platform, layout, {
+              x: pos.x + dx,
+              y: pos.y + dy,
+            }),
+          )
+        }
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
+  })
+
+  useEffect(() => {
+    const draft = loadAutosave()
+    if (!draft) return
+    setPlatformId(draft.platformId)
+    setNicheId(draft.nicheId)
+    setLayout(draft.layout)
+    setPhotoShape(draft.photoShape)
+    setAccentOverride(draft.accentOverride)
+    setFontId(draft.fontId)
+    setTextStyleId(draft.textStyleId)
+    setTitleFontSizePx(draft.titleFontSizePx)
+    setTextPos(draft.textPos)
+    setTitleAlign(draft.titleAlign)
+    setTitleLine2(draft.titleLine2)
+    setTitleFill(draft.titleFill)
+    setTitleOutlineWidth(draft.titleOutlineWidth)
+    setTitleOutlineColor(draft.titleOutlineColor)
+    setTitleShadow(draft.titleShadow)
+    setTitle(draft.title)
+    setTag(draft.tag)
+    setStickers(draft.stickers)
+    setAiHint(draft.aiHint)
+    setTextRotationDeg(draft.textRotationDeg)
+    setLetterSpacing(draft.letterSpacing)
+    setLineHeight(draft.lineHeight)
+    setTitleOpacity(draft.titleOpacity)
+    setAutosaveLabel(autosaveAgeLabel(draft.updatedAt))
+    if (draft.photoDataUrl) {
+      const img = new Image()
+      img.onload = () => {
+        setPhoto(img)
+        setPhotoName('Restored draft photo')
+      }
+      img.src = draft.photoDataUrl
+    }
+    setStatus('Restored your last draft from this browser.')
   }, [])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => persistAutosave(), 900)
+    return () => window.clearTimeout(timer)
+  }, [
+    title,
+    tag,
+    platformId,
+    nicheId,
+    layout,
+    photoShape,
+    accentOverride,
+    fontId,
+    textStyleId,
+    titleFontSizePx,
+    textPos,
+    titleAlign,
+    titleLine2,
+    titleFill,
+    titleOutlineWidth,
+    titleOutlineColor,
+    titleShadow,
+    stickers,
+    aiHint,
+    textRotationDeg,
+    letterSpacing,
+    lineHeight,
+    titleOpacity,
+    photoUrl,
+  ])
 
   useEffect(() => {
     const nextPlatform = getPlatform(platformId)
@@ -685,6 +862,130 @@ export default function HomePage() {
     setSnapGuides({})
     event.currentTarget.style.cursor = 'grab'
     setStatus('Placed. Drag text or stickers anytime on the preview.')
+  }
+
+  function persistAutosave() {
+    let photoDataUrl: string | undefined
+    try {
+      if (photo && canvasRef.current) {
+        // Prefer storing a small JPEG of the current canvas photo region via existing photo URL when possible.
+        photoDataUrl = photoUrl.startsWith('data:') ? photoUrl : undefined
+      }
+    } catch {
+      photoDataUrl = undefined
+    }
+    saveAutosave({
+      version: 1,
+      updatedAt: Date.now(),
+      platformId,
+      nicheId,
+      layout,
+      photoShape,
+      accentOverride,
+      fontId,
+      textStyleId,
+      titleFontSizePx,
+      textPos,
+      titleAlign,
+      titleLine2,
+      titleFill,
+      titleOutlineWidth,
+      titleOutlineColor,
+      titleShadow,
+      title,
+      tag,
+      stickers,
+      aiHint,
+      textRotationDeg,
+      letterSpacing,
+      lineHeight,
+      titleOpacity,
+      photoDataUrl,
+    })
+    setAutosaveLabel(autosaveAgeLabel(Date.now()))
+  }
+
+  function duplicateActiveSticker() {
+    if (activeStickerIndex == null) return
+    const source = stickers[activeStickerIndex]
+    if (!source) return
+    const copy = {
+      ...source,
+      x: clampStickerPos(source.x + 0.04),
+      y: clampStickerPos(source.y + 0.04),
+    }
+    const next = [...stickers, copy].slice(-3)
+    setStickers(next)
+    setActiveStickerIndex(next.length - 1)
+    setStatus('Sticker duplicated.')
+  }
+
+  function captureBeforeSnapshot() {
+    try {
+      const url = createThumbnailDataUrl({ ...previewInput, watermark: false, showSafeZones: false })
+      setBeforeUrl(url)
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function requestExportWithChecks(clean: boolean) {
+    const checks = validateExport(previewInput)
+    setExportChecks(checks)
+    if (hasBlockingExportIssue(checks)) {
+      setStatus('Export paused — fix the highlighted issues or choose Export anyway.')
+      return
+    }
+    if (clean) requestCleanSave()
+    else saveMarked()
+    snapshotVersion(clean ? 'Clean export' : 'Preview export')
+  }
+
+  function snapshotVersion(label: string) {
+    try {
+      const previewDataUrl = createThumbnailDataUrl({
+        ...previewInput,
+        watermark: false,
+        showSafeZones: false,
+      })
+      pushVersion({
+        label,
+        previewDataUrl,
+        title: title.trim() || 'Untitled',
+      })
+      setVersions(loadVersions())
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function alignTitle(mode: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') {
+    const next = { ...textPos }
+    if (mode === 'left') next.x = 0.06
+    if (mode === 'center') next.x = 0.28
+    if (mode === 'right') next.x = 0.55
+    if (mode === 'top') next.y = 0.08
+    if (mode === 'middle') next.y = 0.38
+    if (mode === 'bottom') next.y = 0.62
+    setTextPos(clampTextPosition(platform, layout, next))
+    setTextSelected(true)
+    setStatus(`Aligned title · ${mode}`)
+  }
+
+  function surpriseMe() {
+    captureBeforeSnapshot()
+    const angles = [
+      'contrarian take, unexpected angle, bold face reaction',
+      'outcome flex, before-after energy without collage',
+      'curiosity gap, one mysterious object, high contrast',
+      'warning stakes, urgent color, oversized subject',
+    ]
+    const pick = angles[Math.floor(Math.random() * angles.length)]!
+    setEditorMode('ai')
+    setEditorTab('create')
+    setAiHint(`${aiHint || title || 'YouTube video'}, ${pick}`)
+    setStatus('Surprise direction loaded — generate 3 concepts to see it.')
+    goToHash('editor-ai')
   }
 
   function applyBrandToCanvas() {
@@ -1363,6 +1664,7 @@ export default function HomePage() {
         </LazyReveal>
 
         <section id="editor" className="editor-section" aria-label="Thumbnail editor">
+          <OnboardingTips />
           <div className="editor-head">
             <p className="section-kicker">Studio</p>
             <h2 className="editor-title">
@@ -1438,7 +1740,7 @@ export default function HomePage() {
             className="controls studio-tools"
             onSubmit={(event) => {
               event.preventDefault()
-              saveMarked()
+              requestExportWithChecks(false)
             }}
           >
             <div className="editor-tabs" role="tablist" aria-label="Editor steps">
@@ -1622,13 +1924,25 @@ export default function HomePage() {
                     className="chip solid ai-generate"
                     disabled={aiBusy}
                     aria-busy={aiBusy}
-                    onClick={() => void runAiThumbnail('fresh')}
+                    onClick={() => {
+                      captureBeforeSnapshot()
+                      void runAiThumbnail('fresh')
+                    }}
                   >
                     {aiBusy
                       ? 'Creating concepts…'
                       : aiCooldownSec > 0 && aiVariants.length === 0
                         ? 'Try again'
                         : 'Create 3 concepts →'}
+                  </button>
+                  <button
+                    type="button"
+                    className="chip"
+                    disabled={aiBusy}
+                    title="Unexpected but relevant creative direction"
+                    onClick={surpriseMe}
+                  >
+                    Surprise me
                   </button>
                   {aiCanFetchMore && !aiBusy && aiCooldownSec === 0 ? (
                     <button
@@ -2218,10 +2532,18 @@ export default function HomePage() {
               </div>
 
               <div className="download-actions-row">
-                <button type="submit" className="primary">
+                <button
+                  type="button"
+                  className="primary"
+                  onClick={() => requestExportWithChecks(false)}
+                >
                   Save free preview
                 </button>
-                <button type="button" className="chip solid" onClick={requestCleanSave}>
+                <button
+                  type="button"
+                  className="chip solid"
+                  onClick={() => requestExportWithChecks(true)}
+                >
                   Save clean (no mark)
                 </button>
               </div>
@@ -2252,26 +2574,42 @@ export default function HomePage() {
                 <button type="button" className="preview-tool" onClick={undoEdit} title="Undo (Ctrl+Z)">
                   Undo
                 </button>
-                <button type="button" className="preview-tool" onClick={redoEdit} title="Redo">
+                <button type="button" className="preview-tool" onClick={redoEdit} title="Redo (Ctrl+Y)">
                   Redo
                 </button>
-                <button
-                  type="button"
-                  className={canvasZoom > 1 ? 'preview-tool is-on' : 'preview-tool'}
-                  onClick={() => setCanvasZoom((z) => (z >= 1.35 ? 1 : 1.35))}
-                >
-                  {canvasZoom > 1 ? 'Fit' : 'Zoom'}
-                </button>
+                <div className="zoom-presets" role="group" aria-label="Zoom">
+                  {ZOOM_PRESETS.map((z) => (
+                    <button
+                      key={z}
+                      type="button"
+                      className={canvasZoom === z ? 'preview-tool is-on' : 'preview-tool'}
+                      title={`${Math.round(z * 100)}%`}
+                      onClick={() => setCanvasZoom(z)}
+                    >
+                      {Math.round(z * 100)}%
+                    </button>
+                  ))}
+                </div>
                 <button
                   type="button"
                   className={showSafeZones ? 'preview-tool is-on' : 'preview-tool'}
+                  title="Safe area / cropping check"
                   onClick={() => setShowSafeZones((v) => !v)}
                 >
                   Safe zone
                 </button>
                 <button
                   type="button"
+                  className={showGrid ? 'preview-tool is-on' : 'preview-tool'}
+                  title="Optional grid"
+                  onClick={() => setShowGrid((v) => !v)}
+                >
+                  Grid
+                </button>
+                <button
+                  type="button"
                   className={mobilePreview ? 'preview-tool is-on' : 'preview-tool'}
+                  title="Mobile size preview"
                   onClick={() => {
                     setMobilePreview((v) => {
                       if (!v) track('mobile_preview_used', { tool: 'editor' })
@@ -2284,11 +2622,32 @@ export default function HomePage() {
                 <button
                   type="button"
                   className={feedPreview ? 'preview-tool is-on' : 'preview-tool'}
+                  title="Simulated YouTube preview"
                   onClick={() => setFeedPreview((v) => !v)}
                 >
                   YouTube feed
                 </button>
+                <button
+                  type="button"
+                  className={compareBefore && beforeUrl ? 'preview-tool is-on' : 'preview-tool'}
+                  title="Before / after comparison"
+                  disabled={!beforeUrl}
+                  onClick={() => setCompareBefore((v) => !v)}
+                >
+                  Before/After
+                </button>
+                <button
+                  type="button"
+                  className="preview-tool"
+                  title="Keyboard shortcuts (?)"
+                  onClick={() => setShortcutsOpen(true)}
+                >
+                  Shortcuts
+                </button>
               </div>
+              <p className="autosave-pill" aria-live="polite">
+                {autosaveLabel}
+              </p>
             </div>
             <div className="preview-viewport">
             <div
@@ -2340,12 +2699,40 @@ export default function HomePage() {
               ) : null}
             </div>
             </div>
+            {compareBefore && beforeUrl ? (
+              <div className="before-after-strip" aria-label="Before and after comparison">
+                <figure>
+                  <img src={beforeUrl} alt="Before" width={240} height={135} />
+                  <figcaption>Before</figcaption>
+                </figure>
+                <figure>
+                  <img src={mobilePreviewUrl || beforeUrl} alt="After" width={240} height={135} />
+                  <figcaption>After (current)</figcaption>
+                </figure>
+              </div>
+            ) : null}
             {feedPreview && mobilePreviewUrl ? (
               <YouTubeFeedPreview
                 thumbUrl={mobilePreviewUrl}
                 title={title}
                 channelName={creatorKit.channelName}
               />
+            ) : null}
+            {versions.length > 0 ? (
+              <div className="version-strip" aria-label="Version history">
+                <p className="version-strip-kicker">Versions (this browser)</p>
+                <ul>
+                  {versions.slice(0, 4).map((item) => (
+                    <li key={item.id}>
+                      <img src={item.previewDataUrl} alt="" width={96} height={54} />
+                      <span>
+                        {item.label}
+                        <small>{new Date(item.ts).toLocaleString()}</small>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ) : null}
             {mobilePreview && mobilePreviewUrl ? (
               <div className="mobile-preview-strip" aria-label="Simulated mobile sizes">
@@ -2412,6 +2799,53 @@ export default function HomePage() {
                 onChange={(event) => setTextRotationDeg(Number(event.target.value))}
               />
             </label>
+            <label className="inspector-field">
+              Letter spacing {letterSpacing}px
+              <input
+                type="range"
+                min={-4}
+                max={16}
+                value={letterSpacing}
+                onChange={(event) => setLetterSpacing(Number(event.target.value))}
+              />
+            </label>
+            <label className="inspector-field">
+              Line height {lineHeight.toFixed(2)}
+              <input
+                type="range"
+                min={0.85}
+                max={1.4}
+                step={0.01}
+                value={lineHeight}
+                onChange={(event) => setLineHeight(Number(event.target.value))}
+              />
+            </label>
+            <label className="inspector-field">
+              Opacity {Math.round(titleOpacity * 100)}%
+              <input
+                type="range"
+                min={0.2}
+                max={1}
+                step={0.05}
+                value={titleOpacity}
+                onChange={(event) => setTitleOpacity(Number(event.target.value))}
+              />
+            </label>
+            <div className="inspector-row">
+              <span className="inspector-label">Canvas align</span>
+              <div className="inspector-pills">
+                {(['left', 'center', 'right', 'top', 'middle', 'bottom'] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    className="inspector-pill"
+                    onClick={() => alignTitle(mode)}
+                  >
+                    {mode}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className="inspector-row">
               <span className="inspector-label">Fill</span>
               <div className="inspector-swatches">
@@ -2559,10 +2993,10 @@ export default function HomePage() {
         </section>
 
         <div className="mobile-save-dock" aria-label="Quick save">
-          <button type="button" className="primary" onClick={saveMarked}>
+          <button type="button" className="primary" onClick={() => requestExportWithChecks(false)}>
             Save preview
           </button>
-          <button type="button" className="chip solid" onClick={requestCleanSave}>
+          <button type="button" className="chip solid" onClick={() => requestExportWithChecks(true)}>
             Clean save
           </button>
         </div>
@@ -2611,6 +3045,59 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+      <ShortcutsModal open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+      {exportChecks ? (
+        <div className="modal-backdrop" role="presentation" onClick={() => setExportChecks(null)}>
+          <div
+            className="modal-card export-check-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="export-check-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h2 id="export-check-title">Export quality check</h2>
+            <ul className="export-check-list">
+              {exportChecks.map((check) => (
+                <li key={check.id} className={check.ok ? 'is-ok' : 'is-warn'}>
+                  <span>{check.ok ? '✓' : '!'}</span>
+                  {check.label}
+                </li>
+              ))}
+            </ul>
+            <div className="photo-actions">
+              <button
+                type="button"
+                className="chip solid"
+                onClick={() => {
+                  const clipped = exportChecks.find((c) => c.id === 'clip' && !c.ok)
+                  if (clipped) alignTitle('left')
+                  if (exportChecks.some((c) => c.id === 'readable' && !c.ok)) {
+                    setTitleFontSizePx(clampTitleFontSize(110))
+                  }
+                  setExportChecks(null)
+                  setStatus('Applied automatic fixes where possible. Review and export again.')
+                }}
+              >
+                Fix automatically
+              </button>
+              <button
+                type="button"
+                className="chip"
+                onClick={() => {
+                  setExportChecks(null)
+                  saveMarked()
+                  snapshotVersion('Preview export')
+                }}
+              >
+                Export anyway
+              </button>
+              <button type="button" className="chip ghost" onClick={() => setExportChecks(null)}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
       <SiteFooter buildLabel={`${PRODUCT_NAME_FULL} · UI ${UI_BUILD}`} />
 
       {modal !== 'none' ? (
