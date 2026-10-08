@@ -2,7 +2,7 @@ import { type MouseEvent, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { PRODUCT_NAME_FULL } from './brand'
 import { goToHash, useOnHomePage } from './nav'
-import { TOOL_NAV } from './toolsCatalog'
+import { TOOL_NAV_CATEGORIES, toolsByCategory } from './toolsCatalog'
 
 type SiteHeaderProps = {
   userLabel?: string | null
@@ -74,8 +74,8 @@ export function SiteHeader({ userLabel, onLoginClick }: SiteHeaderProps) {
         >
           Create
         </a>
-        <Link className="nav-link" to="/projects">
-          Projects
+        <Link className="nav-link" to="/ai-thumbnail-maker">
+          AI Maker
         </Link>
         <Link className="nav-link" to="/thumbnail-doctor">
           Analyze
@@ -105,33 +105,39 @@ export function SiteHeader({ userLabel, onLoginClick }: SiteHeaderProps) {
           </button>
           <div
             id="tools-menu"
-            className="nav-dropdown-panel"
+            className="nav-dropdown-panel nav-mega-panel"
             role="menu"
             hidden={!toolsOpen}
             onMouseEnter={openTools}
             onMouseLeave={scheduleCloseTools}
           >
-            <p className="nav-dropdown-heading">Free creator tools</p>
-            {TOOL_NAV.map((item) => (
-              <Link
-                key={item.id}
-                className="nav-dropdown-item"
-                to={item.path}
-                role="menuitem"
-                onClick={() => setToolsOpen(false)}
-              >
-                <strong>{item.label}</strong>
-                <span>{item.blurb}</span>
-              </Link>
-            ))}
+            <div className="nav-mega-grid">
+              {TOOL_NAV_CATEGORIES.map((category) => (
+                <div key={category.id} className="nav-mega-col">
+                  <p className="nav-dropdown-heading">{category.label}</p>
+                  {toolsByCategory(category.id).map((item) => (
+                    <Link
+                      key={item.id}
+                      className="nav-dropdown-item"
+                      to={item.path}
+                      role="menuitem"
+                      onClick={() => setToolsOpen(false)}
+                    >
+                      <strong>{item.label}</strong>
+                      <span>{item.blurb}</span>
+                    </Link>
+                  ))}
+                </div>
+              ))}
+            </div>
             <Link
               className="nav-dropdown-item nav-dropdown-more"
               to="/tools"
               role="menuitem"
               onClick={() => setToolsOpen(false)}
             >
-              <strong>All free tools</strong>
-              <span>Score · tester · resizer · CTR · titles · Doctor</span>
+              <strong>View all tools</strong>
+              <span>Score · tester · resizer · CTR · titles · Doctor · AI</span>
             </Link>
           </div>
         </div>

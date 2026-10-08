@@ -46,7 +46,7 @@ export default function ProjectsPage() {
             <h2>Your next thumbnail starts here.</h2>
             <p>Create with AI or start from scratch. Exports appear on this page automatically.</p>
             <div className="empty-state-actions">
-              <Link className="chip solid" to={{ pathname: '/', hash: '#editor-ai' }}>
+              <Link className="chip solid" to="/ai-thumbnail-maker">
                 Create thumbnail
               </Link>
               <Link className="chip" to="/thumbnail-doctor">

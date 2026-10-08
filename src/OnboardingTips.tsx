@@ -6,7 +6,7 @@ const TIPS = [
   {
     id: 'start',
     title: 'Step 1 · Pick a starting point',
-    body: 'Create with AI, design from scratch, or improve an existing thumbnail. Your video is optional.',
+    body: 'Start from scratch here — platform, template, photo, title. For AI, open AI Thumbnail Maker.',
   },
   {
     id: 'edit',

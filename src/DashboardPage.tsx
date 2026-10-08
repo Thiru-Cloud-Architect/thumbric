@@ -32,7 +32,7 @@ export default function DashboardPage() {
         </p>
 
         <section className="dashboard-actions" aria-label="Start creating">
-          <Link className="dashboard-action is-primary" to={{ pathname: '/', hash: '#editor-ai' }}>
+          <Link className="dashboard-action is-primary" to="/ai-thumbnail-maker">
             <strong>Describe your video</strong>
             <span>AI concepts → editable canvas</span>
           </Link>
@@ -50,7 +50,7 @@ export default function DashboardPage() {
           <article className="tool-card empty-state-card">
             <h2>Your next thumbnail starts here.</h2>
             <p>No projects yet. Create with AI or analyze an existing thumb — exports land in Projects.</p>
-            <Link className="chip solid" to={{ pathname: '/', hash: '#editor-ai' }}>
+            <Link className="chip solid" to="/ai-thumbnail-maker">
               Create thumbnail
             </Link>
           </article>

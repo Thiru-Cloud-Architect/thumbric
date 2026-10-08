@@ -13,7 +13,7 @@ export default function ToolsHubPage() {
           Free YouTube thumbnail tools. <span className="gradient-text">Try before signup.</span>
         </>
       }
-      lede="Score, test, resize, calculate CTR, and analyze titles in the browser. Then generate 3 AI looks when you are ready."
+      lede="Score, test, resize, calculate CTR, and analyze titles — then create with AI Thumbnail Maker when you are ready."
     >
       <section className="tools-hub-grid" aria-label="Free tools">
         {TOOL_NAV.map((item) => (

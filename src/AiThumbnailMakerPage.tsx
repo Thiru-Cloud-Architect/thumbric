@@ -4,23 +4,31 @@ import { track } from './analytics'
 import {
   AI_LOOK_TARGET,
   AI_RATE_LIMIT_COOLDOWN_SEC,
-  AI_SCENE_PRESETS,
-  AI_STYLES,
   generateAiThumbnailVariants,
-  getAiStyle,
   isAiRateLimitedError,
-  suggestAiStyle,
   type AiGeneratedImage,
-  type AiStyleId,
 } from './aiThumbnail'
-import { objectUrlToDataUrl, saveAiHandoff } from './aiHandoff'
-import { resolveAiBackend } from './aiConfig'
+import { consumeAiHandoff, objectUrlToDataUrl, saveAiHandoff } from './aiHandoff'
 import { buildCreativeBrief, visualHintForConcept, type CreativeBrief } from './creativeBrief'
 import { getNiche } from './niches'
 import { getPlatform } from './platforms'
 import { ToolShell } from './ToolShell'
+import {
+  YOUTUBE_FRAME_HONESTY,
+  looksLikeYoutubeUrl,
+  resolveYoutubeMeta,
+  sceneBriefFromInput,
+  type YoutubeMeta,
+} from './youtubeUrl'
 
-type Status = { kind: 'idle' | 'busy' | 'ok' | 'err'; text: string }
+type Phase = 'compose' | 'busy' | 'ready' | 'err'
+
+const LOADING_LINES = [
+  'Analysing idea…',
+  'Building high-CTR packaging…',
+  'Preparing your thumbnail…',
+  'Refining the cover concept…',
+] as const
 
 function attachConcepts(items: AiGeneratedImage[], brief: CreativeBrief | null) {
   if (!brief) return items
@@ -38,26 +46,37 @@ function attachConcepts(items: AiGeneratedImage[], brief: CreativeBrief | null) 
 
 export default function AiThumbnailMakerPage() {
   const navigate = useNavigate()
-  const [hint, setHint] = useState('')
-  const [styleId, setStyleId] = useState<AiStyleId>('auto')
-  const [styleTip, setStyleTip] = useState<AiStyleId | null>(null)
+  const [input, setInput] = useState('')
+  const [phase, setPhase] = useState<Phase>('compose')
+  const [statusLine, setStatusLine] = useState('')
+  const [errorText, setErrorText] = useState('')
   const [variants, setVariants] = useState<AiGeneratedImage[]>([])
   const [pick, setPick] = useState(0)
-  const [busy, setBusy] = useState(false)
-  const [slotCount, setSlotCount] = useState(3)
-  const [progressDone, setProgressDone] = useState(0)
-  const [cooldown, setCooldown] = useState(0)
   const [brief, setBrief] = useState<CreativeBrief | null>(null)
-  const [status, setStatus] = useState<Status>({ kind: 'idle', text: '' })
+  const [youtubeMeta, setYoutubeMeta] = useState<YoutubeMeta | null>(null)
+  const [cooldown, setCooldown] = useState(0)
+  const [photoName, setPhotoName] = useState('')
+  const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null)
   const abortRef = useRef<AbortController | null>(null)
   const runIdRef = useRef(0)
   const objectUrls = useRef<string[]>([])
+  const fileRef = useRef<HTMLInputElement>(null)
+  const loadTick = useRef(0)
 
   const niche = useMemo(() => getNiche('vlog'), [])
   const platform = useMemo(() => getPlatform('youtube'), [])
+  const urlMode = looksLikeYoutubeUrl(input)
+  const canGenerate = input.trim().length >= 3 && phase !== 'busy' && cooldown === 0
+  const chosen = variants[pick] ?? variants[0] ?? null
 
   useEffect(() => {
     track('landing_page_view', { path: '/ai-thumbnail-maker' })
+    const handoff = consumeAiHandoff()
+    if (handoff?.hint) setInput(handoff.hint)
+    if (handoff?.photoDataUrl) {
+      setPhotoDataUrl(handoff.photoDataUrl)
+      setPhotoName('Reference photo')
+    }
     return () => {
       abortRef.current?.abort()
       for (const url of objectUrls.current) URL.revokeObjectURL(url)
@@ -70,70 +89,94 @@ export default function AiThumbnailMakerPage() {
     return () => window.clearTimeout(timer)
   }, [cooldown])
 
-  function onHintChange(value: string) {
-    setHint(value)
-    setStyleTip(suggestAiStyle(value, styleId))
-  }
+  useEffect(() => {
+    if (phase !== 'busy') return
+    setStatusLine(LOADING_LINES[0]!)
+    loadTick.current = 0
+    const timer = window.setInterval(() => {
+      loadTick.current += 1
+      setStatusLine(LOADING_LINES[loadTick.current % LOADING_LINES.length]!)
+    }, 2200)
+    return () => window.clearInterval(timer)
+  }, [phase])
 
-  function applyPreset(preset: (typeof AI_SCENE_PRESETS)[number]) {
-    setHint(preset.hint)
-    setStyleId(preset.styleId)
-    setStyleTip(null)
-    setStatus({ kind: 'idle', text: `Preset “${preset.label}” loaded.` })
+  async function onPhotoPick(file: File | undefined) {
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      setErrorText('Photo upload accepts JPG or PNG only. Video files are not required for AI.')
+      setPhase('err')
+      return
+    }
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(String(reader.result || ''))
+        reader.onerror = () => reject(new Error('Could not read that photo.'))
+        reader.readAsDataURL(file)
+      })
+      setPhotoDataUrl(dataUrl)
+      setPhotoName(file.name)
+      setErrorText('')
+      if (phase === 'err') setPhase('compose')
+    } catch {
+      setErrorText('Could not read that photo.')
+      setPhase('err')
+    }
   }
 
   async function runGenerate() {
-    if (busy) return
-    let nextStyle = styleId
-    const tip = suggestAiStyle(hint, styleId)
-    if (tip) {
-      nextStyle = tip
-      setStyleId(tip)
-      setStyleTip(null)
-    }
-
-    const nextBrief = buildCreativeBrief(hint || 'YouTube video idea')
-    setBrief(nextBrief)
-    const primaryHint =
-      nextBrief?.concepts[0] != null
-        ? visualHintForConcept(nextBrief, nextBrief.concepts[0])
-        : hint
+    if (!canGenerate) return
 
     abortRef.current?.abort()
     const controller = new AbortController()
     const runId = ++runIdRef.current
     abortRef.current = controller
-    setBusy(true)
-    setSlotCount(AI_LOOK_TARGET)
-    setProgressDone(0)
+    setPhase('busy')
+    setErrorText('')
     setPick(0)
+    setYoutubeMeta(null)
     for (const url of objectUrls.current) URL.revokeObjectURL(url)
     objectUrls.current = []
     setVariants([])
-    setStatus({ kind: 'busy', text: 'Packaging 3 concepts — strategy first, then visuals…' })
+    setStatusLine(LOADING_LINES[0]!)
+
+    let meta: YoutubeMeta | null = null
+    if (urlMode) {
+      setStatusLine('Analysing idea…')
+      meta = await resolveYoutubeMeta(input, controller.signal)
+      if (runId !== runIdRef.current) return
+      setYoutubeMeta(meta)
+    }
+
+    const sceneText = sceneBriefFromInput(input, meta)
+    const nextBrief = buildCreativeBrief(sceneText || input || 'YouTube video idea')
+    setBrief(nextBrief)
+    const primaryHint =
+      nextBrief?.concepts[0] != null
+        ? visualHintForConcept(nextBrief, nextBrief.concepts[0])
+        : sceneText
+
+    setStatusLine('Building high-CTR packaging…')
 
     try {
       const batch = await generateAiThumbnailVariants(
         {
-          title: nextBrief?.concepts[0]?.headline || hint || 'Thumbnail',
+          title: nextBrief?.concepts[0]?.headline || meta?.title || input || 'Thumbnail',
           niche,
           platform,
           hint: primaryHint,
-          styleId: nextStyle,
+          styleId: 'auto',
         },
         {
           count: AI_LOOK_TARGET,
           signal: controller.signal,
           onProgress: (done, total) => {
             if (runId !== runIdRef.current) return
-            setProgressDone(done)
-            setStatus({
-              kind: 'busy',
-              text:
-                done >= total
-                  ? 'Concepts are ready — pick one below.'
-                  : `Creating concept ${Math.min(done + 1, AI_LOOK_TARGET)} of ${AI_LOOK_TARGET}…`,
-            })
+            setStatusLine(
+              done >= total
+                ? 'Preparing your thumbnail…'
+                : LOADING_LINES[Math.min(done + 1, LOADING_LINES.length - 1)]!,
+            )
           },
           onItem: (item, index) => {
             if (runId !== runIdRef.current) return
@@ -154,277 +197,276 @@ export default function AiThumbnailMakerPage() {
         if (!objectUrls.current.includes(item.objectUrl)) objectUrls.current.push(item.objectUrl)
       }
       setVariants(merged)
-      setProgressDone(merged.length)
       if (batch.rateLimited) setCooldown(AI_RATE_LIMIT_COOLDOWN_SEC)
-
-      setStatus({
-        kind: 'ok',
-        text: batch.usedStudioFallback
-          ? 'Free AI is busy — 3 concept packs are ready. Pick one and finish titles in the editor.'
-          : merged.length >= AI_LOOK_TARGET
-            ? 'Three packaging strategies ready — pick one, then finish in the editor.'
-            : `Pick 1 of ${merged.length} concepts, then finish in the editor.`,
-      })
+      setPhase('ready')
+      setStatusLine('')
       track('concepts_generated', {
         tool: 'ai-thumbnail-maker',
         count: merged.length,
         studio: batch.usedStudioFallback,
+        youtube: Boolean(meta),
       })
       track('thumbnail_generated', { tool: 'ai-thumbnail-maker', looks: merged.length })
     } catch (error) {
       if (runId !== runIdRef.current) return
       if (error instanceof DOMException && error.name === 'AbortError' && controller.signal.aborted) {
-        setStatus({ kind: 'idle', text: '' })
+        setPhase('compose')
+        setStatusLine('')
         return
       }
-      const message = error instanceof Error ? error.message : 'Could not create those looks.'
+      const message = error instanceof Error ? error.message : 'Could not create that thumbnail.'
       const rateLimited = isAiRateLimitedError(error) || /busy|try again in a minute/i.test(message)
-      setStatus({ kind: 'err', text: message })
+      setErrorText(message)
+      setPhase('err')
       track('generation_failed', { tool: 'ai-thumbnail-maker', rateLimited })
       if (rateLimited) setCooldown(AI_RATE_LIMIT_COOLDOWN_SEC)
     } finally {
       if (runId === runIdRef.current) {
-        setBusy(false)
         if (abortRef.current === controller) abortRef.current = null
       }
     }
   }
 
   async function finishInEditor() {
-    const chosen = variants[pick] ?? variants[0]
-    const headline = chosen?.lookHeadline || brief?.concepts[pick]?.headline || ''
-    let photoDataUrl: string | undefined
-    if (chosen?.objectUrl) {
+    if (!chosen) return
+    const headline = chosen.lookHeadline || brief?.concepts[pick]?.headline || youtubeMeta?.title || ''
+    let handoffPhoto = photoDataUrl ?? undefined
+    if (!handoffPhoto && chosen.objectUrl) {
       try {
-        photoDataUrl = await objectUrlToDataUrl(chosen.objectUrl)
+        handoffPhoto = await objectUrlToDataUrl(chosen.objectUrl)
       } catch {
-        photoDataUrl = undefined
+        handoffPhoto = undefined
       }
     }
     saveAiHandoff({
-      hint: hint || primaryFallbackHint(brief),
+      hint: input.trim() || primaryFallbackHint(brief),
       title: headline,
-      styleId,
-      photoDataUrl,
+      styleId: 'auto',
+      photoDataUrl: handoffPhoto,
       source: 'ai-thumbnail-maker',
-      mode: 'ai',
+      mode: 'classic',
     })
     track('cta_click', { tool: 'ai-thumbnail-maker', cta: 'finish_in_editor' })
-    navigate({ pathname: '/', hash: '#editor-ai' })
+    navigate({ pathname: '/', hash: '#editor' })
   }
 
-  const backend = resolveAiBackend()
-  const canGenerate = hint.trim().length >= 3 && !busy && cooldown === 0
+  async function downloadHd() {
+    if (!chosen?.objectUrl) return
+    try {
+      const response = await fetch(chosen.objectUrl)
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const anchor = document.createElement('a')
+      anchor.href = url
+      anchor.download = 'thumbric-ai-thumbnail.png'
+      anchor.click()
+      URL.revokeObjectURL(url)
+      track('cta_click', { tool: 'ai-thumbnail-maker', cta: 'download_hd' })
+    } catch {
+      setErrorText('Could not download that image. Try Finish in editor instead.')
+      setPhase('err')
+    }
+  }
+
+  function resetCompose() {
+    setPhase('compose')
+    setStatusLine('')
+    setErrorText('')
+  }
 
   return (
     <ToolShell
       path="/ai-thumbnail-maker"
-      kicker="AI Thumbnail Maker · Pro packaging"
+      breadcrumbs={[
+        { label: 'Home', to: '/' },
+        { label: 'Tools', to: '/tools' },
+        { label: 'AI Thumbnail Maker' },
+      ]}
+      kicker="Free AI · YouTube-ready"
       title={
         <>
-          AI thumbnail maker <span className="gradient-text">built for the click.</span>
+          AI thumbnail maker <span className="gradient-text">that gets more clicks.</span>
         </>
       }
-      lede="Describe the video. Get three packaging strategies with visuals. Pick one, then finish titles on the live canvas — not a marketing landing page."
+      lede="Describe your video or paste a YouTube URL. Thumbric builds a click-optimized cover in seconds — then you finish the title in the editor."
     >
-      <section className="tool-card ai-maker-card" aria-label="AI packaging">
-        <div className="ai-maker-intro">
-          <p className="ai-maker-kicker">Step 1 · Concept</p>
-          <p>
-            Natural language is fine. Headlines stay editable in the editor — never burned into the AI
-            image. {backend.premium ? 'Premium AI path is available.' : 'Free path uses honest studio fallbacks when the model is busy.'}
-          </p>
-        </div>
-
-        <div className="scene-preset-row" role="list">
-          {AI_SCENE_PRESETS.map((preset) => (
+      {phase === 'ready' && chosen ? (
+        <section className="tool-card ai-ready-card" aria-label="Thumbnail result">
+          <div className="ai-ready-head">
+            <div>
+              <h2 className="ai-ready-title">Your thumbnail is ready</h2>
+              <p className="ai-ready-sub">Review your result and download it in HD — or finish the title in the editor.</p>
+            </div>
             <button
-              key={preset.id}
               type="button"
-              role="listitem"
-              className="chip scene-preset"
-              onClick={() => applyPreset(preset)}
+              className="btn-gradient ai-ready-again"
+              onClick={() => {
+                resetCompose()
+                void runGenerate()
+              }}
+              disabled={cooldown > 0}
             >
-              {preset.label}
+              {cooldown > 0 ? `Try again in ${cooldown}s` : 'Generate again'}
             </button>
-          ))}
-        </div>
-
-        <fieldset className="ai-style-field">
-          <legend>Creative direction</legend>
-          <div className="ai-style-row" role="list">
-            {AI_STYLES.map((style) => (
-              <button
-                key={style.id}
-                type="button"
-                role="listitem"
-                className={
-                  style.id === styleId ? 'chip solid ai-style-chip is-selected' : 'chip ai-style-chip'
-                }
-                aria-pressed={style.id === styleId}
-                title={style.blurb}
-                onClick={() => {
-                  setStyleId(style.id)
-                  setStyleTip(suggestAiStyle(hint, style.id))
-                }}
-              >
-                <span className="ai-style-chip-label">{style.label}</span>
-                <span className="ai-style-chip-blurb">{style.blurb}</span>
-              </button>
-            ))}
           </div>
-        </fieldset>
 
-        <label className="ai-hint-field">
-          What is your video about?
-          <textarea
-            id="ai-maker-hint"
-            rows={3}
-            value={hint}
-            onChange={(event) => onHintChange(event.target.value)}
-            placeholder='e.g. “5 mistakes people make when buying their first house”'
-          />
-        </label>
+          <div className="ai-ready-preview">
+            <img src={chosen.objectUrl} alt="Generated thumbnail preview" />
+            {chosen.lookHeadline ? (
+              <p className="ai-ready-hook" aria-hidden>
+                Suggested hook: {chosen.lookHeadline}
+              </p>
+            ) : null}
+          </div>
 
-        {styleTip ? (
-          <p className="ai-style-suggest" role="status">
-            This topic fits <strong>{getAiStyle(styleTip).label}</strong> better than{' '}
-            {getAiStyle(styleId).label}.
-            <button
-              type="button"
-              className="ai-style-suggest-btn"
-              onClick={() => {
-                setStyleId(styleTip)
-                setStyleTip(null)
-              }}
-            >
-              Switch style
-            </button>
-          </p>
-        ) : (
-          <p className="hint">
-            Ban collages in your scene text — say “one photo of …” not “grid of …”. Photoreal Canva-grade
-            faces need a paid fal key later; free AI still ships usable stills.
-          </p>
-        )}
-
-        <div className="tool-actions">
-          <button
-            type="button"
-            className="btn-gradient"
-            disabled={!canGenerate}
-            aria-busy={busy}
-            onClick={() => void runGenerate()}
-          >
-            {busy
-              ? 'Creating concepts…'
-              : cooldown > 0
-                ? `Try again in ${cooldown}s`
-                : 'Create 3 concepts →'}
-          </button>
-          {busy ? (
-            <button
-              type="button"
-              className="btn-outline"
-              onClick={() => {
-                abortRef.current?.abort()
-                setBusy(false)
-                setStatus({ kind: 'idle', text: 'Stopped. Keep the looks you have.' })
-              }}
-            >
-              Stop
-            </button>
-          ) : null}
-          <Link className="btn-outline" to={{ pathname: '/', hash: '#editor' }}>
-            Prefer the clean editor
-          </Link>
-        </div>
-
-        {status.text ? (
-          <p className={`ai-inline-status is-${status.kind}`} role="status" aria-live="polite">
-            {status.text}
-          </p>
-        ) : null}
-      </section>
-
-      <section className="tool-card ai-maker-results" aria-label="Concept picker">
-        <div className="ai-maker-intro">
-          <p className="ai-maker-kicker">Step 2 · Pick a look</p>
-          <p>
-            {busy
-              ? `Creating concepts… ${Math.min(progressDone + 1, AI_LOOK_TARGET)} of ${AI_LOOK_TARGET}`
-              : variants.length > 0
-                ? `Pick a concept · ${variants.length} ready`
-                : 'Your three packaging strategies land here after you create.'}
-          </p>
-        </div>
-
-        <div className="ai-variant-picker ai-maker-picker" role="listbox" aria-label="Pick an AI look">
-          {Array.from({ length: slotCount }, (_, index) => {
-            const item = variants[index]
-            if (item) {
-              return (
+          {variants.length > 1 ? (
+            <div className="ai-ready-thumbs" role="listbox" aria-label="Other concepts">
+              {variants.map((item, index) => (
                 <button
                   key={`${item.seed}-${index}`}
                   type="button"
                   role="option"
                   aria-selected={index === pick}
-                  className={index === pick ? 'ai-variant-card is-selected' : 'ai-variant-card'}
+                  className={index === pick ? 'ai-ready-thumb is-selected' : 'ai-ready-thumb'}
                   onClick={() => setPick(index)}
                 >
-                  <img src={item.objectUrl} alt={`AI look ${index + 1}`} />
-                  <span>
-                    {item.lookLabel || `Concept ${index + 1}`}
-                    {index === pick ? ' · selected' : ''}
-                  </span>
-                  {item.lookWhy ? <em className="ai-concept-why">{item.lookWhy}</em> : null}
-                  {item.lookHeadline ? (
-                    <strong className="ai-concept-hook">{item.lookHeadline}</strong>
-                  ) : null}
+                  <img src={item.objectUrl} alt={`Concept ${index + 1}`} />
+                  <span>{item.lookLabel || `Look ${index + 1}`}</span>
                 </button>
-              )
-            }
-            const loadingThis = busy && index <= Math.max(progressDone, 0)
-            return (
-              <div
-                key={`slot-${index}`}
-                className={loadingThis ? 'ai-variant-card is-loading' : 'ai-variant-card is-empty'}
-              >
-                <div className="ai-variant-placeholder">
-                  {loadingThis ? (
-                    <>
-                      <span className="ai-inline-spinner" aria-hidden />
-                      <span>Creating…</span>
-                    </>
-                  ) : (
-                    <span className="ai-look-skel" aria-hidden />
-                  )}
-                </div>
-                <span>{loadingThis ? 'Working' : `Look ${index + 1}`}</span>
-              </div>
-            )
-          })}
-        </div>
+              ))}
+            </div>
+          ) : null}
 
-        <div className="tool-actions">
-          <button
-            type="button"
-            className="btn-gradient"
-            disabled={variants.length === 0}
-            onClick={() => void finishInEditor()}
-          >
-            Finish in editor →
-          </button>
-          <Link className="btn-outline" to="/youtube-thumbnail-score">
-            Score an existing thumb
-          </Link>
-        </div>
-      </section>
+          <div className="tool-actions">
+            <button type="button" className="btn-gradient" onClick={() => void finishInEditor()}>
+              Finish in editor →
+            </button>
+            <button type="button" className="btn-outline" onClick={() => void downloadHd()}>
+              Download HD
+            </button>
+            <button type="button" className="btn-outline" onClick={resetCompose}>
+              Edit prompt
+            </button>
+          </div>
+        </section>
+      ) : (
+        <section className="tool-card ai-simple-card" aria-label="Create a thumbnail">
+          <div className="ai-simple-head">
+            <h2 className="ai-simple-title">Create a thumbnail</h2>
+            <p className="ai-simple-sub">Start with a description or YouTube URL.</p>
+          </div>
+
+          <label className="ai-simple-field">
+            <span className="ai-simple-label">Describe your video or paste a YouTube URL</span>
+            <textarea
+              id="ai-maker-hint"
+              rows={4}
+              value={input}
+              disabled={phase === 'busy'}
+              onChange={(event) => {
+                setInput(event.target.value)
+                if (phase === 'err') {
+                  setPhase('compose')
+                  setErrorText('')
+                }
+              }}
+              placeholder="Describe the thumbnail you want, or paste a YouTube video URL"
+            />
+          </label>
+
+          {urlMode ? <p className="ai-simple-note">{YOUTUBE_FRAME_HONESTY}</p> : null}
+
+          {youtubeMeta?.title && phase === 'busy' ? (
+            <p className="ai-simple-note" role="status">
+              Using title: <strong>{youtubeMeta.title}</strong>
+              {youtubeMeta.authorName ? ` · ${youtubeMeta.authorName}` : ''}
+            </p>
+          ) : null}
+
+          <div className="ai-simple-or" aria-hidden>
+            <span>or</span>
+          </div>
+
+          <div className="ai-simple-secondary">
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              hidden
+              onChange={(event) => void onPhotoPick(event.target.files?.[0])}
+            />
+            <button
+              type="button"
+              className="btn-outline ai-simple-upload"
+              disabled={phase === 'busy'}
+              onClick={() => fileRef.current?.click()}
+            >
+              {photoName ? `Photo: ${photoName}` : 'Optional: upload a reference photo'}
+            </button>
+            <p className="hint">Video file upload is not required. Paste a link or describe the scene.</p>
+          </div>
+
+          <div className="tool-actions">
+            <button
+              type="button"
+              className="btn-gradient"
+              disabled={!canGenerate}
+              aria-busy={phase === 'busy'}
+              onClick={() => void runGenerate()}
+            >
+              {phase === 'busy'
+                ? 'Creating…'
+                : cooldown > 0
+                  ? `Try again in ${cooldown}s`
+                  : 'Create thumbnail'}
+            </button>
+            {phase === 'busy' ? (
+              <button
+                type="button"
+                className="btn-outline"
+                onClick={() => {
+                  abortRef.current?.abort()
+                  setPhase('compose')
+                  setStatusLine('')
+                }}
+              >
+                Stop
+              </button>
+            ) : (
+              <Link className="btn-outline" to={{ pathname: '/', hash: '#editor' }}>
+                Open clean editor
+              </Link>
+            )}
+          </div>
+
+          {phase === 'busy' ? (
+            <div className="ai-simple-loading" role="status" aria-live="polite">
+              <span className="ai-inline-spinner" aria-hidden />
+              <p>{statusLine || 'Preparing your thumbnail…'}</p>
+              <div className="ai-simple-loading-preview" aria-hidden>
+                {variants[0] ? (
+                  <img src={variants[0].objectUrl} alt="" />
+                ) : (
+                  <div className="ai-look-skel" />
+                )}
+              </div>
+            </div>
+          ) : null}
+
+          {phase === 'err' && errorText ? (
+            <p className="tool-error" role="alert">
+              {errorText}
+            </p>
+          ) : null}
+        </section>
+      )}
     </ToolShell>
   )
 }
 
 function primaryFallbackHint(brief: CreativeBrief | null) {
-  if (!brief?.concepts[0]) return 'expressive creator looking at camera, dramatic key light, empty space for a title'
+  if (!brief?.concepts[0]) {
+    return 'expressive creator looking at camera, dramatic key light, empty space for a title'
+  }
   return visualHintForConcept(brief, brief.concepts[0])
 }

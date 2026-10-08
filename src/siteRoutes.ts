@@ -90,9 +90,9 @@ export const SITE_ROUTES: SiteRouteMeta[] = [
   },
   {
     path: '/ai-thumbnail-maker',
-    title: 'AI Thumbnail Maker — packaging strategies | Thumbric.ai',
+    title: 'AI Thumbnail Maker — describe or paste a URL | Thumbric.ai',
     description:
-      'Dedicated AI thumbnail maker: describe the video, get 3 packaging concepts, then finish titles in the Thumbric editor.',
+      'Describe your video or paste a YouTube URL. Free AI builds a click-optimized thumbnail — review, download HD, or finish in the editor.',
     changefreq: 'weekly',
     priority: '0.9',
   },

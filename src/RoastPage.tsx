@@ -49,7 +49,7 @@ export default function RoastPage() {
             <Link className="btn-gradient" to="/youtube-thumbnail-score">
               Score your own thumbnail
             </Link>
-            <Link className="btn-outline" to={{ pathname: '/', hash: '#editor-ai' }}>
+            <Link className="btn-outline" to="/ai-thumbnail-maker">
               Generate 3 alternatives
             </Link>
           </div>

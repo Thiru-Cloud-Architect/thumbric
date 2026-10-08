@@ -113,7 +113,7 @@ export default function PricingPage() {
                     ))}
                   </ul>
                   {plan.id === 'free' ? (
-                    <Link className="btn-outline price-cta" to="/#editor-ai">
+                    <Link className="btn-outline price-cta" to="/ai-thumbnail-maker">
                       {plan.cta}
                     </Link>
                   ) : (

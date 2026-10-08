@@ -1,16 +1,25 @@
 import { Link } from 'react-router-dom'
 import { ToolShell } from './ToolShell'
 import { MAKER_PAGES } from './toolsCatalog'
-import { saveAiHandoff } from './aiHandoff'
 import { track } from './analytics'
 
 export default function SeoMakerPage({ path }: { path: string }) {
   const page = MAKER_PAGES.find((item) => item.path === path) ?? MAKER_PAGES[0]!
-  const hash = page.editorHash
+  const isAiPage = page.path === '/ai-thumbnail-maker'
+  const primaryTo = isAiPage
+    ? '/ai-thumbnail-maker'
+    : page.editorHash.startsWith('editor')
+      ? { pathname: '/', hash: `#${page.editorHash === 'editor-ai' ? 'editor' : page.editorHash}` }
+      : { pathname: '/', hash: '#editor' }
 
   return (
     <ToolShell
       path={page.path}
+      breadcrumbs={[
+        { label: 'Home', to: '/' },
+        { label: 'Tools', to: '/tools' },
+        { label: page.h1 },
+      ]}
       kicker={page.kicker}
       title={
         <>
@@ -32,27 +41,29 @@ export default function SeoMakerPage({ path }: { path: string }) {
           ))}
         </ol>
         <div className="tool-actions">
+          {isAiPage ? (
+            <a
+              className="btn-gradient"
+              href="#ai-maker-hint"
+              onClick={() => track('cta_click', { tool: page.path, cta: 'focus_prompt' })}
+            >
+              Describe or paste a URL
+            </a>
+          ) : (
+            <Link
+              className="btn-gradient"
+              to={primaryTo}
+              onClick={() => track('cta_click', { tool: page.path, cta: 'editor' })}
+            >
+              Open clean editor
+            </Link>
+          )}
           <Link
-            className="btn-gradient"
-            to={{ pathname: '/', hash: `#${hash}` }}
-            onClick={() => {
-              saveAiHandoff({
-                hint:
-                  page.nicheHint === 'gaming'
-                    ? 'intense gamer silhouette in RGB neon room, controller in hand, cinematic fog'
-                    : page.nicheHint === 'faceless'
-                      ? 'premium object hero on dark marble, dramatic rim light, empty space for a title'
-                      : page.nicheHint === 'shorts'
-                        ? 'vertical close-up subject, high contrast, empty lower third for a title'
-                        : page.nicheHint === 'podcast'
-                          ? 'two hosts in a warm studio, big faces, shallow depth of field'
-                          : 'expressive creator looking at camera, dramatic key light, empty space for a title',
-                source: page.path,
-              })
-              track('cta_click', { tool: page.path, cta: 'editor' })
-            }}
+            className="btn-outline"
+            to="/ai-thumbnail-maker"
+            onClick={() => track('cta_click', { tool: page.path, cta: 'ai_maker' })}
           >
-            Try AI Thumbnail creator
+            AI Thumbnail Maker
           </Link>
           <Link className="btn-outline" to="/youtube-thumbnail-score">
             Score an existing thumb

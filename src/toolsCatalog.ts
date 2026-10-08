@@ -1,54 +1,24 @@
+export type ToolNavCategory = 'thumbnails' | 'analyze' | 'utilities'
+
 export type ToolNavItem = {
   id: string
   path: string
   label: string
   blurb: string
   nav: boolean
+  /** Present for header mega-menu tools; makers may omit. */
+  category?: ToolNavCategory
 }
 
 /** User-visible free tools — linked from the header menu and /tools hub. */
 export const TOOL_NAV: ToolNavItem[] = [
   {
-    id: 'score',
-    path: '/youtube-thumbnail-score',
-    label: 'Thumbnail Score',
-    blurb: 'Upload a thumb. Get a 0–100 heuristic score.',
-    nav: true,
-  },
-  {
-    id: 'tester',
-    path: '/youtube-thumbnail-tester',
-    label: 'A/B Tester',
-    blurb: 'Compare two thumbnails at phone size.',
-    nav: true,
-  },
-  {
-    id: 'resizer',
-    path: '/youtube-thumbnail-resizer',
-    label: 'Resizer',
-    blurb: 'Sizes, 50%/25% shrink, 3 quality tiers.',
-    nav: true,
-  },
-  {
-    id: 'ctr',
-    path: '/youtube-ctr-calculator',
-    label: 'CTR Calculator',
-    blurb: 'Impressions + clicks → CTR.',
-    nav: true,
-  },
-  {
-    id: 'title',
-    path: '/youtube-title-analyzer',
-    label: 'Title Analyzer',
-    blurb: 'Length, mobile cutoff, hook words.',
-    nav: true,
-  },
-  {
     id: 'ai',
     path: '/ai-thumbnail-maker',
     label: 'AI Thumbnail Maker',
-    blurb: 'Pro packaging: 3 concepts, then editor.',
+    blurb: 'Describe or paste a URL — get a ready cover.',
     nav: true,
+    category: 'thumbnails',
   },
   {
     id: 'doctor',
@@ -56,8 +26,66 @@ export const TOOL_NAV: ToolNavItem[] = [
     label: 'Thumbnail Doctor',
     blurb: 'Score → compare → improve funnel.',
     nav: true,
+    category: 'analyze',
+  },
+  {
+    id: 'score',
+    path: '/youtube-thumbnail-score',
+    label: 'Thumbnail Score',
+    blurb: 'Upload a thumb. Get a 0–100 heuristic score.',
+    nav: true,
+    category: 'analyze',
+  },
+  {
+    id: 'tester',
+    path: '/youtube-thumbnail-tester',
+    label: 'A/B Tester',
+    blurb: 'Compare two thumbnails at phone size.',
+    nav: true,
+    category: 'analyze',
+  },
+  {
+    id: 'title',
+    path: '/youtube-title-analyzer',
+    label: 'Title Analyzer',
+    blurb: 'Length, mobile cutoff, hook words.',
+    nav: true,
+    category: 'analyze',
+  },
+  {
+    id: 'resizer',
+    path: '/youtube-thumbnail-resizer',
+    label: 'Resizer',
+    blurb: 'Sizes, 50%/25% shrink, 3 quality tiers.',
+    nav: true,
+    category: 'utilities',
+  },
+  {
+    id: 'ctr',
+    path: '/youtube-ctr-calculator',
+    label: 'CTR Calculator',
+    blurb: 'Impressions + clicks → your real CTR.',
+    nav: true,
+    category: 'utilities',
   },
 ]
+
+export const TOOL_NAV_CATEGORIES: {
+  id: ToolNavCategory
+  label: string
+}[] = [
+  { id: 'thumbnails', label: 'Thumbnails' },
+  { id: 'analyze', label: 'Analyze' },
+  { id: 'utilities', label: 'Utilities' },
+]
+
+export function toolsByCategory(category: ToolNavCategory) {
+  return TOOL_NAV.filter((item) => item.category === category)
+}
+
+export function toolCategoryOrDefault(item: ToolNavItem): ToolNavCategory {
+  return item.category ?? 'thumbnails'
+}
 
 export const MAKER_NAV: ToolNavItem[] = [
   {
@@ -126,7 +154,7 @@ export const MAKER_PAGES: MakerCopy[] = [
       'Leave a clean third of the frame for the title.',
       'Do not paint words into the AI image — add them in the editor so spelling stays yours.',
     ],
-    editorHash: 'editor-ai',
+    editorHash: 'editor',
     nicheHint: 'youtube',
   },
   {
@@ -144,7 +172,7 @@ export const MAKER_PAGES: MakerCopy[] = [
       'A generator is only useful if text stays editable — ours never burns words into the pixels.',
       'Score an existing thumb first if you already publish weekly.',
     ],
-    editorHash: 'editor-ai',
+    editorHash: 'editor',
     nicheHint: 'youtube',
   },
   {
@@ -167,20 +195,20 @@ export const MAKER_PAGES: MakerCopy[] = [
   },
   {
     path: '/ai-thumbnail-maker',
-    kicker: 'AI · free scene stills',
+    kicker: 'AI · free',
     h1: 'AI thumbnail maker',
-    h1Accent: 'describe the scene.',
-    lede: 'You write who, where, and the mood. Thumbric fills 3 looks. You finish the title. It does not watch your video file.',
+    h1Accent: 'describe or paste a URL.',
+    lede: 'One box: describe your video or paste a YouTube link. Get a ready cover, then finish the title in the editor.',
     steps: [
-      { title: 'Write a scene', body: 'Example: “shocked creator, neon studio, laptop glow”.' },
-      { title: 'Generate 3 looks', body: 'Free AI when it is available; cinematic studio stills if it is busy.' },
-      { title: 'Style the hook', body: 'Two-line title, outline, drag placement — then download.' },
+      { title: 'Describe or paste', body: 'Scene text or a YouTube URL. Photo upload is optional.' },
+      { title: 'Generate', body: 'Free AI packaging — status updates while it works.' },
+      { title: 'Review & finish', body: '“Your thumbnail is ready” — download HD or open the clean editor.' },
     ],
     tips: [
-      'Photoreal faces at Canva quality need a paid fal key on the Worker. The free path is still a usable still + editor overlays.',
-      'Ban collages in your scene text — say “one photo of …” not “grid of …”.' ,
+      'We can read a YouTube title via oEmbed, but we cannot pull frames yet on the free path.',
+      'Photoreal Canva-grade faces need a paid fal key later — free AI still ships usable stills.',
     ],
-    editorHash: 'editor-ai',
+    editorHash: 'editor',
     nicheHint: 'ai',
   },
   {
@@ -198,7 +226,7 @@ export const MAKER_PAGES: MakerCopy[] = [
       'RGB glow is a seasoning, not the subject.',
       'Faces still win in gaming commentary — crop tighter than your capture card overlay.',
     ],
-    editorHash: 'editor-ai',
+    editorHash: 'editor',
     nicheHint: 'gaming',
   },
   {
@@ -234,7 +262,7 @@ export const MAKER_PAGES: MakerCopy[] = [
       'Avoid stock-looking groups of people if your channel never shows a host.',
       'High contrast object + empty space is the whole game.',
     ],
-    editorHash: 'editor-ai',
+    editorHash: 'editor',
     nicheHint: 'faceless',
   },
   {
@@ -252,7 +280,7 @@ export const MAKER_PAGES: MakerCopy[] = [
       'YouTube may auto-pick a frame; a custom cover still helps in feeds that show it.',
       'Safe-zone: keep type away from the very bottom UI chrome.',
     ],
-    editorHash: 'editor-ai',
+    editorHash: 'editor',
     nicheHint: 'shorts',
   },
 ]

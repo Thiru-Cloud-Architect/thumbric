@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026.10.08-simple-ui
+
+- Market-leader simplicity pass (vidIQ / Canva / Genspark / Wayin inspired)
+- AI Thumbnail Maker: one-box describe-or-URL, rotating status, “Your thumbnail is ready”
+- Clean editor: from-scratch only; AI mode linked out to `/ai-thumbnail-maker`
+- Tools mega-menu: Thumbnails / Analyze / Utilities columns
+- Shared tool chrome: breadcrumbs + card “More free tools”
+- Home hero: one primary Create with AI CTA + quieter editor/analyze paths
+- Roadmap: `docs/SIMPLE_UI_ROADMAP.md`
+
 ## 2026.10.08-premium
 
 - Premium editor pass from deep live audit master

@@ -37,7 +37,7 @@ export default function CareerPage() {
               <Link className="btn-outline" to="/">
                 Back to home
               </Link>
-              <Link className="btn-gradient" to={{ pathname: '/', hash: '#editor-ai' }}>
+              <Link className="btn-gradient" to="/ai-thumbnail-maker">
                 Try the AI editor
               </Link>
             </div>

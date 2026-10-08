@@ -49,7 +49,7 @@ export default function LearnPage() {
       ))}
       <p className="hint">
         Next: <Link to="/youtube-thumbnail-score">score a thumbnail</Link> or{' '}
-        <Link to={{ pathname: '/', hash: '#editor-ai' }}>generate 3 looks</Link>.
+        <Link to="/ai-thumbnail-maker">generate 3 looks</Link>.
       </p>
     </ToolShell>
   )

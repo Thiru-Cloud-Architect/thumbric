@@ -25,7 +25,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'How does the AI thumbnail work?',
-    a: 'Tap “Try AI Thumbnail creator” in the hero. Describe the visual scene, pick a style, and generate 3 looks. If free AI is busy, cinematic studio looks still fill so you can keep editing. Pick a favorite, then finish the title on the live canvas. It does not paste a YouTube URL or analyze your video file. Photoreal Canva-grade faces need a paid fal key on the Worker.',
+    a: 'Open AI Thumbnail Maker. Describe your video or paste a YouTube URL in one box. Free AI builds packaging concepts (studio fallbacks if the model is busy). Review “Your thumbnail is ready,” then download HD or finish the title in the clean editor. We can read a YouTube title, but we cannot pull video frames yet. Photoreal Canva-grade faces need a paid fal key later.',
   },
   {
     q: 'How long does it take?',
@@ -115,39 +115,36 @@ export function HeroFlashy({ onStartTrial }: HeroFlashyProps) {
       <div className="hero-inner">
         <p className="hero-badge">
           <span className="hero-badge-pulse" aria-hidden />
-          Free in browser · No video upload required
+          Free AI YouTube thumbnail maker
         </p>
         <h1 id="hero-title">
-          Create thumbnails that <span className="gradient-text gradient-text-motion">earn the click.</span>
+          Thumbnails that <span className="gradient-text gradient-text-motion">earn the click.</span>
         </h1>
         <p className="hero-sub">
-          Give Thumbric your idea, assets, or an existing thumbnail. Create strong concepts, then refine them
-          in a professional editor — your unpublished video never has to leave your machine.
+          Describe your video or paste a YouTube URL — or start from scratch in the clean editor. No design skills needed.
         </p>
         <div className="hero-cta-row">
+          <Link className="btn-gradient hero-cta hero-cta-ai btn-pulse" to="/ai-thumbnail-maker">
+            Create with AI
+            <span aria-hidden> →</span>
+          </Link>
           <a
-            className="btn-gradient hero-cta hero-cta-ai btn-pulse"
+            className="btn-outline hero-cta-secondary"
             href="#editor"
             onClick={(event) => onEditorHashClick(event, 'editor')}
           >
-            Create my thumbnail — Free
-            <span aria-hidden> →</span>
+            Open editor
           </a>
-          <Link className="btn-outline hero-cta-secondary" to="/ai-thumbnail-maker">
-            AI Thumbnail Maker
-          </Link>
-          <Link className="btn-outline hero-cta-tertiary" to="/thumbnail-doctor">
-            Analyze my thumbnail
+          <Link className="hero-cta-quiet" to="/thumbnail-doctor">
+            Analyze a thumbnail
           </Link>
         </div>
-        <p className="hero-trial-line">
-          <button type="button" className="hero-trial-link" onClick={onStartTrial}>
-            Start {TRIAL_DAYS}-day trial
-          </button>
-          {' · '}clean exports without the on-photo mark
-        </p>
         <p className="hero-fine">
-          Privacy-first · photo stays on device · unlimited preview saves · optional video understanding later
+          Free in the browser · photo stays on device ·{' '}
+          <button type="button" className="hero-trial-link" onClick={onStartTrial}>
+            {TRIAL_DAYS}-day trial
+          </button>{' '}
+          for clean exports
         </p>
       </div>
     </section>
@@ -367,8 +364,8 @@ export function FaqAccordion() {
           <h2 id="faq-title">Frequently asked questions</h2>
           <p>
             Haven&apos;t found what you need? Try the free{' '}
-            <Link to="/tools">Tools</Link> or start in the{' '}
-            <a href="#editor-ai">AI editor</a>.
+            <Link to="/tools">Tools</Link> or the{' '}
+            <Link to="/ai-thumbnail-maker">AI Thumbnail Maker</Link>.
           </p>
         </div>
         <div className="faq-list">

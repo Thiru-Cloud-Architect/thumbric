@@ -8,7 +8,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from 'react'
 import { flushSync } from 'react-dom'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   CREATOR_CLEAN_DOWNLOADS_PER_MONTH,
   TRIAL_DAYS,
@@ -129,7 +129,7 @@ import {
   simpleAuthIsDeviceOnly,
   type SimpleUser,
 } from './simpleAuth'
-import { consumeAiHandoff, loadImageFromUrl } from './aiHandoff'
+import { consumeAiHandoff, loadImageFromUrl, saveAiHandoff } from './aiHandoff'
 import {
   buildCreativeBrief,
   visualHintForConcept,
@@ -189,6 +189,7 @@ type EditorSnap = {
 }
 
 export default function HomePage() {
+  const navigate = useNavigate()
   const [platformId, setPlatformId] = useState<PlatformId>('youtube')
   const [nicheId, setNicheId] = useState<NicheId>('tech')
   const [layout, setLayout] = useState<LayoutId>('photo-left')
@@ -276,7 +277,8 @@ export default function HomePage() {
   })
   const [editorMode, setEditorMode] = useState<EditorMode>(() => {
     const hash = normalizeHash(typeof window !== 'undefined' ? window.location.hash : '')
-    return hash === 'editor-ai' ? 'ai' : 'classic'
+    // Default create path is from-scratch only. AI lives at /ai-thumbnail-maker.
+    return hash === 'editor-improve' ? 'improve' : 'classic'
   })
   const [aiCooldownSec, setAiCooldownSec] = useState(0)
   const [photoDragOver, setPhotoDragOver] = useState(false)
@@ -378,6 +380,29 @@ export default function HomePage() {
     track('landing_page_view', { path: '/' })
   }, [])
 
+  // Retain in-editor AI generator internals without exposing them in the calm create UI.
+  // Generation lives on /ai-thumbnail-maker; these stay for handoff / future improve regen.
+  useEffect(() => {
+    void AI_STYLES
+    void getAiStyle
+    void AI_SCENE_PRESETS
+    void aiSlotCount
+    void aiProgressDone
+    void aiCanFetchMore
+    void aiStatus
+    void captureBeforeSnapshot
+    void surpriseMe
+    void onAiHintChange
+    void applySuggestedStyle
+    void applyScenePreset
+    void runAiThumbnail
+  }, [
+    aiSlotCount,
+    aiProgressDone,
+    aiCanFetchMore,
+    aiStatus,
+  ])
+
   useEffect(() => {
     if (!creatorKit.logoDataUrl) {
       setLogoImage(null)
@@ -400,10 +425,9 @@ export default function HomePage() {
       if (!hash) return
 
       if (hash === 'editor-ai') {
-        flushSync(() => {
-          setEditorMode('ai')
-          setEditorTab('create')
-        })
+        // AI belongs on the dedicated maker — keep the studio calm.
+        navigate('/ai-thumbnail-maker', { replace: true })
+        return
       } else if (hash === 'editor-improve') {
         flushSync(() => {
           setEditorMode('improve')
@@ -420,7 +444,7 @@ export default function HomePage() {
 
       void (async () => {
         const targetId =
-          hash === 'editor' || hash === 'editor-ai' || hash === 'editor-title' || hash === 'editor-improve'
+          hash === 'editor' || hash === 'editor-title' || hash === 'editor-improve'
             ? 'editor'
             : hash
         const el = await scrollToElementId(targetId, { attempts: 80, behavior: 'auto' })
@@ -668,21 +692,22 @@ export default function HomePage() {
     if (handoff.hint) setAiHint(handoff.hint)
     if (handoff.title) setTitle(handoff.title)
     if (handoff.styleId) setAiStyleId(handoff.styleId)
-    const mode = handoff.mode ?? 'ai'
-    setEditorMode(mode === 'classic' ? 'classic' : mode === 'improve' ? 'improve' : 'ai')
-    setEditorTab('create')
+    // Handoffs always land in the clean from-scratch studio (photo + title ready).
+    const mode: EditorMode = handoff.mode === 'improve' ? 'improve' : 'classic'
+    setEditorMode(mode)
+    setEditorTab(handoff.photoDataUrl || handoff.title ? 'title' : 'create')
     if (handoff.photoDataUrl) {
       void loadImageFromUrl(handoff.photoDataUrl)
         .then((image) => {
           setPhoto(image)
           setPhotoUrl(handoff.photoDataUrl!)
-          setPhotoName('Imported thumbnail')
+          setPhotoName('AI concept')
+          setStatus('AI concept loaded — style the title, then export.')
         })
         .catch(() => undefined)
     }
-    // Ensure Doctor / AI Maker handoffs land on the studio, not mid-marketing.
     void scrollToElementId('editor', { attempts: 80, behavior: 'auto' }).then((el) => {
-      if (el) focusHashTarget(mode === 'improve' ? 'editor-improve' : mode === 'classic' ? 'editor' : 'editor-ai')
+      if (el) focusHashTarget(mode === 'improve' ? 'editor-improve' : 'editor')
     })
   }, [])
 
@@ -989,7 +1014,6 @@ export default function HomePage() {
   }
 
   function surpriseMe() {
-    captureBeforeSnapshot()
     const angles = [
       'contrarian take, unexpected angle, bold face reaction',
       'outcome flex, before-after energy without collage',
@@ -997,11 +1021,9 @@ export default function HomePage() {
       'warning stakes, urgent color, oversized subject',
     ]
     const pick = angles[Math.floor(Math.random() * angles.length)]!
-    setEditorMode('ai')
-    setEditorTab('create')
-    setAiHint(`${aiHint || title || 'YouTube video'}, ${pick}`)
-    setStatus('Surprise direction loaded — generate 3 concepts to see it.')
-    goToHash('editor-ai')
+    const hint = `${aiHint || title || 'YouTube video'}, ${pick}`
+    saveAiHandoff({ hint, source: 'editor-surprise', mode: 'classic' })
+    navigate('/ai-thumbnail-maker')
   }
 
   function applyBrandToCanvas() {
@@ -1015,21 +1037,13 @@ export default function HomePage() {
 
   function createInMyStyle() {
     applyBrandToCanvas()
-    setEditorMode('ai')
-    setEditorTab('create')
-    setAiHint(styleHintFromKit(creatorKit))
-    if (creatorKit.facePhotos[0]) {
-      const img = new Image()
-      img.onload = () => {
-        setPhoto(img)
-        setPhotoName('Creator kit face')
-        setStatus('Loaded your face photo. Generate 3 concepts in your style.')
-      }
-      img.src = creatorKit.facePhotos[0]
-    } else {
-      setStatus('Style brief loaded — describe the video or generate concepts.')
-    }
-    goToHash('editor-ai')
+    saveAiHandoff({
+      hint: styleHintFromKit(creatorKit),
+      photoDataUrl: creatorKit.facePhotos[0],
+      source: 'creator-kit',
+      mode: 'classic',
+    })
+    navigate('/ai-thumbnail-maker')
   }
 
   async function onBrandLogoFile(file: File) {
@@ -1612,7 +1626,7 @@ export default function HomePage() {
   }
 
   function openEditorAi() {
-    goToHash('editor-ai')
+    navigate('/ai-thumbnail-maker')
   }
 
   function startTrialFlow() {
@@ -1691,48 +1705,29 @@ export default function HomePage() {
             </p>
           </div>
         <section className="workbench editor-workbench studio-grid" aria-label="Thumbnail studio">
-          <div className="editor-mode-bar" role="tablist" aria-label="Start mode">
-            <button
-              id="editor-ai"
-              type="button"
-              role="tab"
-              aria-selected={editorMode === 'ai'}
-              className={editorMode === 'ai' ? 'editor-mode-pill is-active' : 'editor-mode-pill'}
-              onClick={() => {
-                setEditorMode('ai')
-                setEditorTab('create')
-              }}
-            >
-              Create with AI
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={editorMode === 'classic'}
-              className={editorMode === 'classic' ? 'editor-mode-pill is-active' : 'editor-mode-pill'}
-              onClick={() => {
-                setEditorMode('classic')
-                setEditorTab('create')
-              }}
-            >
-              From scratch
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={editorMode === 'improve'}
-              className={editorMode === 'improve' ? 'editor-mode-pill is-active' : 'editor-mode-pill'}
-              onClick={() => {
-                setEditorMode('improve')
-                setEditorTab('create')
-              }}
-            >
-              Improve
-            </button>
+          <div className="editor-mode-bar editor-mode-bar-simple" aria-label="Studio path">
             <p className="editor-mode-meta" aria-live="polite">
-              {platform.width}×{platform.height}
+              From scratch · {platform.width}×{platform.height}
               {photoName ? ` · ${photoName}` : ''}
             </p>
+            <div className="editor-mode-links">
+              <Link className="chip solid" to="/ai-thumbnail-maker">
+                AI Thumbnail Maker
+              </Link>
+              <Link className="chip" to="/thumbnail-doctor">
+                Analyze
+              </Link>
+              <button
+                type="button"
+                className={editorMode === 'improve' ? 'chip solid' : 'chip'}
+                onClick={() => {
+                  setEditorMode(editorMode === 'improve' ? 'classic' : 'improve')
+                  setEditorTab('create')
+                }}
+              >
+                {editorMode === 'improve' ? 'Back to create' : 'Improve existing'}
+              </button>
+            </div>
           </div>
           <form
             className="controls studio-tools"
@@ -1780,11 +1775,9 @@ export default function HomePage() {
             {editorTab === 'create' ? (
             <section className="step step-clean">
               <p className="step-lede">
-                {editorMode === 'ai'
-                  ? 'Tell Thumbric what the video is about. AI proposes 3 packaging strategies — you pick one and finish in the editor.'
-                  : editorMode === 'improve'
-                    ? 'Upload a thumbnail you already have, score it, then jump back here to generate stronger alternatives.'
-                    : 'Pick a platform, tap a YouTube-style template, drop a photo. Title tools sit on the right.'}
+                {editorMode === 'improve'
+                  ? 'Score an existing thumbnail, then generate stronger alternatives in AI Maker.'
+                  : 'Pick a platform, tap a template, drop a photo, then style the title. For AI, use AI Thumbnail Maker.'}
               </p>
               <div className="choice-row platform-row" role="radiogroup" aria-label="Platform">
                 {PLATFORMS.map((item) => (
@@ -1819,246 +1812,21 @@ export default function HomePage() {
                   <p className="photo-title">Improve my thumbnail</p>
                   <p className="photo-help">
                     Score an existing thumbnail for contrast, face size, and title space — then
-                    generate 3 stronger packaging concepts in the AI path.
+                    open AI Thumbnail Maker for stronger packaging concepts.
                   </p>
                 </div>
                 <div className="photo-actions">
                   <Link className="chip solid ai-generate" to="/thumbnail-doctor">
                     Open Thumbnail Doctor →
                   </Link>
-                  <button
-                    type="button"
-                    className="chip"
-                    onClick={() => {
-                      setEditorMode('ai')
-                      setEditorTab('create')
-                    }}
-                  >
+                  <Link className="chip" to="/ai-thumbnail-maker">
                     Or create with AI
-                  </button>
+                  </Link>
                 </div>
                 <p className="ai-honesty-note">
-                  After you score, use <strong>Generate 3 alternatives</strong> on the score page —
-                  it hands a brief back into this editor.
+                  After you score, use <strong>Generate 3 alternatives</strong> — it opens AI Maker
+                  with a brief ready.
                 </p>
-              </div>
-              ) : null}
-
-              {editorMode === 'ai' ? (
-              <div className="photo-box ai-scene-box">
-                <div>
-                  <p className="photo-title">Create with AI</p>
-                  <p className="photo-help">
-                    Tell us what the video is about. Thumbric builds 3 packaging strategies
-                    (warning, curiosity, outcome…) with editable titles — not three crops of the
-                    same image.
-                  </p>
-                  {photoName ? <p className="photo-name">Selected: {photoName}</p> : null}
-                </div>
-                <div className="scene-preset-row" role="list">
-                  {AI_SCENE_PRESETS.map((preset) => (
-                    <button
-                      key={preset.id}
-                      type="button"
-                      role="listitem"
-                      className="chip scene-preset"
-                      onClick={() => applyScenePreset(preset)}
-                    >
-                      {preset.label}
-                    </button>
-                  ))}
-                </div>
-                <fieldset className="ai-style-field">
-                  <legend>Creative direction</legend>
-                  <div className="ai-style-row" role="list">
-                    {AI_STYLES.map((style) => (
-                      <button
-                        key={style.id}
-                        type="button"
-                        role="listitem"
-                        className={
-                          style.id === aiStyleId ? 'chip solid ai-style-chip is-selected' : 'chip ai-style-chip'
-                        }
-                        aria-pressed={style.id === aiStyleId}
-                        title={style.blurb}
-                        onClick={() => {
-                          setAiStyleId(style.id)
-                          setAiStyleTip(suggestAiStyle(aiHint, style.id))
-                        }}
-                      >
-                        <span className="ai-style-chip-label">{style.label}</span>
-                        <span className="ai-style-chip-blurb">{style.blurb}</span>
-                      </button>
-                    ))}
-                  </div>
-                </fieldset>
-                <label className="ai-hint-field">
-                  What is your video about?
-                  <textarea
-                    id="ai-scene-hint"
-                    rows={3}
-                    value={aiHint}
-                    onChange={(event) => onAiHintChange(event.target.value)}
-                    placeholder='e.g. “5 mistakes people make when buying their first house”'
-                  />
-                </label>
-                {aiStyleTip ? (
-                  <p className="ai-style-suggest" role="status">
-                    This topic fits <strong>{getAiStyle(aiStyleTip).label}</strong> better than{' '}
-                    {getAiStyle(aiStyleId).label}.
-                    <button type="button" className="ai-style-suggest-btn" onClick={applySuggestedStyle}>
-                      Switch style
-                    </button>
-                  </p>
-                ) : (
-                  <p className="ai-honesty-note">
-                    Natural language is fine. Optional photo upload comes next. Headlines stay
-                    editable on the canvas — never burned into the AI image.
-                  </p>
-                )}
-                <div className="photo-actions">
-                  <button
-                    type="button"
-                    className="chip solid ai-generate"
-                    disabled={aiBusy}
-                    aria-busy={aiBusy}
-                    onClick={() => {
-                      captureBeforeSnapshot()
-                      void runAiThumbnail('fresh')
-                    }}
-                  >
-                    {aiBusy
-                      ? 'Creating concepts…'
-                      : aiCooldownSec > 0 && aiVariants.length === 0
-                        ? 'Try again'
-                        : 'Create 3 concepts →'}
-                  </button>
-                  <button
-                    type="button"
-                    className="chip"
-                    disabled={aiBusy}
-                    title="Unexpected but relevant creative direction"
-                    onClick={surpriseMe}
-                  >
-                    Surprise me
-                  </button>
-                  {aiCanFetchMore && !aiBusy && aiCooldownSec === 0 ? (
-                    <button
-                      type="button"
-                      className="chip solid ai-retry-remaining"
-                      onClick={() => void runAiThumbnail('more')}
-                    >
-                      More looks
-                    </button>
-                  ) : null}
-                  {aiBusy ? (
-                    <button
-                      type="button"
-                      className="chip"
-                      onClick={() => {
-                        aiAbortRef.current?.abort()
-                        setAiBusy(false)
-                        setAiStatus({ kind: 'idle', text: 'Stopped. Keep the looks you have.' })
-                      }}
-                    >
-                      Stop
-                    </button>
-                  ) : null}
-                </div>
-                {creativeBrief && aiVariants.length > 0 ? (
-                  <div className="ai-director" role="status">
-                    <p className="ai-director-kicker">Creative director</p>
-                    <p className="ai-director-lead">
-                      I found {aiVariants.length} ways to package{' '}
-                      <strong>{creativeBrief.topic}</strong> for {creativeBrief.audience.toLowerCase()}.
-                    </p>
-                  </div>
-                ) : null}
-                <div className="ai-picker-block">
-                  <p className="ai-picker-label">
-                    {aiBusy
-                      ? `Creating concepts… ${Math.min(aiProgressDone + 1, AI_LOOK_TARGET)} of ${AI_LOOK_TARGET}`
-                      : aiVariants.length > 0
-                        ? `Pick a concept · ${aiVariants.length} ready`
-                        : aiStatus.kind === 'err'
-                          ? 'No concepts yet — try a shorter topic'
-                          : '3 concepts land here after you create'}
-                  </p>
-                  <div className="ai-variant-picker" role="listbox" aria-label="Pick one of up to 3 AI looks">
-                    {Array.from({ length: aiSlotCount }, (_, index) => {
-                      const item = aiVariants[index]
-                      if (item) {
-                        return (
-                          <button
-                            key={`${item.seed}-${index}`}
-                            type="button"
-                            role="option"
-                            aria-selected={index === aiPick}
-                            className={index === aiPick ? 'ai-variant-card is-selected' : 'ai-variant-card'}
-                            onClick={() => pickAiVariant(index)}
-                          >
-                            <img src={item.objectUrl} alt={`AI look ${index + 1}`} />
-                            <span>
-                              {item.lookLabel || `Concept ${index + 1}`}
-                              {index === aiPick ? ' · selected' : ''}
-                            </span>
-                            {item.lookWhy ? (
-                              <em className="ai-concept-why">{item.lookWhy}</em>
-                            ) : null}
-                            {item.lookHeadline ? (
-                              <strong className="ai-concept-hook">{item.lookHeadline}</strong>
-                            ) : null}
-                          </button>
-                        )
-                      }
-                      const loadingThis = aiBusy && index <= Math.max(aiProgressDone, 0)
-                      const failedEmpty = !aiBusy && aiStatus.kind === 'err' && aiVariants.length === 0
-                      return (
-                        <div
-                          key={`slot-${index}`}
-                          className={
-                            loadingThis
-                              ? 'ai-variant-card is-loading'
-                              : failedEmpty
-                                ? 'ai-variant-card is-error'
-                                : 'ai-variant-card is-empty'
-                          }
-                        >
-                          <div className="ai-variant-placeholder">
-                            {loadingThis ? (
-                              <>
-                                <span className="ai-inline-spinner" aria-hidden />
-                                <span>Creating…</span>
-                              </>
-                            ) : failedEmpty ? (
-                              <span>Try again</span>
-                            ) : (
-                              <span className="ai-look-skel" aria-hidden />
-                            )}
-                          </div>
-                          <span>
-                            {loadingThis ? 'Working' : failedEmpty ? 'Empty' : `Look ${index + 1}`}
-                          </span>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-                {aiStatus.text ? (
-                  <p
-                    className={`ai-inline-status is-${aiStatus.kind}`}
-                    role="status"
-                    aria-live="polite"
-                  >
-                    {aiStatus.kind === 'busy' ? <span className="ai-inline-spinner" aria-hidden /> : null}
-                    {aiStatus.text}
-                  </p>
-                ) : null}
-                <div className="editor-next-row">
-                  <button type="button" className="chip solid" onClick={() => setEditorTab('title')}>
-                    Next: style the title →
-                  </button>
-                </div>
               </div>
               ) : (
               <div className="photo-box classic-create-box">
@@ -2126,7 +1894,7 @@ export default function HomePage() {
                   </button>
                 </div>
                 <p className="field-help">
-                  Drop a photo on the canvas, or generate an AI scene anytime from the AI path.
+                  Drop a photo on the canvas, or open AI Thumbnail Maker for a generated cover.
                 </p>
               </div>
               )}
@@ -2669,28 +2437,13 @@ export default function HomePage() {
                 <div className="canvas-drop-overlay">Drop photo to place it</div>
               ) : !photo && !aiBusy && !title.trim() ? (
                 <div className="canvas-empty-hint">
-                  {editorMode === 'ai' ? (
-                    <>
-                      <p>No backdrop yet</p>
-                      <button
-                        type="button"
-                        className="chip solid"
-                        onClick={() => {
-                          setEditorTab('create')
-                          window.setTimeout(() => document.getElementById('ai-scene-hint')?.focus(), 50)
-                        }}
-                      >
-                        Describe an AI scene
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <p>Drop a photo or pick a template</p>
-                      <button type="button" className="chip solid" onClick={() => fileRef.current?.click()}>
-                        Upload photo
-                      </button>
-                    </>
-                  )}
+                  <p>Drop a photo or pick a template</p>
+                  <button type="button" className="chip solid" onClick={() => fileRef.current?.click()}>
+                    Upload photo
+                  </button>
+                  <Link className="chip" to="/ai-thumbnail-maker">
+                    Or use AI Maker
+                  </Link>
                 </div>
               ) : null}
             </div>

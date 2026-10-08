@@ -89,13 +89,11 @@ export function focusHashTarget(hash: string) {
   const id = normalizeHash(hash)
   if (id === 'editor' || id === 'editor-title' || id === 'editor-ai' || id === 'editor-improve') {
     const focusId =
-      id === 'editor-ai'
-        ? 'ai-scene-hint'
-        : id === 'editor-title'
-          ? 'title-input'
-          : id === 'editor-improve'
-            ? 'editor-tab-create'
-            : 'editor-tab-create'
+      id === 'editor-title'
+        ? 'title-input'
+        : id === 'editor-improve'
+          ? 'editor-tab-create'
+          : 'editor-tab-create'
     const focusEl = document.getElementById(focusId)
     if (focusEl instanceof HTMLElement) {
       focusEl.focus({ preventScroll: true })
