@@ -54,7 +54,6 @@ import {
   filterNiches,
   getNiche,
 } from './niches'
-import { pickQuickIdea } from './quickIdeas'
 import { PLATFORMS, type PlatformId, getPlatform } from './platforms'
 import { TEXT_STYLES, type TextStyleId } from './textStyle'
 import {
@@ -67,10 +66,8 @@ import {
   renderThumbnail,
 } from './render'
 import {
-  TEMPLATE_CATEGORIES,
   templatesForCategory,
   THUMB_TEMPLATES,
-  type TemplateCategory,
   type TemplateId,
 } from './templates'
 import { LayersPanel } from './LayersPanel'
@@ -226,7 +223,7 @@ export default function HomePage() {
   const [textSelected, setTextSelected] = useState(false)
   const [dragging, setDragging] = useState(false)
   const [photo, setPhoto] = useState<HTMLImageElement | null>(null)
-  const [photoName, setPhotoName] = useState('')
+  const [, setPhotoName] = useState('')
   const [photoUrl, setPhotoUrl] = useState('')
   const [status, setStatus] = useState('Upload a photo or pick a template — then write your title.')
   const [entitlement, setEntitlement] = useState<Entitlement>(() => loadEntitlement())
@@ -267,7 +264,6 @@ export default function HomePage() {
   const [logoImage, setLogoImage] = useState<HTMLImageElement | null>(null)
   const [textRotationDeg, setTextRotationDeg] = useState(0)
   const [snapGuides, setSnapGuides] = useState<{ vertical?: number; horizontal?: number }>({})
-  const [templateCategory, setTemplateCategory] = useState<TemplateCategory>('all')
   const [refineDraft, setRefineDraft] = useState('')
   const [designIssues, setDesignIssues] = useState<DesignIssue[]>([])
   const historyRef = useRef<HistoryStack<EditorSnap> | null>(null)
@@ -787,24 +783,6 @@ export default function HomePage() {
     }
     setTextSelected(true)
     setStatus(`Title ${preset.label.toLowerCase()} — drag to fine-tune.`)
-  }
-
-  function applyQuickIdea() {
-    const idea = pickQuickIdea(platform)
-    setNicheId(idea.nicheId)
-    setLayout(idea.layout)
-    setFontId(idea.fontId)
-    setTextStyleId(idea.textStyleId)
-    setPhotoShape(idea.photoShape)
-    setAccentOverride('')
-    setStickers([])
-    setActiveStickerIndex(null)
-    setTextSelected(false)
-    setTextPos(defaultTextPosition(platform, idea.layout))
-    const look = getNiche(idea.nicheId)
-    setStatus(
-      `Quick idea: ${look.label} · ${LAYOUTS.find((item) => item.id === idea.layout)?.label ?? idea.layout}. Edit title on the preview.`,
-    )
   }
 
   function toggleSticker(id: StickerId) {
@@ -1731,15 +1709,27 @@ export default function HomePage() {
       <main id="top" className="page-main page-main-calm">
         <HeroFlashy onStartTrial={startTrialFlow} />
 
-        <section id="editor" className="editor-section editor-section-calm" aria-label="Thumbnail editor">
-          <div className="editor-head editor-head-calm">
-            <div>
-              <h2 className="editor-title">Editor</h2>
-              <p className="editor-lede">Upload · title · download</p>
-            </div>
-            <Link className="chip quiet-link" to="/ai-thumbnail-maker">
-              Try AI instead
-            </Link>
+        <section id="editor" className="editor-section editor-fit" aria-label="Thumbnail editor">
+          <div className="editor-fit-bar">
+            <h2>Editor</h2>
+            <label className="editor-fit-size">
+              Size
+              <select
+                value={platformId}
+                onChange={(event) => setPlatformId(event.target.value as PlatformId)}
+                aria-label="Thumbnail size"
+              >
+                {PLATFORMS.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <Link to="/ai-thumbnail-maker">AI maker</Link>
+            <button type="button" className="editor-fit-download" onClick={() => requestExportWithChecks(false)}>
+              Download PNG
+            </button>
           </div>
         <section className="workbench editor-workbench studio-grid studio-grid-calm" aria-label="Thumbnail studio">
           <form
@@ -1781,67 +1771,23 @@ export default function HomePage() {
                 Download
               </button>
             </div>
-            <p className="editor-quota-line" aria-live="polite">
-              {freemiumStatusLabel({
-                isRegistered,
-                isPaid: paidActive,
-                planLabel: entitlementStatusLabel(entitlement),
-              })}
-            </p>
-
             {editorTab === 'create' ? (
             <section className="step step-clean step-plush">
-              <div className="choice-row platform-row platform-row-compact" role="radiogroup" aria-label="Platform">
-                {PLATFORMS.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    className={item.id === platformId ? 'choice is-selected' : 'choice'}
-                    role="radio"
-                    aria-checked={item.id === platformId}
-                    onClick={() => setPlatformId(item.id)}
-                  >
-                    <span>{item.label}</span>
-                  </button>
-                ))}
-              </div>
-
               <div className="photo-box classic-create-box plush-media-box">
-                <div className="photo-actions photo-actions-stack">
-                  <button
-                    type="button"
-                    className="chip solid"
-                    onClick={() => fileRef.current?.click()}
-                  >
-                    {photo ? 'Change photo' : 'Upload photo'}
+                <button
+                  type="button"
+                  className="editor-fit-upload"
+                  onClick={() => fileRef.current?.click()}
+                >
+                  {photo ? 'Change photo' : 'Upload photo'}
+                </button>
+                {photo ? (
+                  <button type="button" className="chip" onClick={clearPhoto}>
+                    Remove photo
                   </button>
-                  {photo ? (
-                    <button type="button" className="chip" onClick={clearPhoto}>
-                      Remove
-                    </button>
-                  ) : null}
-                  <button type="button" className="chip" onClick={applyQuickIdea}>
-                    Surprise layout
-                  </button>
-                </div>
-                {photoName ? <p className="photo-name">Selected: {photoName}</p> : null}
-
-                <div className="template-category-row" role="tablist" aria-label="Template category">
-                  {TEMPLATE_CATEGORIES.slice(0, 4).map((cat) => (
-                    <button
-                      key={cat.id}
-                      type="button"
-                      role="tab"
-                      aria-selected={templateCategory === cat.id}
-                      className={templateCategory === cat.id ? 'chip solid' : 'chip'}
-                      onClick={() => setTemplateCategory(cat.id)}
-                    >
-                      {cat.label}
-                    </button>
-                  ))}
-                </div>
-                <div className="template-gallery template-gallery-compact" role="list">
-                  {templatesForCategory(templateCategory).slice(0, 6).map((item) => (
+                ) : null}
+                <div className="template-gallery template-gallery-fit" role="list">
+                  {templatesForCategory('all').slice(0, 4).map((item) => (
                     <button
                       key={item.id}
                       type="button"
@@ -1851,16 +1797,12 @@ export default function HomePage() {
                       role="listitem"
                       onClick={() => applyTemplate(item.id)}
                     >
-                      <span className={`template-thumb layout-${item.layout}`} aria-hidden />
                       <span className="template-copy">
                         <strong>{item.label}</strong>
                       </span>
                     </button>
                   ))}
                 </div>
-                <button type="button" className="chip solid" onClick={() => setEditorTab('title')}>
-                  Next: Text →
-                </button>
               </div>
 
               <input
@@ -2276,19 +2218,7 @@ export default function HomePage() {
                 <p className="mobile-preview-note">Simulated preview — toggle YouTube feed for home-layout chrome.</p>
               </div>
             ) : null}
-            <p className="preview-hint">
-              {textSelected
-                ? 'Drag the title. Size and color are on the right.'
-                : 'Drag the title. Drop a photo to replace it.'}
-            </p>
-            <div className="canvas-download-row">
-              <button type="button" className="primary" onClick={() => requestExportWithChecks(false)}>
-                Download PNG
-              </button>
-              <button type="button" className="chip" onClick={() => setEditorTab('title')}>
-                Edit title
-              </button>
-            </div>
+            <p className="preview-hint">Drag the title. Drop a photo on the canvas.</p>
           </div>
 
           <aside className="studio-inspector studio-inspector-calm" aria-label="Title inspector">
@@ -2353,6 +2283,8 @@ export default function HomePage() {
                 />
               </div>
             </div>
+            <details className="editor-advanced">
+              <summary>More title options</summary>
             <label className="inspector-field">
               Outline {titleOutlineWidth < 0 ? 'auto' : `${titleOutlineWidth}px`}
               <input
@@ -2463,6 +2395,7 @@ export default function HomePage() {
                 </div>
               </div>
             ) : null}
+            </details>
             <details className="editor-advanced inspector-more">
               <summary>More tools</summary>
               <label className="inspector-field refine-field">
