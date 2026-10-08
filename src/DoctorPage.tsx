@@ -59,6 +59,7 @@ export default function DoctorPage() {
       title,
       styleId: 'auto',
       source: 'doctor',
+      mode: 'improve',
     })
     track('cta_click', { tool: 'thumbnail-doctor', cta: 'fix_with_thumbric' })
   }
@@ -142,7 +143,7 @@ export default function DoctorPage() {
             <div className="doctor-fix-actions">
               <Link
                 className="chip solid"
-                to={{ pathname: '/', hash: '#editor-ai' }}
+                to={{ pathname: '/', hash: '#editor-improve' }}
                 onClick={onFix}
               >
                 Fix with Thumbric →

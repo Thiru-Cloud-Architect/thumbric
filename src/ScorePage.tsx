@@ -60,6 +60,7 @@ export default function ScorePage({ analyzer }: { analyzer?: boolean }) {
       title,
       styleId: 'auto',
       source: 'score',
+      mode: 'ai',
     })
     track('cta_click', { tool: 'score', cta: 'generate_3' })
   }
@@ -145,7 +146,10 @@ export default function ScorePage({ analyzer }: { analyzer?: boolean }) {
               </ul>
               <div className="tool-actions">
                 <Link className="btn-gradient" to={{ pathname: '/', hash: '#editor-ai' }} onClick={onGenerateAlts}>
-                  Generate 3 alternatives
+                  Fix in editor →
+                </Link>
+                <Link className="btn-outline" to="/ai-thumbnail-maker" onClick={onGenerateAlts}>
+                  Open AI Maker
                 </Link>
                 <Link className="btn-outline" to="/youtube-thumbnail-tester">
                   Compare two thumbs

@@ -18,10 +18,10 @@ Missing: wow AI (needs fal), full pro editor, payments, Phase 2–6.
 
 ## Current stamp
 
-`UI_BUILD=2026.10.08-gap`
+`UI_BUILD=2026.10.08-nav-polish`
 
 ## Open threads
 
-1. UI polish until user is impressed (nav alignment fixed in gap pass).
-2. Paid AI path for real concept quality.
+1. UI polish / nav scroll / AI maker separation (this pass).
+2. Paid AI path for real concept quality (fal still deferred).
 3. Continue master-plan Phase 1B gaps only after UI bar is acceptable.

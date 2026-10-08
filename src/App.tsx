@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import AiThumbnailMakerPage from './AiThumbnailMakerPage'
 import CareerPage from './CareerPage'
 import CtrPage from './CtrPage'
 import HomePage from './HomePage'
@@ -50,7 +51,7 @@ export default function App() {
         <Route path="/youtube-ctr-calculator" element={<CtrPage />} />
         <Route path="/youtube-title-analyzer" element={<TitleToolPage />} />
         <Route path="/youtube-thumbnail-maker" element={<SeoMakerPage path="/youtube-thumbnail-maker" />} />
-        <Route path="/ai-thumbnail-maker" element={<SeoMakerPage path="/ai-thumbnail-maker" />} />
+        <Route path="/ai-thumbnail-maker" element={<AiThumbnailMakerPage />} />
         <Route path="/gaming-thumbnail-maker" element={<SeoMakerPage path="/gaming-thumbnail-maker" />} />
         <Route path="/podcast-thumbnail-maker" element={<SeoMakerPage path="/podcast-thumbnail-maker" />} />
         <Route path="/faceless-youtube-thumbnail-maker" element={<SeoMakerPage path="/faceless-youtube-thumbnail-maker" />} />

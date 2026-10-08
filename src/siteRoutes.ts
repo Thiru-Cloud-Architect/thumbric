@@ -90,10 +90,11 @@ export const SITE_ROUTES: SiteRouteMeta[] = [
   },
   {
     path: '/ai-thumbnail-maker',
-    title: 'AI Thumbnail Maker — free YouTube looks | Thumbric.ai',
-    description: 'AI YouTube thumbnail maker: describe the scene, get 3 looks, finish the title on a live canvas.',
+    title: 'AI Thumbnail Maker — packaging strategies | Thumbric.ai',
+    description:
+      'Dedicated AI thumbnail maker: describe the video, get 3 packaging concepts, then finish titles in the Thumbric editor.',
     changefreq: 'weekly',
-    priority: '0.85',
+    priority: '0.9',
   },
   {
     path: '/gaming-thumbnail-maker',

@@ -127,19 +127,25 @@ export function HeroFlashy({ onStartTrial }: HeroFlashyProps) {
         <div className="hero-cta-row">
           <a
             className="btn-gradient hero-cta hero-cta-ai btn-pulse"
-            href="#editor-ai"
-            onClick={(event) => onEditorHashClick(event, 'editor-ai')}
+            href="#editor"
+            onClick={(event) => onEditorHashClick(event, 'editor')}
           >
             Create my thumbnail — Free
             <span aria-hidden> →</span>
           </a>
-          <Link className="btn-outline hero-cta-secondary" to="/thumbnail-doctor">
+          <Link className="btn-outline hero-cta-secondary" to="/ai-thumbnail-maker">
+            AI Thumbnail Maker
+          </Link>
+          <Link className="btn-outline hero-cta-tertiary" to="/thumbnail-doctor">
             Analyze my thumbnail
           </Link>
-          <button type="button" className="btn-outline hero-cta-tertiary hero-cta-trial" onClick={onStartTrial}>
+        </div>
+        <p className="hero-trial-line">
+          <button type="button" className="hero-trial-link" onClick={onStartTrial}>
             Start {TRIAL_DAYS}-day trial
           </button>
-        </div>
+          {' · '}clean exports without the on-photo mark
+        </p>
         <p className="hero-fine">
           Privacy-first · photo stays on device · unlimited preview saves · optional video understanding later
         </p>
@@ -439,13 +445,19 @@ export function FeaturesSection() {
               </div>
             </div>
           </div>
-          <a
-            href={AI_FEATURE.href}
-            className="feature-ai-cta btn-pulse"
-            onClick={(event) => onEditorHashClick(event, AI_FEATURE.href)}
-          >
-            {AI_FEATURE.cta} →
-          </a>
+          {AI_FEATURE.href.startsWith('/') ? (
+            <Link to={AI_FEATURE.href} className="feature-ai-cta btn-pulse">
+              {AI_FEATURE.cta} →
+            </Link>
+          ) : (
+            <a
+              href={AI_FEATURE.href}
+              className="feature-ai-cta btn-pulse"
+              onClick={(event) => onEditorHashClick(event, AI_FEATURE.href)}
+            >
+              {AI_FEATURE.cta} →
+            </a>
+          )}
         </div>
       </RevealItem>
 
@@ -546,15 +558,15 @@ export function SiteFooter({ buildLabel }: { buildLabel?: string }) {
       <div className="footer-shell">
         <div className="footer-grid">
           <div className="footer-col footer-col-brand">
-            <p className="footer-brand">{PRODUCT_NAME_FULL}</p>
+            <p className="footer-head footer-brand">{PRODUCT_NAME_FULL}</p>
             <p className="footer-tag">Free browser thumbnail maker for YouTube &amp; social.</p>
           </div>
           <div className="footer-nav-group" role="navigation" aria-label="Footer">
             <div className="footer-col">
-              <p className="footer-head">Product</p>
-              <NavHashLink hash="editor-ai">AI thumbnail creator</NavHashLink>
+              <p className="footer-head">Create</p>
+              <NavHashLink hash="editor">Thumbnail editor</NavHashLink>
+              <Link to="/ai-thumbnail-maker">AI Thumbnail Maker</Link>
               <NavHashLink hash="how">How it works</NavHashLink>
-              <NavHashLink hash="features">Feature list</NavHashLink>
               <Link to="/pricing">Plans &amp; pricing</Link>
               <NavHashLink hash="faq">FAQ</NavHashLink>
             </div>
@@ -565,20 +577,18 @@ export function SiteFooter({ buildLabel }: { buildLabel?: string }) {
               <Link to="/youtube-thumbnail-resizer">Resizer</Link>
               <Link to="/youtube-ctr-calculator">CTR Calculator</Link>
               <Link to="/youtube-title-analyzer">Title Analyzer</Link>
-              <Link to="/tools">All tools</Link>
+              <Link to="/thumbnail-doctor">Thumbnail Doctor</Link>
             </div>
             <div className="footer-col">
               <p className="footer-head">Resources</p>
               <Link to="/learn">Lessons</Link>
               <Link to="/projects">Projects</Link>
-              <Link to="/thumbnail-doctor">Analyze</Link>
               <Link to="/dashboard">Dashboard</Link>
               <Link to="/account">Account</Link>
               <Link to="/feedback">Feedback</Link>
               <Link to="/roadmap">Roadmap</Link>
               <Link to="/legal">Privacy &amp; terms</Link>
               <Link to="/career">Careers</Link>
-              <Link to="/ai-thumbnail-maker">AI Thumbnail Maker</Link>
               <a href={`${SITE_URL}sitemap.xml`}>Sitemap</a>
             </div>
           </div>

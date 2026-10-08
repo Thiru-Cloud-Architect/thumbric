@@ -37,6 +37,7 @@ export function ToolShell({ path, kicker, title, lede, children, userLabel, onLo
                 {item.label}
               </Link>
             ))}
+            <Link to="/tools">All tools</Link>
           </div>
         </nav>
       </main>

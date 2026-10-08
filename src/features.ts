@@ -89,7 +89,7 @@ export const AI_FEATURE = {
     'No paste-a-YouTube-URL / full video analysis (that needs a paid model)',
     'AI draws a scene image — it does not watch your video file',
   ],
-  href: '#editor-ai',
-  where: 'Editor · AI Thumbnail creator',
-  cta: 'Try AI Thumbnail creator',
+  href: '/ai-thumbnail-maker',
+  where: 'Tools · AI Thumbnail Maker',
+  cta: 'Open AI Thumbnail Maker',
 } as const

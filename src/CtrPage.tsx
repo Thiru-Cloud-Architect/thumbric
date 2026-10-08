@@ -23,7 +23,7 @@ export default function CtrPage() {
       }
       lede="CTR is clicks divided by impressions. Paste numbers from YouTube Studio. Bands below are rough public ranges — not your niche average."
     >
-      <section className="tool-card">
+      <section className="tool-card ctr-card">
         <div className="ctr-fields">
           <label>
             Impressions
@@ -34,12 +34,16 @@ export default function CtrPage() {
             <input inputMode="numeric" value={clicks} onChange={(event) => setClicks(event.target.value)} />
           </label>
         </div>
-        <div className="score-ring" aria-label={`CTR ${formatCtr(result.ctr)}`}>
-          <strong>{formatCtr(result.ctr)}</strong>
-          <span>{result.band.label}</span>
+        <div className="ctr-result" aria-label={`CTR ${formatCtr(result.ctr)}`}>
+          <div className="score-ring">
+            <strong>{formatCtr(result.ctr)}</strong>
+            <span>{result.band.label}</span>
+          </div>
+          <div className="ctr-result-copy">
+            <p className="ctr-result-lead">{result.band.hint}</p>
+            <p className="hint">{result.disclaimer}</p>
+          </div>
         </div>
-        <p>{result.band.hint}</p>
-        <p className="hint">{result.disclaimer}</p>
         <div className="tool-actions">
           <Link
             className="btn-gradient"
@@ -48,8 +52,12 @@ export default function CtrPage() {
           >
             Score a thumbnail
           </Link>
-          <Link className="btn-outline" to={{ pathname: '/', hash: '#editor-ai' }}>
-            Generate a stronger look
+          <Link
+            className="btn-outline"
+            to="/ai-thumbnail-maker"
+            onClick={() => track('cta_click', { tool: 'ctr', cta: 'ai-maker' })}
+          >
+            Open AI Thumbnail Maker
           </Link>
         </div>
       </section>

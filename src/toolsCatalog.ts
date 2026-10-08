@@ -47,7 +47,7 @@ export const TOOL_NAV: ToolNavItem[] = [
     id: 'ai',
     path: '/ai-thumbnail-maker',
     label: 'AI Thumbnail Maker',
-    blurb: 'Describe a scene. Get 3 looks.',
+    blurb: 'Pro packaging: 3 concepts, then editor.',
     nav: true,
   },
   {

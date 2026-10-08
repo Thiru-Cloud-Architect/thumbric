@@ -404,6 +404,11 @@ export default function HomePage() {
           setEditorMode('ai')
           setEditorTab('create')
         })
+      } else if (hash === 'editor-improve') {
+        flushSync(() => {
+          setEditorMode('improve')
+          setEditorTab('create')
+        })
       } else if (hash === 'editor-title') {
         flushSync(() => setEditorTab('title'))
       } else if (hash === 'editor') {
@@ -414,7 +419,11 @@ export default function HomePage() {
       }
 
       void (async () => {
-        const el = await scrollToElementId(hash, { attempts: 60 })
+        const targetId =
+          hash === 'editor' || hash === 'editor-ai' || hash === 'editor-title' || hash === 'editor-improve'
+            ? 'editor'
+            : hash
+        const el = await scrollToElementId(targetId, { attempts: 80, behavior: 'auto' })
         if (el) focusHashTarget(hash)
       })()
     }
@@ -659,7 +668,8 @@ export default function HomePage() {
     if (handoff.hint) setAiHint(handoff.hint)
     if (handoff.title) setTitle(handoff.title)
     if (handoff.styleId) setAiStyleId(handoff.styleId)
-    setEditorMode('ai')
+    const mode = handoff.mode ?? 'ai'
+    setEditorMode(mode === 'classic' ? 'classic' : mode === 'improve' ? 'improve' : 'ai')
     setEditorTab('create')
     if (handoff.photoDataUrl) {
       void loadImageFromUrl(handoff.photoDataUrl)
@@ -670,6 +680,10 @@ export default function HomePage() {
         })
         .catch(() => undefined)
     }
+    // Ensure Doctor / AI Maker handoffs land on the studio, not mid-marketing.
+    void scrollToElementId('editor', { attempts: 80, behavior: 'auto' }).then((el) => {
+      if (el) focusHashTarget(mode === 'improve' ? 'editor-improve' : mode === 'classic' ? 'editor' : 'editor-ai')
+    })
   }, [])
 
   useEffect(() => {
@@ -1672,7 +1686,8 @@ export default function HomePage() {
               Thumbnail studio
             </h2>
             <p className="editor-lede">
-              One canvas. Start with AI, a template, or an existing thumb — edit text last.
+              Calm canvas for everyday creates — templates, photo, title, export. For packaging strategies, open{' '}
+              <Link to="/ai-thumbnail-maker">AI Thumbnail Maker</Link>.
             </p>
           </div>
         <section className="workbench editor-workbench studio-grid" aria-label="Thumbnail studio">

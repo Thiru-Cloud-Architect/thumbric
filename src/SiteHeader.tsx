@@ -69,8 +69,8 @@ export function SiteHeader({ userLabel, onLoginClick }: SiteHeaderProps) {
       <nav className="top-nav" aria-label="Primary">
         <a
           className="nav-link"
-          href={onHome ? '#editor-ai' : '/#editor-ai'}
-          onClick={(event) => goHomeHash(event, 'editor-ai')}
+          href={onHome ? '#editor' : '/#editor'}
+          onClick={(event) => goHomeHash(event, 'editor')}
         >
           Create
         </a>
@@ -152,16 +152,16 @@ export function SiteHeader({ userLabel, onLoginClick }: SiteHeaderProps) {
         {onHome ? (
           <a
             className="top-cta top-cta-light"
-            href="#editor-ai"
-            onClick={(event) => goHomeHash(event, 'editor-ai')}
+            href="#editor"
+            onClick={(event) => goHomeHash(event, 'editor')}
           >
             Create thumbnail
           </a>
         ) : (
           <Link
             className="top-cta top-cta-light"
-            to={{ pathname: '/', hash: '#editor-ai' }}
-            onClick={(event) => goHomeHash(event, 'editor-ai')}
+            to={{ pathname: '/', hash: '#editor' }}
+            onClick={(event) => goHomeHash(event, 'editor')}
           >
             Create thumbnail
           </Link>

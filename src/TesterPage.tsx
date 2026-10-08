@@ -88,8 +88,11 @@ export default function TesterPage() {
                 : `Heuristic pick: Look ${winner.toUpperCase()}. Not a CTR forecast.`}
             </p>
             <div className="tool-actions">
-              <Link className="btn-gradient" to={{ pathname: '/', hash: '#editor-ai' }} onClick={onGenerate}>
-                Generate 3 alternatives
+              <Link className="btn-gradient" to="/ai-thumbnail-maker" onClick={onGenerate}>
+                Open AI Thumbnail Maker
+              </Link>
+              <Link className="btn-outline" to={{ pathname: '/', hash: '#editor' }}>
+                Open clean editor
               </Link>
             </div>
           </div>

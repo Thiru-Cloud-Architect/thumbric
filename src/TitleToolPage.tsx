@@ -37,13 +37,21 @@ export default function TitleToolPage() {
         <div className="tool-actions">
           <Link
             className="btn-gradient"
-            to={{ pathname: '/', hash: '#editor-ai' }}
+            to="/ai-thumbnail-maker"
             onClick={() => {
-              saveAiHandoff({ title: analysis.title, hint: `cinematic still that matches: ${analysis.title}`, source: 'title' })
-              track('cta_click', { tool: 'title', cta: 'editor-ai' })
+              saveAiHandoff({
+                title: analysis.title,
+                hint: `cinematic still that matches: ${analysis.title}`,
+                source: 'title',
+                mode: 'ai',
+              })
+              track('cta_click', { tool: 'title', cta: 'ai-maker' })
             }}
           >
             Make a matching thumbnail
+          </Link>
+          <Link className="btn-outline" to={{ pathname: '/', hash: '#editor' }}>
+            Open clean editor
           </Link>
         </div>
       </section>

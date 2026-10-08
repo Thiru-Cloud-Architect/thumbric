@@ -1,11 +1,15 @@
 import type { AiStyleId } from './aiThumbnail'
 
+export type AiHandoffMode = 'ai' | 'improve' | 'classic'
+
 export type AiHandoff = {
   hint?: string
   title?: string
   styleId?: AiStyleId
   photoDataUrl?: string
   source?: string
+  /** Which editor start mode to open after handoff. */
+  mode?: AiHandoffMode
 }
 
 const KEY = 'thumbric-ai-handoff-v1'
@@ -45,5 +49,17 @@ export function loadImageFromUrl(src: string) {
     image.onload = () => resolve(image)
     image.onerror = () => reject(new Error('Could not open that image.'))
     image.src = src
+  })
+}
+
+/** Convert a blob/object URL into a durable data URL for session handoff. */
+export async function objectUrlToDataUrl(objectUrl: string) {
+  const response = await fetch(objectUrl)
+  const blob = await response.blob()
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result || ''))
+    reader.onerror = () => reject(new Error('Could not encode that image.'))
+    reader.readAsDataURL(blob)
   })
 }
