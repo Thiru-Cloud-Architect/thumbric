@@ -168,7 +168,7 @@ export const AI_RETRY_LEAD_MS = 400
 export const AI_LOOK_TARGET = 3
 
 /** Pollinations URL prompt slice — keep subject at the front so this never chops the scene. */
-export const AI_PROMPT_MAX_CHARS = 1100
+export const AI_PROMPT_MAX_CHARS = 1200
 
 /** Seconds to wait after a hard free-tier failure before Generate is enabled again. */
 export const AI_RATE_LIMIT_COOLDOWN_SEC = 8
@@ -213,6 +213,12 @@ export const AI_SCENE_PRESETS = [
     id: 'stage',
     label: 'Music stage',
     hint: 'singer on concert stage, warm spotlights, crowd bokeh, dramatic haze',
+    styleId: 'music-stage' as AiStyleId,
+  },
+  {
+    id: 'song-cover',
+    label: 'Song cover',
+    hint: 'Tamil cinema singer in a music-video close-up, warm stage light, film grain',
     styleId: 'music-stage' as AiStyleId,
   },
 ] as const
@@ -273,24 +279,35 @@ export function visualSceneFromHint(raw: string) {
   let scene = sanitizeSceneText(raw)
   if (!scene) return ''
 
+  // Strip meta phrases users paste ("cinematic still that matches: …")
+  scene = scene
+    .replace(/^(cinematic\s+)?(still|shot|image|photo|photograph|thumbnail)\s+that\s+matches\s*:?\s*/i, '')
+    .replace(/^(make|create|generate|draw)\s+(me\s+)?(a\s+)?/i, '')
+    .trim()
+
   scene = scene.replace(
     /\bin\s+(tamil|hindi|telugu|kannada|malayalam|bengali|marathi|punjabi)\b/gi,
     (_, lang: string) => `${lang} cinema atmosphere`,
   )
-  if (!/\bcinema atmosphere\b/i.test(scene)) {
-    scene = scene.replace(
-      /\b(tamil|hindi|telugu|kannada|malayalam)\s+(song|album|lyrics|cover|movie)\b/gi,
-      '$1 $2 mood',
-    )
-  }
-  scene = scene.replace(/\bcouple goals?\b/gi, 'romantic couple in a cinematic embrace')
+  scene = scene.replace(
+    /\b(tamil|hindi|telugu|kannada|malayalam)\s+(song|album|lyrics|cover|movie)\b/gi,
+    (_, lang: string, kind: string) =>
+      kind.toLowerCase() === 'cover' || kind.toLowerCase() === 'song'
+        ? `${lang} cinema singer in a music-video close-up, warm stage light`
+        : `${lang} ${kind} mood, dramatic film lighting`,
+  )
+  scene = scene.replace(
+    /\b(song cover|album cover|lyrics video)\b/gi,
+    'music-video singer close-up, warm stage light',
+  )
+  scene = scene.replace(/\bcouple goals?\b/gi, 'romantic couple in a cinematic embrace at golden hour')
 
   const hasVisualNoun =
-    /\b(couple|person|people|face|man|woman|girl|boy|singer|dog|cat|animals?|puppy|kitten|stage|forest|woods?|studio|portrait|photo|cinematic|light|city|beach|car|phone|laptop|gamer|creator|fox|jungle|concert|gadget|silhouette)\b/i.test(
+    /\b(couple|person|people|face|man|woman|girl|boy|singer|dog|cat|animals?|puppy|kitten|stage|forest|woods?|studio|portrait|photo|cinematic|light|city|beach|car|phone|laptop|gamer|creator|fox|jungle|concert|gadget|silhouette|music.?video)\b/i.test(
       scene,
     )
   if (!hasVisualNoun) {
-    scene = `cinematic photograph of ${scene}`
+    scene = `cinematic YouTube thumbnail photograph of ${scene}, one oversized hero subject, dramatic key light`
   }
   return scene
 }
@@ -314,13 +331,15 @@ function styleBoostForScene(style: AiStyle, cues: SceneCues) {
   return style.boost
 }
 
-/** Join prompt parts, never chopping the scene subject if we hit the URL cap. */
+/** Join prompt parts, never chopping the scene subject / focal lock if we hit the URL cap. */
 export function clampAiPrompt(parts: string[], maxChars = AI_PROMPT_MAX_CHARS) {
   const cleaned = parts.map((part) => part.trim()).filter(Boolean)
   const joined = cleaned.join('. ')
   if (joined.length <= maxChars) return joined
-  const head = cleaned.slice(0, 3).join('. ')
-  const rest = cleaned.slice(3).join('. ')
+  // Keep medium + framing + subject + focal (first 4) intact; trim the tail.
+  const keep = Math.min(4, cleaned.length)
+  const head = cleaned.slice(0, keep).join('. ')
+  const rest = cleaned.slice(keep).join('. ')
   const budget = maxChars - head.length - 2
   if (budget < 24) return head.slice(0, maxChars)
   return `${head}. ${rest.slice(0, budget)}`
@@ -349,26 +368,26 @@ export function buildAiThumbnailPrompt(options: AiThumbOptions) {
 
   const medium =
     style.id === 'cartoon' || style.id === 'kids-fun' || cues.cartoon
-      ? 'Bold YouTube thumbnail illustration, ONE stylized still, single frame, click-stopping color'
-      : 'Cinematic YouTube thumbnail photograph, ONE camera, ONE moment, 85mm shallow depth of field, rim light, catchlights'
+      ? 'Award-winning YouTube thumbnail illustration, ONE stylized still, hyper-clear silhouette, click-stopping saturated color, Pixar-grade lighting'
+      : 'CTR-winning YouTube thumbnail photograph, ONE camera ONE moment, 85mm f/1.8, rim light + catchlights, magazine cover energy without any cover text'
 
   const focal = cues.nonHumanSubject
-    ? 'clear animal silhouette oversized in frame, readable at phone-tile size, follow the scene literally'
-    : 'one clear focal subject oversized in the frame, readable at phone-tile size, follow the scene literally'
+    ? 'clear animal silhouette oversized filling ~60% of frame, readable at phone-tile size, follow the scene literally'
+    : 'one clear focal subject oversized filling ~60% of frame, emotional expression, readable at phone-tile size, follow the scene literally'
 
   return clampAiPrompt([
     medium,
     aspectFraming(options.platform),
-    `SINGLE full-bleed photograph of: ${subject}`,
-    subjectGuard(cues),
-    'CRITICAL: one image only — never a collage, grid, 2x2, four-panel, split-screen, or multi-photo layout',
-    'CRITICAL: no text, no letters, no watermarks, do not paint any words or titles on the image',
-    `avoid: ${negative}`,
-    `composition: ${compositionForVariant(variantIndex)}`,
-    `style (${style.label}): ${styleBoostForScene(style, cues)}`,
-    `niche mood: ${options.niche.label} — ${options.niche.hint}`,
+    `SINGLE full-bleed hero frame of: ${subject}`,
     focal,
-    'ultra-high contrast, saturated cinematic color, razor sharp focus, phone-tile readability, poster-grade lighting',
+    subjectGuard(cues),
+    `composition: ${compositionForVariant(variantIndex)}`,
+    'CRITICAL: one image only — never a collage, grid, 2x2, four-panel, split-screen, diptych, or multi-photo layout',
+    'CRITICAL: no text, no letters, no watermarks, do not paint any words or titles on the image',
+    `style (${style.label}): ${styleBoostForScene(style, cues)}`,
+    `niche mood: ${options.niche.label}`,
+    `avoid: ${negative}`,
+    'ultra-high contrast, cinematic color, razor-sharp subject, soft bokeh, poster-grade lighting',
   ])
 }
 

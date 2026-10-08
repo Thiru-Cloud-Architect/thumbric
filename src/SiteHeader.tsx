@@ -14,6 +14,24 @@ export function SiteHeader({ userLabel, onLoginClick }: SiteHeaderProps) {
   const navigate = useNavigate()
   const [toolsOpen, setToolsOpen] = useState(false)
   const toolsRef = useRef<HTMLDivElement>(null)
+  const closeTimer = useRef<number | null>(null)
+
+  function clearCloseTimer() {
+    if (closeTimer.current != null) {
+      window.clearTimeout(closeTimer.current)
+      closeTimer.current = null
+    }
+  }
+
+  function openTools() {
+    clearCloseTimer()
+    setToolsOpen(true)
+  }
+
+  function scheduleCloseTools() {
+    clearCloseTimer()
+    closeTimer.current = window.setTimeout(() => setToolsOpen(false), 160)
+  }
 
   function goHomeHash(event: MouseEvent<HTMLAnchorElement>, hash: string) {
     event.preventDefault()
@@ -28,8 +46,16 @@ export function SiteHeader({ userLabel, onLoginClick }: SiteHeaderProps) {
     function onDoc(event: Event) {
       if (!toolsRef.current?.contains(event.target as Node)) setToolsOpen(false)
     }
+    function onKey(event: KeyboardEvent) {
+      if (event.key === 'Escape') setToolsOpen(false)
+    }
     document.addEventListener('pointerdown', onDoc)
-    return () => document.removeEventListener('pointerdown', onDoc)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('pointerdown', onDoc)
+      document.removeEventListener('keydown', onKey)
+      clearCloseTimer()
+    }
   }, [])
 
   return (
@@ -41,36 +67,60 @@ export function SiteHeader({ userLabel, onLoginClick }: SiteHeaderProps) {
         {PRODUCT_NAME_FULL}
       </Link>
       <nav className="top-nav" aria-label="Sections">
-        <div className={toolsOpen ? 'nav-dropdown is-open' : 'nav-dropdown'} ref={toolsRef}>
+        <div
+          className={toolsOpen ? 'nav-dropdown is-open' : 'nav-dropdown'}
+          ref={toolsRef}
+          onMouseEnter={openTools}
+          onMouseLeave={scheduleCloseTools}
+          onFocusCapture={openTools}
+        >
           <button
             type="button"
             className="nav-dropdown-trigger"
             aria-expanded={toolsOpen}
-            aria-haspopup="true"
-            onClick={() => setToolsOpen((open) => !open)}
+            aria-haspopup="menu"
+            aria-controls="tools-menu"
+            onClick={() => {
+              clearCloseTimer()
+              setToolsOpen((open) => !open)
+            }}
           >
             Tools
+            <span className="nav-dropdown-chevron" aria-hidden>
+              ▾
+            </span>
           </button>
-          {toolsOpen ? (
-            <div className="nav-dropdown-panel" role="menu">
-              {TOOL_NAV.map((item) => (
-                <Link
-                  key={item.id}
-                  className="nav-dropdown-item"
-                  to={item.path}
-                  role="menuitem"
-                  onClick={() => setToolsOpen(false)}
-                >
-                  <strong>{item.label}</strong>
-                  <span>{item.blurb}</span>
-                </Link>
-              ))}
-              <Link className="nav-dropdown-item nav-dropdown-more" to="/tools" onClick={() => setToolsOpen(false)}>
-                <strong>All free tools</strong>
-                <span>Score, tester, resizer, CTR, titles</span>
+          <div
+            id="tools-menu"
+            className="nav-dropdown-panel"
+            role="menu"
+            hidden={!toolsOpen}
+            onMouseEnter={openTools}
+            onMouseLeave={scheduleCloseTools}
+          >
+            <p className="nav-dropdown-heading">Free creator tools</p>
+            {TOOL_NAV.map((item) => (
+              <Link
+                key={item.id}
+                className="nav-dropdown-item"
+                to={item.path}
+                role="menuitem"
+                onClick={() => setToolsOpen(false)}
+              >
+                <strong>{item.label}</strong>
+                <span>{item.blurb}</span>
               </Link>
-            </div>
-          ) : null}
+            ))}
+            <Link
+              className="nav-dropdown-item nav-dropdown-more"
+              to="/tools"
+              role="menuitem"
+              onClick={() => setToolsOpen(false)}
+            >
+              <strong>All free tools</strong>
+              <span>Score · tester · resizer · CTR · titles · AI</span>
+            </Link>
+          </div>
         </div>
         <NavHashLink hash="features">Features</NavHashLink>
         <Link to="/pricing">Pricing</Link>

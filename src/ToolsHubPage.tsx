@@ -19,22 +19,23 @@ export default function ToolsHubPage() {
         {TOOL_NAV.map((item) => (
           <Link
             key={item.id}
-            className="feature-card"
+            className="tool-hub-card"
             to={item.path}
             onClick={() => track('tool_started', { tool: item.id })}
           >
             <h3>{item.label}</h3>
             <p>{item.blurb}</p>
-            <span className="feature-card-link">Open →</span>
+            <span className="tool-hub-card-link">Open →</span>
           </Link>
         ))}
       </section>
+      <p className="tools-hub-subhead">Makers by niche</p>
       <section className="tools-hub-grid" aria-label="Makers">
         {MAKER_NAV.map((item) => (
-          <Link key={item.id} className="feature-card" to={item.path}>
+          <Link key={item.id} className="tool-hub-card" to={item.path}>
             <h3>{item.label}</h3>
             <p>{item.blurb}</p>
-            <span className="feature-card-link">Open →</span>
+            <span className="tool-hub-card-link">Open →</span>
           </Link>
         ))}
       </section>

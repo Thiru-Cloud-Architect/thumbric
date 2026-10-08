@@ -1093,7 +1093,7 @@ export default function HomePage() {
                   ))}
                 </div>
                 <fieldset className="ai-style-field">
-                  <legend>Style (lighting &amp; look — scene text still wins)</legend>
+                  <legend>Look style</legend>
                   <div className="ai-style-row" role="list">
                     {AI_STYLES.map((style) => (
                       <button
@@ -1136,9 +1136,9 @@ export default function HomePage() {
                   </p>
                 ) : (
                   <p className="ai-honesty-note">
-                    Animals and kids work best with <strong>Kids / fun</strong> or{' '}
-                    <strong>Cartoon</strong>. Keep the scene visual — skip slogans; add those as
-                    title on the canvas.
+                    Tip: describe people, place, and lighting — not slogans. Put the hook text on
+                    the canvas after you pick a look. Animals / kids → use <strong>Kids / fun</strong>{' '}
+                    or <strong>Cartoon</strong>.
                   </p>
                 )}
                 <div className="photo-actions">
@@ -1204,11 +1204,6 @@ export default function HomePage() {
                             <img src={item.objectUrl} alt={`AI look ${index + 1}`} />
                             <span>
                               {item.lookLabel || `Look ${index + 1}`}
-                              {item.source === 'grade'
-                                ? ' · restyle'
-                                : item.source === 'studio'
-                                  ? ' · studio'
-                                  : ''}
                               {index === aiPick ? ' · selected' : ''}
                             </span>
                           </button>
