@@ -53,6 +53,7 @@ a {
   border-bottom: 1px solid var(--line);
   position: sticky;
   top: 0;
+  overflow: visible;
   background: rgba(16, 12, 14, 0.9);
   backdrop-filter: blur(18px);
   z-index: 10;
@@ -62,9 +63,23 @@ a {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
+  flex: 0 0 auto;
+  min-width: max-content;
+  max-width: none;
+  overflow: visible;
+  white-space: nowrap;
   font-weight: 800;
   font-size: 1.15rem;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
+  padding-right: 0.15em;
+}
+
+.brand-word {
+  display: inline-block;
+  overflow: visible;
+  letter-spacing: 0;
+  line-height: 1.2;
+  padding-right: 0.08em;
 }
 
 .brand-mark {
@@ -3177,6 +3192,31 @@ footer {
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 420px) {
+  .top {
+    flex-wrap: nowrap;
+    gap: 0.4rem;
+    padding-left: 0.7rem;
+    padding-right: 0.7rem;
+  }
+
+  .brand {
+    font-size: 1.02rem;
+  }
+
+  .top-login {
+    padding: 0.4rem 0.55rem;
+    font-size: 0.78rem;
+    max-width: 5.5rem;
+  }
+
+  .top-cta,
+  .top-cta-light {
+    padding: 0.42rem 0.62rem;
+    font-size: 0.74rem;
   }
 }
 
@@ -6453,6 +6493,22 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+.editor-card {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: grid;
+  gap: 0.7rem;
+  padding: 0.8rem 0.9rem 0.85rem;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 127, 138, 0.32);
+  background:
+    radial-gradient(ellipse 72% 48% at 0% 0%, rgba(255, 93, 122, 0.2), transparent 58%),
+    radial-gradient(ellipse 64% 46% at 100% 0%, rgba(96, 165, 250, 0.16), transparent 54%),
+    radial-gradient(ellipse 58% 42% at 78% 100%, rgba(192, 132, 252, 0.18), transparent 56%),
+    #161014;
+  box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.12), 0 18px 48px rgba(0, 0, 0, 0.35);
+}
+
 .editor-fit-bar {
   display: flex;
   align-items: center;
@@ -6526,6 +6582,56 @@ body {
   border: 0;
   box-shadow: none;
   padding: 0;
+}
+
+.editor-card .studio-tools,
+.editor-card .studio-inspector,
+.editor-card .studio-stage {
+  align-self: start;
+  min-height: 0;
+}
+
+.editor-card .studio-tools,
+.editor-card .studio-inspector {
+  background: rgba(0, 0, 0, 0.22);
+  border-radius: 16px;
+  padding: 0.7rem 0.65rem 0.75rem;
+}
+
+.editor-card .studio-stage {
+  background: rgba(0, 0, 0, 0.28);
+  border-radius: 16px;
+  padding: 0.55rem 0.6rem 0.5rem;
+}
+
+.editor-card .preview-viewport {
+  overflow: visible;
+  min-height: 0;
+}
+
+.editor-card .preview-wrap.horizontal {
+  width: 100%;
+  max-width: 100%;
+  max-height: none;
+}
+
+.editor-templates {
+  margin-top: 0.7rem;
+}
+
+.editor-templates > summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: #fff8f5;
+}
+
+.editor-disclosure-label {
+  margin: 0.75rem 0 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #cbbdb6;
 }
 
 .editor-fit .studio-tools,
@@ -6643,19 +6749,42 @@ body {
 }
 
 .ai-canva-prompt,
-.ai-canva-prompt textarea {
+.ai-canva-prompt textarea,
+.ai-canva-prompt input {
   width: 100%;
 }
 
-.ai-canva-prompt textarea {
-  min-height: 4.5rem;
+.ai-canva-prompt textarea,
+.ai-canva-prompt input {
+  min-height: 3.1rem;
   resize: vertical;
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: #1c1618;
   color: #fff8f5;
-  padding: 0.9rem 1rem;
+  padding: 0.85rem 1rem;
   font: 500 1rem/1.45 'DM Sans', system-ui, sans-serif;
+}
+
+.ai-canva-prompt input {
+  resize: none;
+}
+
+.ai-text-btn {
+  appearance: none;
+  border: 0;
+  background: none;
+  color: #ffc2c8;
+  padding: 0.15rem 0.1rem;
+  font: 650 0.92rem/1.3 'DM Sans', system-ui, sans-serif;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+  cursor: pointer;
+}
+
+.ai-text-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
 }
 
 .ai-canva-examples,
@@ -6787,7 +6916,8 @@ body {
   }
 }
 
-/* Laptop screens: each primary portion fits the viewport under the sticky header. */
+/* Laptop screens: the hero, how-it-works, and the editor are each a full view.
+   Do not stack those portions into one 100vh lock. */
 @media (min-width: 901px) {
   main.pricing-page-main {
     padding: 0.55rem clamp(1rem, 3vw, 1.75rem) 0.7rem;
@@ -6897,102 +7027,70 @@ body {
     line-height: 1.35;
   }
 
-  .home-lock {
+  .hero-flashy {
     min-height: calc(100dvh - 3.75rem);
+    box-sizing: border-box;
+    padding: 2.75rem 1.5rem 3rem;
+  }
+
+  .how-rail {
+    min-height: calc(100dvh - 3.75rem);
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    box-sizing: border-box;
+    padding: 2.75rem 1.5rem;
   }
 
-  .home-lock .hero-flashy {
-    min-height: 0;
-    padding: 0.7rem 1rem 0.15rem;
-  }
-
-  .home-lock .hero-inner {
-    gap: 0.6rem;
-  }
-
-  .home-lock .hero-flashy h1 {
-    font-size: clamp(2.15rem, 4.2vw, 3.15rem);
-  }
-
-  .home-lock .hero-sub {
-    font-size: 0.98rem;
-    line-height: 1.38;
-  }
-
-  .home-lock .hero-cta {
-    padding: 0.72rem 1.25rem;
-    font-size: 0.98rem;
-  }
-
-  .home-lock .how-rail {
-    padding: 0.2rem 1.25rem 0.35rem;
-  }
-
-  .home-lock .section-eyebrow {
-    margin-bottom: 0.3rem;
-  }
-
-  .how-rail h2,
-  .home-lock .how-rail h2 {
-    margin: 0.1rem auto 0.75rem;
+  .how-rail h2 {
+    margin: 0.35rem auto 1.35rem;
     max-width: none;
     white-space: nowrap;
     font-size: clamp(1.85rem, 3vw, 2.65rem);
     line-height: 1.08;
   }
 
-  .home-lock .how-rail-icon {
-    width: 2.65rem;
-    height: 2.65rem;
-    margin-bottom: 0.45rem;
-  }
-
-  .home-lock .how-rail-steps {
-    gap: 0.9rem;
-  }
-
-  .home-lock .how-rail-steps::before {
-    top: 1.32rem;
-  }
-
-  .home-lock .how-rail-steps h3 {
-    margin-bottom: 0.25rem;
-    font-size: 0.95rem;
-  }
-
-  .home-lock .how-rail-steps p {
-    font-size: 0.78rem;
-    line-height: 1.32;
-  }
-
   #editor.editor-fit {
     /* html already has scroll-padding-top, so no extra margin or the bar lands too low.
-       Stay a block so the bar and the three columns share the same width.
-       One viewport tall so the next strip does not start under a chopped canvas. */
+       Own screen under the sticky header. The canvas keeps its real aspect ratio. */
     scroll-margin-top: 0;
     min-height: calc(100dvh - 3.75rem);
     box-sizing: border-box;
-    padding-top: 0.65rem;
-    padding-bottom: 0.65rem;
+    padding-top: 0.85rem;
+    padding-bottom: 1.25rem;
   }
 
   #editor.editor-fit .editor-fit-bar {
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.65rem;
+  }
+
+  #editor.editor-fit .preview-panel,
+  #editor.editor-fit .editor-workbench .preview-panel,
+  #editor.editor-fit .editor-workbench.studio-grid .preview-panel,
+  #editor.editor-fit .studio-stage,
+  #editor.editor-fit .studio-inspector,
+  #editor.editor-fit .studio-tools {
+    position: static;
+    top: auto;
+    min-height: 0;
   }
 
   #editor.editor-fit .preview-panel,
   #editor.editor-fit .editor-workbench .preview-panel,
   #editor.editor-fit .editor-workbench.studio-grid .preview-panel {
-    min-height: 0;
-    padding-top: 0.65rem;
+    padding-top: 0.75rem;
   }
 
-  #editor.editor-fit .preview-wrap.vertical {
-    max-height: min(46vh, calc(100dvh - 18rem));
+  #editor.editor-fit .preview-viewport {
+    overflow: visible;
+    min-height: 0;
+  }
+
+  #editor.editor-fit .preview-wrap,
+  #editor.editor-fit .preview-wrap.vertical,
+  #editor.editor-fit .preview-wrap.horizontal,
+  #editor.editor-fit .preview-wrap.square {
+    max-height: none;
   }
 
   .tool-page-main:has(.ai-canva),
@@ -7040,9 +7138,10 @@ body {
     border-radius: 20px;
   }
 
-  .ai-canva-prompt textarea {
-    min-height: 3.25rem;
-    padding: 0.65rem 0.8rem;
+  .ai-canva-prompt textarea,
+  .ai-canva-prompt input {
+    min-height: 3.05rem;
+    padding: 0.7rem 0.85rem;
   }
 }
 
@@ -7149,26 +7248,9 @@ body {
     margin-top: 0.35rem;
   }
 
-  .home-lock .hero-inner {
-    gap: 0.45rem;
-  }
-
-  .home-lock .hero-flashy h1 {
-    font-size: clamp(1.95rem, 3.6vw, 2.55rem);
-  }
-
-  .home-lock .how-rail-steps p {
-    font-size: 0.74rem;
-    line-height: 1.28;
-  }
 }
 
 @media (min-width: 901px) and (max-height: 820px) {
-  .home-lock .how-rail h2 {
-    font-size: clamp(1.55rem, 2.5vw, 2rem);
-    margin-bottom: 0.5rem;
-  }
-
   .tool-page-main:has(.doctor-upload) .tool-drop {
     min-height: 3rem;
   }

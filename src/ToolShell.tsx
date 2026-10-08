@@ -21,6 +21,8 @@ type ToolShellProps = {
   breadcrumbs?: Crumb[]
   userLabel?: string | null
   onLoginClick?: () => void
+  /** AI maker is one field. Other tools keep the footer tool row. */
+  hideMoreTools?: boolean
 }
 
 export function ToolShell({
@@ -32,6 +34,7 @@ export function ToolShell({
   breadcrumbs,
   userLabel,
   onLoginClick,
+  hideMoreTools = false,
 }: ToolShellProps) {
   const crumbs =
     breadcrumbs ??
@@ -69,6 +72,7 @@ export function ToolShell({
           </section>
           {children}
         </div>
+        {hideMoreTools ? null : (
         <nav className="tool-more" aria-label="More free tools">
           <p className="footer-head">More free tools</p>
           <div className="tool-more-grid">
@@ -84,6 +88,7 @@ export function ToolShell({
             </Link>
           </div>
         </nav>
+        )}
       </main>
       <SiteFooter buildLabel={`${PRODUCT_NAME_FULL} · UI ${UI_BUILD}`} />
     </div>

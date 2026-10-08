@@ -296,9 +296,14 @@ export default function HomePage() {
   const aiRunIdRef = useRef(0)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+  const titleOptionsRef = useRef<HTMLDetailsElement>(null)
   const dragIndexRef = useRef<number | null>(null)
   const dragTargetRef = useRef<DragTarget>(null)
   const dragOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
+
+  useEffect(() => {
+    if (editorTab === 'title' && titleOptionsRef.current) titleOptionsRef.current.open = true
+  }, [editorTab])
 
   const niche = useMemo(() => getNiche(nicheId), [nicheId])
   const platform = useMemo(() => getPlatform(platformId), [platformId])
@@ -443,7 +448,10 @@ export default function HomePage() {
           setEditorTab('create')
         })
       } else if (hash === 'editor-title') {
-        flushSync(() => setEditorTab('title'))
+        flushSync(() => {
+          setEditorTab('title')
+          setTextSelected(true)
+        })
       } else if (hash === 'editor') {
         flushSync(() => {
           setEditorMode('classic')
@@ -1709,12 +1717,11 @@ export default function HomePage() {
       />
 
       <main id="top" className="page-main page-main-calm">
-        <div className="home-lock">
-          <HeroFlashy onStartTrial={startTrialFlow} />
-          <HowItWorks />
-        </div>
+        <HeroFlashy onStartTrial={startTrialFlow} />
+        <HowItWorks />
 
         <section id="editor" className="editor-section editor-fit" aria-label="Thumbnail editor">
+          <div className="editor-card">
           <div className="editor-fit-bar">
             <h2>Editor</h2>
             <label className="editor-fit-size">
@@ -1744,39 +1751,6 @@ export default function HomePage() {
               requestExportWithChecks(false)
             }}
           >
-            <div className="editor-tabs editor-tabs-calm" role="tablist" aria-label="Editor steps">
-              <button
-                id="editor-tab-create"
-                type="button"
-                role="tab"
-                aria-selected={editorTab === 'create'}
-                className={editorTab === 'create' ? 'editor-tab is-active' : 'editor-tab'}
-                onClick={() => setEditorTab('create')}
-              >
-                Media
-              </button>
-              <button
-                id="editor-tab-title"
-                type="button"
-                role="tab"
-                aria-selected={editorTab === 'title'}
-                className={editorTab === 'title' ? 'editor-tab is-active' : 'editor-tab'}
-                onClick={() => setEditorTab('title')}
-              >
-                Text
-              </button>
-              <button
-                id="editor-tab-finish"
-                type="button"
-                role="tab"
-                aria-selected={editorTab === 'finish'}
-                className={editorTab === 'finish' ? 'editor-tab is-active' : 'editor-tab'}
-                onClick={() => setEditorTab('finish')}
-              >
-                Download
-              </button>
-            </div>
-            {editorTab === 'create' ? (
             <section className="step step-clean step-plush">
               <div className="photo-box classic-create-box plush-media-box">
                 <button
@@ -1791,6 +1765,18 @@ export default function HomePage() {
                     Remove photo
                   </button>
                 ) : null}
+              </div>
+
+              <input
+                ref={fileRef}
+                className="file-input"
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={(event) => onPickPhoto(event.target.files?.[0])}
+              />
+
+              <details className="editor-advanced editor-templates">
+                <summary>Templates</summary>
                 <div className="template-gallery template-gallery-fit" role="list">
                   {templatesForCategory('all').slice(0, 4).map((item) => (
                     <button
@@ -1808,18 +1794,7 @@ export default function HomePage() {
                     </button>
                   ))}
                 </div>
-              </div>
-
-              <input
-                ref={fileRef}
-                className="file-input"
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                onChange={(event) => onPickPhoto(event.target.files?.[0])}
-              />
-
-              <details className="editor-advanced">
-                <summary>Mood &amp; look colors</summary>
+                <p className="editor-disclosure-label">Mood &amp; look colors</p>
                 <label className="search">
                   Search looks
                   <input
@@ -1869,177 +1844,7 @@ export default function HomePage() {
                 ) : null}
               </details>
             </section>
-            ) : null}
 
-            {editorTab === 'title' ? (
-            <section id="editor-title" className="step step-clean step-plush">
-              <label>
-                Title
-                <textarea
-                  id="title-input"
-                  value={title}
-                  maxLength={42}
-                  rows={2}
-                  onChange={(event) => setTitle(event.target.value)}
-                  placeholder="I SPENT $1"
-                />
-              </label>
-              <label>
-                Line 2 (optional)
-                <input
-                  value={titleLine2}
-                  maxLength={42}
-                  onChange={(event) => setTitleLine2(event.target.value)}
-                  placeholder="AND THIS HAPPENED"
-                />
-              </label>
-              <label>
-                Tag (optional)
-                <input
-                  value={tag}
-                  maxLength={18}
-                  onChange={(event) => setTag(event.target.value)}
-                  placeholder={niche.badge}
-                />
-              </label>
-
-              <div className="title-style-row" role="listbox" aria-label="Title style">
-                {TEXT_STYLES.slice(0, 5).map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    role="option"
-                    aria-selected={textStyleId === item.id}
-                    className={
-                      textStyleId === item.id ? 'title-style-chip is-selected' : 'title-style-chip'
-                    }
-                    data-style={item.id}
-                    title={item.hint}
-                    onClick={() => setTextStyleId(item.id)}
-                  >
-                    <span className="title-style-sample" aria-hidden>
-                      Aa
-                    </span>
-                    <span className="title-style-label">{item.label}</span>
-                  </button>
-                ))}
-              </div>
-              <p className="field-help">Drag the title on the canvas. Size &amp; color sit in the inspector.</p>
-              <button type="button" className="chip solid" onClick={() => setEditorTab('finish')}>
-                Next: Download →
-              </button>
-            </section>
-            ) : null}
-
-            {editorTab === 'finish' ? (
-            <section className="step step-clean step-plush save-step">
-              <div className="plan-box plan-box-plush">
-                <p>
-                  {freemiumStatusLabel({
-                    isRegistered,
-                    isPaid: paidActive,
-                    planLabel: entitlementStatusLabel(entitlement),
-                  })}
-                </p>
-                {(authUser?.email || entitlement.email) ? (
-                  <p className="plan-box-sub">{authUser?.email || entitlement.email}</p>
-                ) : null}
-              </div>
-
-              <div className="download-actions-row">
-                <button
-                  type="button"
-                  className="primary"
-                  onClick={() => requestExportWithChecks(false)}
-                >
-                  Download PNG
-                </button>
-                <button
-                  type="button"
-                  className="chip solid"
-                  onClick={() => requestExportWithChecks(true)}
-                >
-                  Clean (no mark)
-                </button>
-              </div>
-              <p className="field-help">
-                Free = light <strong>thumbric</strong> corner mark · {FREE_DAILY_DOWNLOADS}/day after
-                register. Clean needs{' '}
-                <Link to="/pricing">
-                  Creator {planPriceLabel('creator', currency)} / Pro {planPriceLabel('pro', currency)}
-                </Link>.
-              </p>
-
-              <details className="editor-advanced">
-                <summary>Layout &amp; extras</summary>
-                <fieldset>
-                  <legend>Photo placement</legend>
-                  <div className="choice-row">
-                    {LAYOUTS.map((item) => (
-                      <button
-                        key={item.id}
-                        type="button"
-                        className={item.id === layout ? 'choice is-selected' : 'choice'}
-                        onClick={() => setLayout(item.id)}
-                      >
-                        <span>{item.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </fieldset>
-                <fieldset>
-                  <legend>Shape</legend>
-                  <div className="choice-row">
-                    {PHOTO_SHAPES.map((item) => (
-                      <button
-                        key={item.id}
-                        type="button"
-                        className={item.id === photoShape ? 'choice is-selected' : 'choice'}
-                        onClick={() => setPhotoShape(item.id)}
-                      >
-                        <span>{item.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </fieldset>
-                <fieldset>
-                  <legend>Stickers</legend>
-                  <div className="sticker-row">
-                    {STICKERS.map((sticker) => (
-                      <button
-                        key={sticker.id}
-                        type="button"
-                        className={
-                          stickers.some((item) => item.id === sticker.id)
-                            ? 'sticker active'
-                            : 'sticker'
-                        }
-                        onClick={() => toggleSticker(sticker.id)}
-                      >
-                        {sticker.label}
-                      </button>
-                    ))}
-                  </div>
-                </fieldset>
-                <LayersPanel
-                  state={layerState}
-                  onChange={setLayerState}
-                  stickerCount={stickers.length}
-                  hasLogo={Boolean(creatorKit.logoDataUrl)}
-                />
-                <CreatorKitPanel
-                  kit={creatorKit}
-                  onChange={setCreatorKit}
-                  onApply={applyBrandToCanvas}
-                  onLogoFile={onBrandLogoFile}
-                  onCreateInMyStyle={createInMyStyle}
-                />
-              </details>
-              <p className="hint editor-status" role="status">
-                {status}
-              </p>
-            </section>
-            ) : null}
           </form>
 
           <div
@@ -2066,34 +1871,6 @@ export default function HomePage() {
                 <button type="button" className="preview-tool" onClick={redoEdit} title="Redo (Ctrl+Y)">
                   Redo
                 </button>
-                <label className="zoom-select-wrap">
-                  <span className="sr-only">Zoom</span>
-                  <select
-                    className="zoom-select"
-                    value={canvasZoom}
-                    onChange={(event) => setCanvasZoom(Number(event.target.value))}
-                    aria-label="Zoom level"
-                  >
-                    {ZOOM_PRESETS.map((z) => (
-                      <option key={z} value={z}>
-                        {Math.round(z * 100)}%
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <button
-                  type="button"
-                  className={mobilePreview ? 'preview-tool is-on' : 'preview-tool'}
-                  title="Mobile size preview"
-                  onClick={() => {
-                    setMobilePreview((v) => {
-                      if (!v) track('mobile_preview_used', { tool: 'editor' })
-                      return !v
-                    })
-                  }}
-                >
-                  Mobile
-                </button>
                 <button
                   type="button"
                   className={showMoreCanvasTools ? 'preview-tool is-on' : 'preview-tool'}
@@ -2104,6 +1881,34 @@ export default function HomePage() {
               </div>
               {showMoreCanvasTools ? (
                 <div className="preview-toolbar preview-toolbar-more" role="toolbar" aria-label="More canvas tools">
+                  <label className="zoom-select-wrap">
+                    <span className="sr-only">Zoom</span>
+                    <select
+                      className="zoom-select"
+                      value={canvasZoom}
+                      onChange={(event) => setCanvasZoom(Number(event.target.value))}
+                      aria-label="Zoom level"
+                    >
+                      {ZOOM_PRESETS.map((z) => (
+                        <option key={z} value={z}>
+                          {Math.round(z * 100)}%
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <button
+                    type="button"
+                    className={mobilePreview ? 'preview-tool is-on' : 'preview-tool'}
+                    title="Mobile size preview"
+                    onClick={() => {
+                      setMobilePreview((v) => {
+                        if (!v) track('mobile_preview_used', { tool: 'editor' })
+                        return !v
+                      })
+                    }}
+                  >
+                    Mobile
+                  </button>
                   <button
                     type="button"
                     className={showSafeZones ? 'preview-tool is-on' : 'preview-tool'}
@@ -2131,7 +1936,7 @@ export default function HomePage() {
                     disabled={!beforeUrl}
                     onClick={() => setCompareBefore((v) => !v)}
                   >
-                    Before/After
+                    Compare
                   </button>
                   <button type="button" className="preview-tool" onClick={() => setShortcutsOpen(true)}>
                     Shortcuts
@@ -2223,6 +2028,19 @@ export default function HomePage() {
             {!textSelected && !photo ? (
               <p className="inspector-empty">Click the title on the canvas to edit it.</p>
             ) : null}
+            {textSelected ? (
+              <label className="inspector-field" id="editor-title">
+                Title
+                <textarea
+                  id="title-input"
+                  value={title}
+                  maxLength={42}
+                  rows={2}
+                  onChange={(event) => setTitle(event.target.value)}
+                  placeholder="I SPENT $1"
+                />
+              </label>
+            ) : null}
             <div className="inspector-row">
               <span className="inspector-label">Align</span>
               <div className="inspector-pills">
@@ -2280,8 +2098,47 @@ export default function HomePage() {
                 />
               </div>
             </div>
-            <details className="editor-advanced">
+            <details className="editor-advanced" ref={titleOptionsRef}>
               <summary>More title options</summary>
+              <label className="inspector-field">
+                Line 2 (optional)
+                <input
+                  value={titleLine2}
+                  maxLength={42}
+                  onChange={(event) => setTitleLine2(event.target.value)}
+                  placeholder="AND THIS HAPPENED"
+                />
+              </label>
+              <label className="inspector-field">
+                Tag (optional)
+                <input
+                  value={tag}
+                  maxLength={18}
+                  onChange={(event) => setTag(event.target.value)}
+                  placeholder={niche.badge}
+                />
+              </label>
+              <div className="title-style-row" role="listbox" aria-label="Title style">
+                {TEXT_STYLES.slice(0, 5).map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    role="option"
+                    aria-selected={textStyleId === item.id}
+                    className={
+                      textStyleId === item.id ? 'title-style-chip is-selected' : 'title-style-chip'
+                    }
+                    data-style={item.id}
+                    title={item.hint}
+                    onClick={() => setTextStyleId(item.id)}
+                  >
+                    <span className="title-style-sample" aria-hidden>
+                      Aa
+                    </span>
+                    <span className="title-style-label">{item.label}</span>
+                  </button>
+                ))}
+              </div>
             <label className="inspector-field">
               Outline {titleOutlineWidth < 0 ? 'auto' : `${titleOutlineWidth}px`}
               <input
@@ -2462,6 +2319,114 @@ export default function HomePage() {
                   </div>
                 </div>
               ) : null}
+              <div className="editor-more-tools">
+
+              <div className="plan-box plan-box-plush">
+                <p>
+                  {freemiumStatusLabel({
+                    isRegistered,
+                    isPaid: paidActive,
+                    planLabel: entitlementStatusLabel(entitlement),
+                  })}
+                </p>
+                {(authUser?.email || entitlement.email) ? (
+                  <p className="plan-box-sub">{authUser?.email || entitlement.email}</p>
+                ) : null}
+              </div>
+
+              <div className="download-actions-row">
+                <button
+                  type="button"
+                  className="primary"
+                  onClick={() => requestExportWithChecks(false)}
+                >
+                  Download PNG
+                </button>
+                <button
+                  type="button"
+                  className="chip solid"
+                  onClick={() => requestExportWithChecks(true)}
+                >
+                  Clean (no mark)
+                </button>
+              </div>
+              <p className="field-help">
+                Free = light <strong>thumbric</strong> corner mark · {FREE_DAILY_DOWNLOADS}/day after
+                register. Clean needs{' '}
+                <Link to="/pricing">
+                  Creator {planPriceLabel('creator', currency)} / Pro {planPriceLabel('pro', currency)}
+                </Link>.
+              </p>
+
+              <details className="editor-advanced">
+                <summary>Layout &amp; extras</summary>
+                <fieldset>
+                  <legend>Photo placement</legend>
+                  <div className="choice-row">
+                    {LAYOUTS.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        className={item.id === layout ? 'choice is-selected' : 'choice'}
+                        onClick={() => setLayout(item.id)}
+                      >
+                        <span>{item.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+                <fieldset>
+                  <legend>Shape</legend>
+                  <div className="choice-row">
+                    {PHOTO_SHAPES.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        className={item.id === photoShape ? 'choice is-selected' : 'choice'}
+                        onClick={() => setPhotoShape(item.id)}
+                      >
+                        <span>{item.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+                <fieldset>
+                  <legend>Stickers</legend>
+                  <div className="sticker-row">
+                    {STICKERS.map((sticker) => (
+                      <button
+                        key={sticker.id}
+                        type="button"
+                        className={
+                          stickers.some((item) => item.id === sticker.id)
+                            ? 'sticker active'
+                            : 'sticker'
+                        }
+                        onClick={() => toggleSticker(sticker.id)}
+                      >
+                        {sticker.label}
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+                <LayersPanel
+                  state={layerState}
+                  onChange={setLayerState}
+                  stickerCount={stickers.length}
+                  hasLogo={Boolean(creatorKit.logoDataUrl)}
+                />
+                <CreatorKitPanel
+                  kit={creatorKit}
+                  onChange={setCreatorKit}
+                  onApply={applyBrandToCanvas}
+                  onLogoFile={onBrandLogoFile}
+                  onCreateInMyStyle={createInMyStyle}
+                />
+              </details>
+              <p className="hint editor-status" role="status">
+                {status}
+              </p>
+                          </div>
             </details>
           </aside>
         </section>
@@ -2473,6 +2438,7 @@ export default function HomePage() {
             Clean
           </button>
         </div>
+          </div>
         </section>
 
         <LazyReveal staggerMs={75} variant="soft-rise">

@@ -64,7 +64,7 @@ export function SiteHeader({ userLabel, onLoginClick }: SiteHeaderProps) {
         <span className="brand-mark" aria-hidden>
           ▶
         </span>
-        {PRODUCT_NAME_FULL}
+        <span className="brand-word">{PRODUCT_NAME_FULL}</span>
       </Link>
       <nav className="top-nav" aria-label="Primary">
         <a

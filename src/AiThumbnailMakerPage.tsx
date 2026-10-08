@@ -15,7 +15,6 @@ import { getNiche } from './niches'
 import { getPlatform } from './platforms'
 import { ToolShell } from './ToolShell'
 import {
-  YOUTUBE_FRAME_HONESTY,
   looksLikeYoutubeUrl,
   resolveYoutubeMeta,
   sceneBriefFromInput,
@@ -257,27 +256,11 @@ export default function AiThumbnailMakerPage() {
       kicker="AI Thumbnail Maker"
       title="Free AI thumbnail maker"
       lede="Describe the shot or paste a YouTube URL. You get one cover, then you can download it or open it in the editor."
+      hideMoreTools
     >
       {phase === 'ready' && chosen ? (
         <section className="ai-canva-result" aria-label="Thumbnail result">
           <img src={chosen.objectUrl} alt="Generated thumbnail" />
-          {chosen.lookHeadline ? <p className="ai-canva-hook">Suggested title: {chosen.lookHeadline}</p> : null}
-          {variants.length > 1 ? (
-            <div className="ai-canva-thumbs" role="listbox" aria-label="Other covers">
-              {variants.map((item, index) => (
-                <button
-                  key={`${item.seed}-${index}`}
-                  type="button"
-                  role="option"
-                  aria-selected={index === pick}
-                  className={index === pick ? 'is-selected' : ''}
-                  onClick={() => setPick(index)}
-                >
-                  <img src={item.objectUrl} alt="" />
-                </button>
-              ))}
-            </div>
-          ) : null}
           <div className="ai-canva-actions">
             <button type="button" className="btn-gradient" onClick={() => void downloadHd()}>
               Download
@@ -285,26 +268,31 @@ export default function AiThumbnailMakerPage() {
             <button type="button" className="btn-outline" onClick={() => void finishInEditor()}>
               Open in editor
             </button>
-            <button
-              type="button"
-              className="btn-outline"
-              disabled={cooldown > 0}
-              onClick={() => {
-                resetCompose()
-                void runGenerate()
-              }}
-            >
-              {cooldown > 0 ? `Wait ${cooldown}s` : 'Try again'}
-            </button>
           </div>
+          <button
+            type="button"
+            className="ai-text-btn"
+            disabled={cooldown > 0}
+            onClick={() => {
+              resetCompose()
+              void runGenerate()
+            }}
+          >
+            {cooldown > 0 ? `Try again in ${cooldown}s` : 'Try again'}
+          </button>
+          {errorText ? (
+            <p className="tool-error" role="alert">
+              {errorText}
+            </p>
+          ) : null}
         </section>
       ) : (
         <section className="ai-canva" aria-label="Create a thumbnail">
           <label className="ai-canva-prompt">
             <span className="sr-only">Paste a YouTube link, or describe the scene</span>
-            <textarea
+            <input
               id="ai-maker-hint"
-              rows={3}
+              type="text"
               value={input}
               disabled={phase === 'busy'}
               onChange={(event) => {
@@ -317,12 +305,6 @@ export default function AiThumbnailMakerPage() {
               placeholder="Paste a YouTube link, or describe the scene"
             />
           </label>
-          {urlMode ? <p className="ai-canva-note">{YOUTUBE_FRAME_HONESTY}</p> : null}
-          {youtubeMeta?.title && phase === 'busy' ? (
-            <p className="ai-canva-note" role="status">
-              Using title: <strong>{youtubeMeta.title}</strong>
-            </p>
-          ) : null}
           <div className="ai-canva-actions">
             <button
               type="button"
@@ -331,27 +313,9 @@ export default function AiThumbnailMakerPage() {
               aria-busy={phase === 'busy'}
               onClick={() => void runGenerate()}
             >
-              {phase === 'busy' ? 'Creating…' : cooldown > 0 ? `Try again in ${cooldown}s` : 'Create'}
+              {phase === 'busy' ? statusLine || 'Creating…' : cooldown > 0 ? `Try again in ${cooldown}s` : 'Create thumbnail'}
             </button>
-            {phase === 'busy' ? (
-              <button
-                type="button"
-                className="btn-outline"
-                onClick={() => {
-                  abortRef.current?.abort()
-                  setPhase('compose')
-                  setStatusLine('')
-                }}
-              >
-                Stop
-              </button>
-            ) : null}
           </div>
-          {phase === 'busy' ? (
-            <p className="ai-canva-note" role="status">
-              <span className="ai-inline-spinner" aria-hidden /> {statusLine || 'Preparing your thumbnail…'}
-            </p>
-          ) : null}
           {phase === 'err' && errorText ? (
             <p className="tool-error" role="alert">
               {errorText}
