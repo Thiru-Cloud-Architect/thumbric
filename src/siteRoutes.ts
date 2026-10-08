@@ -62,7 +62,8 @@ export const SITE_ROUTES: SiteRouteMeta[] = [
   {
     path: '/youtube-thumbnail-resizer',
     title: 'YouTube Thumbnail Resizer — 1280×720 | Thumbric.ai',
-    description: 'Resize and crop any image to YouTube 1280×720, Shorts, or square social sizes in the browser.',
+    description:
+      'Resize thumbnails to YouTube, 50%/25% sizes, Shorts, square, or custom pixels with High, Balanced, or Light quality.',
     changefreq: 'weekly',
     priority: '0.8',
   },

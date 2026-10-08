@@ -26,7 +26,7 @@ export const TOOL_NAV: ToolNavItem[] = [
     id: 'resizer',
     path: '/youtube-thumbnail-resizer',
     label: 'Resizer',
-    blurb: 'Crop to 1280×720, Shorts, or square.',
+    blurb: 'Sizes, 50%/25% shrink, 3 quality tiers.',
     nav: true,
   },
   {

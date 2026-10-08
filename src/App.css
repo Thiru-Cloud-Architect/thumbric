@@ -4464,6 +4464,60 @@ footer {
   text-align: center;
 }
 
+.resizer-card .resizer-fieldset {
+  margin: 1rem 0 0;
+  padding: 0;
+  border: none;
+}
+
+.resizer-card .resizer-fieldset legend {
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.45rem;
+}
+
+.resizer-choice-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.55rem;
+}
+
+.resizer-custom-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.resizer-custom-row label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.82rem;
+}
+
+.resizer-custom-row input {
+  width: 7rem;
+  padding: 0.45rem 0.55rem;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.35);
+  color: inherit;
+}
+
+.resizer-output-meta {
+  margin: 1rem 0 0.5rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.resizer-source {
+  margin: 0;
+  align-self: center;
+}
+
 .resize-preview {
   overflow: auto;
   border-radius: 12px;
