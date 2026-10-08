@@ -40,8 +40,8 @@ export const PLANS: Plan[] = [
     id: 'trial',
     name: '7-day Trial',
     tagline: 'Creator clean exports — no card yet',
-    usd: { amount: 0, compareAt: 9, symbol: '$' },
-    inr: { amount: 0, compareAt: 149, symbol: '₹' },
+    usd: { amount: 0, compareAt: 5, symbol: '$' },
+    inr: { amount: 0, compareAt: 99, symbol: '₹' },
     highlight: `${TRIAL_DAYS}-day Creator trial in this browser`,
     popular: true,
     features: [
@@ -56,8 +56,8 @@ export const PLANS: Plan[] = [
     id: 'creator',
     name: 'Creator',
     tagline: 'For weekly uploads',
-    usd: { amount: 9, compareAt: 19, symbol: '$' },
-    inr: { amount: 149, compareAt: 299, symbol: '₹' },
+    usd: { amount: 5, compareAt: 12, symbol: '$' },
+    inr: { amount: 99, compareAt: 199, symbol: '₹' },
     highlight: `${CREATOR_CLEAN_DOWNLOADS_PER_MONTH} clean PNGs every month`,
     features: [
       'Everything in Free',
@@ -72,8 +72,8 @@ export const PLANS: Plan[] = [
     id: 'pro',
     name: 'Pro',
     tagline: 'Daily publishers & teams',
-    usd: { amount: 19, compareAt: 39, symbol: '$' },
-    inr: { amount: 399, compareAt: 799, symbol: '₹' },
+    usd: { amount: 9, compareAt: 19, symbol: '$' },
+    inr: { amount: 199, compareAt: 399, symbol: '₹' },
     highlight: 'Unlimited clean downloads',
     features: [
       'Everything in Creator',
@@ -88,8 +88,8 @@ export const PLANS: Plan[] = [
     id: 'agency',
     name: 'Agency',
     tagline: 'Multi-channel teams & clients',
-    usd: { amount: 49, compareAt: 99, symbol: '$' },
-    inr: { amount: 1499, compareAt: 2999, symbol: '₹' },
+    usd: { amount: 29, compareAt: 59, symbol: '$' },
+    inr: { amount: 799, compareAt: 1499, symbol: '₹' },
     highlight: '5 seats · brand kits · priority support',
     features: [
       'Everything in Pro',
