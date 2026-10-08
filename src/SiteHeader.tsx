@@ -147,8 +147,8 @@ export function SiteHeader({ userLabel, onLoginClick }: SiteHeaderProps) {
       </nav>
       <div className="top-actions">
         {onLoginClick ? (
-          <button type="button" className="top-login" onClick={onLoginClick} title={userLabel ? 'Sign out' : 'Sign in'}>
-            {userLabel ? `${userLabel} · Out` : 'Sign in'}
+          <button type="button" className="top-login" onClick={onLoginClick}>
+            {userLabel ? userLabel : 'Sign in'}
           </button>
         ) : (
           <Link className="top-login" to="/account">

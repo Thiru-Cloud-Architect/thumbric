@@ -4,7 +4,6 @@ import { PRODUCT_NAME_FULL, UI_BUILD } from './brand'
 import { DocumentHead } from './DocumentHead'
 import {
   CREATOR_CLEAN_DOWNLOADS_PER_MONTH,
-  TRIAL_DAYS,
   activateDemoPlan,
   loadEntitlement,
   registerEmail,
@@ -56,8 +55,7 @@ export default function PricingPage() {
             Three simple tiers. <span className="gradient-text">Launch pricing.</span>
           </h1>
           <p className="section-lede center">
-            Free forever for watermarked previews. Creator and Pro unlock clean PNGs — both include a{' '}
-            {TRIAL_DAYS}-day demo trial when checkout is not live yet.
+            Start free. Upgrade when you want downloads without the small corner mark.
           </p>
           <p className="pricing-launch-offer">Never again at these rates.</p>
           <div className="currency-toggle" role="group" aria-label="Billing currency">

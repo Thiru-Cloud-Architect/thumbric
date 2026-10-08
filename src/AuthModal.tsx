@@ -128,8 +128,7 @@ export function AuthModal({ open, reason = 'generic', onClose, onSuccess }: Auth
             </label>
           ) : (
             <p className="auth-fallback-note">
-              Running without Supabase env — account is saved on this device. Add{' '}
-              <code>VITE_SUPABASE_URL</code> + <code>VITE_SUPABASE_ANON_KEY</code> for cloud auth.
+              Free account on this browser. You can save designs and download after you sign up.
             </p>
           )}
           {error ? <p className="auth-error">{error}</p> : null}

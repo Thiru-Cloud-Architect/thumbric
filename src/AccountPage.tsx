@@ -9,11 +9,9 @@ import { AuthModal } from './AuthModal'
 import { entitlementStatusLabel, loadEntitlement } from './entitlement'
 import { planPriceLabel } from './plans'
 import { useAuth } from './auth'
-import { isSupabaseConfigured } from './supabaseClient'
 import {
   FREE_DAILY_DOWNLOADS,
   FREE_DESIGN_CAP,
-  freemiumStatusLabel,
   loadDesignCount,
   watermarkDownloadsLeftToday,
 } from './usageLimits'
@@ -34,10 +32,7 @@ export default function AccountPage() {
       <DocumentHead path="/account" />
       <SiteHeader
         userLabel={user?.name ?? null}
-        onLoginClick={() => {
-          if (user) void signOut()
-          else setAuthOpen(true)
-        }}
+        onLoginClick={user ? undefined : () => setAuthOpen(true)}
       />
       <AuthModal open={authOpen} reason="generic" onClose={() => setAuthOpen(false)} />
       <main className="account-main tool-page-main">
@@ -46,11 +41,9 @@ export default function AccountPage() {
           Your <span className="gradient-text">creator profile</span>
         </h1>
         <p className="section-lede">
-          {isSupabaseConfigured()
-            ? 'Signed in with Supabase when credentials are set.'
-            : 'Device account today — add Supabase URL + anon key for cloud auth.'}{' '}
-          Free: {FREE_DESIGN_CAP} guest designs · {FREE_DAILY_DOWNLOADS} mild downloads / day after
-          register.
+          {user
+            ? 'This is your free account. Downloads include a small Thumbric mark until you upgrade.'
+            : 'Sign in to save designs and download. Your photo stays in this browser.'}
         </p>
 
         <div className="account-grid">
@@ -63,21 +56,18 @@ export default function AccountPage() {
               <strong>Email:</strong> {user?.email || entitlement.email || 'Not saved'}
             </p>
             <p>
-              <strong>Auth:</strong> {user?.provider || 'none'}
-              {isSupabaseConfigured() ? ' · Supabase ready' : ' · local fallback'}
-            </p>
-            <p>
-              <strong>Usage:</strong>{' '}
-              {freemiumStatusLabel({
-                isRegistered: Boolean(user),
-                isPaid: paid,
-                planLabel: entitlementStatusLabel(entitlement),
-              })}
+              <strong>Plan:</strong>{' '}
+              {paid ? entitlementStatusLabel(entitlement) : `Free · ${FREE_DAILY_DOWNLOADS} downloads a day`}
             </p>
             <p className="hint">
-              Designs started: {loadDesignCount()} · Watermarked left today:{' '}
-              {user ? watermarkDownloadsLeftToday(true, paid) : 0}
+              Designs started: {loadDesignCount()} of {FREE_DESIGN_CAP} guest designs used before signup.
+              {user ? ` Downloads left today: ${watermarkDownloadsLeftToday(true, paid)}.` : ''}
             </p>
+            {user ? (
+              <button type="button" className="chip" onClick={() => void signOut()}>
+                Sign out
+              </button>
+            ) : null}
             <Link className="chip solid" to="/pricing">
               View pricing · Creator {planPriceLabel('creator', 'INR')}
             </Link>
@@ -85,7 +75,7 @@ export default function AccountPage() {
 
           <article className="tool-card">
             <h2>Referral link</h2>
-            <p className="hint">Share Thumbric — attribution stays local until the Worker is live.</p>
+            <p className="hint">Share Thumbric with another creator.</p>
             <p className="account-ref-id">Your ref: {getOrCreateReferralId()}</p>
             <input className="account-ref-input" readOnly value={refLink} onFocus={(e) => e.target.select()} />
           </article>

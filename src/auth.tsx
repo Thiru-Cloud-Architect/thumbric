@@ -14,7 +14,7 @@ import {
   registerSimpleUser,
   type SimpleUser,
 } from './simpleAuth'
-import { registerEmail } from './entitlement'
+import { registerEmail, startFreeAccount } from './entitlement'
 
 export type AuthUser = {
   id: string
@@ -118,7 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       if (error) throw new Error(error.message)
       if (!data.user) throw new Error('Could not create account.')
-      registerEmail(email)
+      startFreeAccount(email)
       const next: AuthUser = {
         id: data.user.id,
         name: name.trim() || email.split('@')[0] || 'Creator',
@@ -132,7 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Local / magic-link-less fallback (works without Supabase env).
     const local = await registerSimpleUser(name, email)
-    registerEmail(email)
+    startFreeAccount(email)
     const next = toAuthUser(local, sb ? 'supabase' : 'local')
     if (sb && !password) {
       const { error } = await sb.auth.signInWithOtp({

@@ -199,7 +199,7 @@ type EditorSnap = {
 
 export default function HomePage() {
   const navigate = useNavigate()
-  const { user: authUser, signOut } = useAuth()
+  const { user: authUser } = useAuth()
   const [platformId, setPlatformId] = useState<PlatformId>('youtube')
   const [nicheId, setNicheId] = useState<NicheId>('tech')
   const [layout, setLayout] = useState<LayoutId>('photo-left')
@@ -1710,10 +1710,7 @@ export default function HomePage() {
         userLabel={authUser?.name || simpleUser?.name || null}
         onLoginClick={() => {
           if (authUser || simpleUser) {
-            void signOut().then(() => {
-              setSimpleUser(null)
-              setStatus('Signed out.')
-            })
+            navigate('/account')
             return
           }
           setAuthModalReason('generic')

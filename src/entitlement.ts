@@ -132,6 +132,19 @@ export function registerEmail(email: string): Entitlement {
   return next
 }
 
+/** A new free signup should not inherit an old demo Creator/Pro unlock. */
+export function startFreeAccount(email: string): Entitlement {
+  const next: Entitlement = {
+    ...emptyEntitlement(),
+    email: email.trim().toLowerCase(),
+    plan: 'free',
+    paidUntil: null,
+    trial: false,
+  }
+  saveEntitlement(next)
+  return next
+}
+
 export function consumeCleanDownload(entitlement: Entitlement): Entitlement {
   const ent = normalizeEntitlement(entitlement)
   if (!isPaid(ent)) return ent

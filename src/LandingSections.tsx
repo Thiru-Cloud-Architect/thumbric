@@ -400,8 +400,7 @@ export function FeaturesSection() {
             AI scene first. <span className="gradient-text gradient-text-motion">Editor tools next.</span>
           </h2>
           <p className="section-lede center">
-            Describe a thumbnail idea → get a free AI backdrop → finish the title on the live canvas.
-            No YouTube-URL paste and no full video analysis yet.
+            Describe your video or paste a YouTube URL, then finish the title in the editor.
           </p>
         </div>
       </RevealItem>
