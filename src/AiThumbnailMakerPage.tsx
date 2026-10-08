@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { track } from './analytics'
 import {
   AI_LOOK_TARGET,
@@ -23,20 +23,6 @@ import {
 } from './youtubeUrl'
 
 type Phase = 'compose' | 'busy' | 'ready' | 'err'
-
-const LOOKS: Array<{ id: AiStyleId; label: string }> = [
-  { id: 'cartoon', label: 'Illustration' },
-  { id: 'dark-moody', label: 'Filmic' },
-  { id: 'product-hero', label: 'Minimal' },
-  { id: 'kids-fun', label: 'Vibrant' },
-  { id: 'face-reaction', label: 'Face' },
-]
-
-const EXAMPLES = [
-  'Smartphone in hand, tech review shot',
-  'Creator cooking in a home kitchen',
-  'Neon gaming desk, shocked reaction',
-]
 
 const LOADING_LINES = [
   'Analysing idea…',
@@ -62,7 +48,6 @@ function attachConcepts(items: AiGeneratedImage[], brief: CreativeBrief | null) 
 export default function AiThumbnailMakerPage() {
   const navigate = useNavigate()
   const [input, setInput] = useState('')
-  const [styleId, setStyleId] = useState<AiStyleId>('cartoon')
   const [phase, setPhase] = useState<Phase>('compose')
   const [statusLine, setStatusLine] = useState('')
   const [errorText, setErrorText] = useState('')
@@ -71,12 +56,10 @@ export default function AiThumbnailMakerPage() {
   const [brief, setBrief] = useState<CreativeBrief | null>(null)
   const [youtubeMeta, setYoutubeMeta] = useState<YoutubeMeta | null>(null)
   const [cooldown, setCooldown] = useState(0)
-  const [photoName, setPhotoName] = useState('')
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null)
   const abortRef = useRef<AbortController | null>(null)
   const runIdRef = useRef(0)
   const objectUrls = useRef<string[]>([])
-  const fileRef = useRef<HTMLInputElement>(null)
   const loadTick = useRef(0)
 
   const niche = useMemo(() => getNiche('vlog'), [])
@@ -89,10 +72,7 @@ export default function AiThumbnailMakerPage() {
     track('landing_page_view', { path: '/ai-thumbnail-maker' })
     const handoff = consumeAiHandoff()
     if (handoff?.hint) setInput(handoff.hint)
-    if (handoff?.photoDataUrl) {
-      setPhotoDataUrl(handoff.photoDataUrl)
-      setPhotoName('Reference photo')
-    }
+    if (handoff?.photoDataUrl) setPhotoDataUrl(handoff.photoDataUrl)
     return () => {
       abortRef.current?.abort()
       for (const url of objectUrls.current) URL.revokeObjectURL(url)
@@ -115,30 +95,6 @@ export default function AiThumbnailMakerPage() {
     }, 2200)
     return () => window.clearInterval(timer)
   }, [phase])
-
-  async function onPhotoPick(file: File | undefined) {
-    if (!file) return
-    if (!file.type.startsWith('image/')) {
-      setErrorText('Photo upload accepts JPG or PNG only. Video files are not required for AI.')
-      setPhase('err')
-      return
-    }
-    try {
-      const dataUrl = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onload = () => resolve(String(reader.result || ''))
-        reader.onerror = () => reject(new Error('Could not read that photo.'))
-        reader.readAsDataURL(file)
-      })
-      setPhotoDataUrl(dataUrl)
-      setPhotoName(file.name)
-      setErrorText('')
-      if (phase === 'err') setPhase('compose')
-    } catch {
-      setErrorText('Could not read that photo.')
-      setPhase('err')
-    }
-  }
 
   async function runGenerate() {
     if (!canGenerate) return
@@ -181,7 +137,7 @@ export default function AiThumbnailMakerPage() {
           niche,
           platform,
           hint: primaryHint,
-          styleId,
+          styleId: 'auto' satisfies AiStyleId,
         },
         {
           count: AI_LOOK_TARGET,
@@ -345,10 +301,10 @@ export default function AiThumbnailMakerPage() {
       ) : (
         <section className="ai-canva" aria-label="Create a thumbnail">
           <label className="ai-canva-prompt">
-            <span className="sr-only">Describe your thumbnail or paste a YouTube URL</span>
+            <span className="sr-only">Paste a YouTube link, or describe the scene</span>
             <textarea
               id="ai-maker-hint"
-              rows={2}
+              rows={3}
               value={input}
               disabled={phase === 'busy'}
               onChange={(event) => {
@@ -358,32 +314,9 @@ export default function AiThumbnailMakerPage() {
                   setErrorText('')
                 }
               }}
-              placeholder="Describe the thumbnail, or paste a YouTube URL"
+              placeholder="Paste a YouTube link, or describe the scene"
             />
           </label>
-          <div className="ai-canva-examples">
-            <span>Try these</span>
-            {EXAMPLES.map((example) => (
-              <button key={example} type="button" onClick={() => setInput(example)} disabled={phase === 'busy'}>
-                {example}
-              </button>
-            ))}
-          </div>
-          <div className="ai-canva-styles" role="listbox" aria-label="Look">
-            {LOOKS.map((look) => (
-              <button
-                key={look.id}
-                type="button"
-                role="option"
-                aria-selected={styleId === look.id}
-                className={styleId === look.id ? 'is-selected' : ''}
-                onClick={() => setStyleId(look.id)}
-                disabled={phase === 'busy'}
-              >
-                {look.label}
-              </button>
-            ))}
-          </div>
           {urlMode ? <p className="ai-canva-note">{YOUTUBE_FRAME_HONESTY}</p> : null}
           {youtubeMeta?.title && phase === 'busy' ? (
             <p className="ai-canva-note" role="status">
@@ -398,7 +331,7 @@ export default function AiThumbnailMakerPage() {
               aria-busy={phase === 'busy'}
               onClick={() => void runGenerate()}
             >
-              {phase === 'busy' ? 'Creating…' : cooldown > 0 ? `Try again in ${cooldown}s` : 'Create a thumbnail with AI'}
+              {phase === 'busy' ? 'Creating…' : cooldown > 0 ? `Try again in ${cooldown}s` : 'Create'}
             </button>
             {phase === 'busy' ? (
               <button
@@ -412,22 +345,8 @@ export default function AiThumbnailMakerPage() {
               >
                 Stop
               </button>
-            ) : (
-              <Link className="btn-outline" to={{ pathname: '/', hash: '#editor' }}>
-                Open editor
-              </Link>
-            )}
+            ) : null}
           </div>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            hidden
-            onChange={(event) => void onPhotoPick(event.target.files?.[0])}
-          />
-          <button type="button" className="ai-canva-photo" disabled={phase === 'busy'} onClick={() => fileRef.current?.click()}>
-            {photoName ? `Reference photo: ${photoName}` : 'Add a reference photo'}
-          </button>
           {phase === 'busy' ? (
             <p className="ai-canva-note" role="status">
               <span className="ai-inline-spinner" aria-hidden /> {statusLine || 'Preparing your thumbnail…'}
