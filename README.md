@@ -1,4 +1,4 @@
-# Thumbric.ai
+# Thumbric
 
 Free browser thumbnail maker for **YouTube**, Shorts/Reels, Instagram, LinkedIn, and Facebook — plus **AI image** generation and free creator tools (score, A/B tester, resizer, CTR, title).
 
@@ -9,7 +9,7 @@ Free browser thumbnail maker for **YouTube**, Shorts/Reels, Instagram, LinkedIn,
 
 | What | Name |
 |------|------|
-| **Product** | **Thumbric.ai** |
+| **Product** | **Thumbric** |
 | **Public site** | **thumbric.app** (Cloudflare → GitHub Pages) |
 
 Connect steps and DNS records: see **[DEPLOY.md](./DEPLOY.md)**. Optional later: buy `thumbric.ai` and redirect `.app` → `.ai`. Worker API can live on `api.thumbric.app` — see `worker/`.

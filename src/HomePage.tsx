@@ -47,6 +47,7 @@ import {
 import { LazyReveal } from './LazyReveal'
 import { SiteHeader } from './SiteHeader'
 import { planPriceLabel } from './plans'
+import { useBillingCurrency } from './useBillingCurrency'
 import { LAYOUTS, PHOTO_SHAPES, type LayoutId, type PhotoShapeId } from './layout'
 import {
   NICHES,
@@ -197,6 +198,7 @@ type EditorSnap = {
 export default function HomePage() {
   const navigate = useNavigate()
   const { user: authUser } = useAuth()
+  const { currency } = useBillingCurrency()
   const [platformId, setPlatformId] = useState<PlatformId>('youtube')
   const [nicheId, setNicheId] = useState<NicheId>('tech')
   const [layout, setLayout] = useState<LayoutId>('photo-left')
@@ -1961,7 +1963,9 @@ export default function HomePage() {
               <p className="field-help">
                 Free = light <strong>thumbric</strong> corner mark · {FREE_DAILY_DOWNLOADS}/day after
                 register. Clean needs{' '}
-                <Link to="/pricing">Creator {planPriceLabel('creator')} / Pro {planPriceLabel('pro')}</Link>.
+                <Link to="/pricing">
+                  Creator {planPriceLabel('creator', currency)} / Pro {planPriceLabel('pro', currency)}
+                </Link>.
               </p>
 
               <details className="editor-advanced">
@@ -2701,10 +2705,10 @@ export default function HomePage() {
                 </p>
                 <div className="actions modal-plan-actions">
                   <button type="button" className="chip solid" onClick={() => onDemoPlan('creator')}>
-                    Demo Creator · {planPriceLabel('creator')}
+                    Demo Creator · {planPriceLabel('creator', currency)}
                   </button>
                   <button type="button" className="primary" onClick={() => onDemoPlan('pro')}>
-                    Demo Pro · {planPriceLabel('pro')}
+                    Demo Pro · {planPriceLabel('pro', currency)}
                   </button>
                   <Link className="chip" to="/pricing" onClick={() => setModal('none')}>
                     View full pricing

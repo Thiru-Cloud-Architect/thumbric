@@ -100,7 +100,7 @@ export function PlushInfoSection() {
           Built for <span className="gradient-text">thumbnails only</span>
         </h2>
         <p className="section-lede center">
-          Scroll to reveal what Thumbric.ai does today — honest, browser-first, no filler features.
+          Scroll to reveal what Thumbric does today — honest, browser-first, no filler features.
         </p>
       </div>
       <div className="plush-info-grid section-shell">

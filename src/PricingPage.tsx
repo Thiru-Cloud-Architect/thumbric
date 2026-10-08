@@ -11,17 +11,12 @@ import {
 } from './entitlement'
 import { SiteFooter } from './LandingSections'
 import { SiteHeader } from './SiteHeader'
-import {
-  PLANS,
-  formatCompareAt,
-  formatPlanPrice,
-  type BillingCurrency,
-  type PlanId,
-} from './plans'
+import { PLANS, formatCompareAt, formatPlanPrice, type PlanId } from './plans'
+import { useBillingCurrency } from './useBillingCurrency'
 import './App.css'
 
 export default function PricingPage() {
-  const [currency, setCurrency] = useState<BillingCurrency>('USD')
+  const { currency, chooseCurrency } = useBillingCurrency()
   const [entitlement, setEntitlement] = useState<Entitlement>(() => loadEntitlement())
 
   function ensureEmail(current: Entitlement) {
@@ -63,7 +58,7 @@ export default function PricingPage() {
               type="button"
               className={currency === 'USD' ? 'currency-btn is-active' : 'currency-btn'}
               aria-pressed={currency === 'USD'}
-              onClick={() => setCurrency('USD')}
+              onClick={() => chooseCurrency('USD')}
             >
               USD
             </button>
@@ -71,18 +66,14 @@ export default function PricingPage() {
               type="button"
               className={currency === 'INR' ? 'currency-btn is-active' : 'currency-btn'}
               aria-pressed={currency === 'INR'}
-              onClick={() => setCurrency('INR')}
+              onClick={() => chooseCurrency('INR')}
             >
               INR
             </button>
           </div>
-          {currency === 'INR' ? (
-            <p className="pricing-region-note">
-              India pricing — lower local rates in rupees. Billed monthly when checkout goes live.
-            </p>
-          ) : (
-            <p className="pricing-region-note">Prices shown in US dollars by default.</p>
-          )}
+          <p className="pricing-region-note">
+            {currency === 'INR' ? 'Prices are in rupees for India.' : 'Prices are in US dollars.'}
+          </p>
         </section>
 
         <section className="pricing-section pricing-section-page" aria-label="Plans">

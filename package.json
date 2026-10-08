@@ -1,6 +1,6 @@
 {
   "name": "thumbric",
-  "description": "Thumbric.ai — free client-side YouTube & Shorts thumbnail maker",
+  "description": "Thumbric — free client-side YouTube & Shorts thumbnail maker",
   "private": true,
   "version": "0.0.0",
   "type": "module",

@@ -7,7 +7,7 @@
 | **https://thumbric.app/** | **Primary** (Cloudflare Registrar → GitHub Pages) |
 | https://thiru-cloud-architect.github.io/thumbric/ | Fallback project URL (still works) |
 
-Product display name remains **Thumbric.ai**; the public site is on **`.app`** for cost.
+Product display name is **Thumbric** (no .ai). The public site is **thumbric.app**.
 
 Build env (`.github/workflows/pages.yml`):
 

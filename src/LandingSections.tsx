@@ -4,6 +4,7 @@ import { NavHashLink, goToHash } from './nav'
 import { PRODUCT_NAME, PRODUCT_NAME_FULL, SITE_URL, UI_BUILD } from './brand'
 import { CREATOR_CLEAN_DOWNLOADS_PER_MONTH, TRIAL_DAYS } from './entitlement'
 import { planPriceLabel } from './plans'
+import { useBillingCurrency } from './useBillingCurrency'
 import { FEATURES, AI_FEATURE } from './features'
 import { TOOL_NAV } from './toolsCatalog'
 import { HERO_THUMBS, type HeroThumb } from './heroThumbs'
@@ -17,7 +18,7 @@ function onEditorHashClick(event: MouseEvent<HTMLAnchorElement>, hash: string) {
 const FAQ_ITEMS = [
   {
     q: 'Will a better thumbnail actually help my videos?',
-    a: 'Strong titles and contrast help people stop scrolling. Thumbric.ai gives you platform-sized layouts, bold type, and moods tuned for YouTube-style clicks — you bring the title and photo.',
+    a: `Strong titles and contrast help people stop scrolling. ${PRODUCT_NAME} gives you platform-sized layouts, bold type, and moods tuned for YouTube-style clicks — you bring the title and photo.`,
   },
   {
     q: 'What if I am bad at design?',
@@ -562,6 +563,7 @@ export function FreeToolsSection() {
 }
 
 export function PricingTeaser() {
+  const { currency } = useBillingCurrency()
   return (
     <section className="pricing-teaser" aria-labelledby="pricing-teaser-title">
       <div className="pricing-teaser-inner">
@@ -571,10 +573,9 @@ export function PricingTeaser() {
             Free · Creator · <span className="gradient-text">Pro</span>
           </h2>
           <p className="section-lede">
-            Watermarked previews stay free. Creator at {planPriceLabel('creator')} (
+            Watermarked previews stay free. Creator at {planPriceLabel('creator', currency)} (
             {CREATOR_CLEAN_DOWNLOADS_PER_MONTH} clean PNGs/month) or Pro unlimited at{' '}
-            {planPriceLabel('pro')} — includes a {TRIAL_DAYS}-day demo trial. INR rates on the pricing
-            page.
+            {planPriceLabel('pro', currency)} — includes a {TRIAL_DAYS}-day demo trial.
           </p>
         </div>
         <Link className="btn-gradient pricing-teaser-cta" to="/pricing">

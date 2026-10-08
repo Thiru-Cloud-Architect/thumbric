@@ -1,4 +1,4 @@
-# Thumbric.ai — team brief
+# Thumbric — team brief
 
 **Live:** https://thumbric.app/ · Repo: `Thiru-Cloud-Architect/thumbric`  
 **Call with:** `@team.md`
@@ -12,6 +12,8 @@
 - **Honest gap:** `docs/IMPLEMENTATION_GAP.md`
 
 ## Truth
+
+Visible UI brand is **Thumbric** (no .ai). The live domain stays https://thumbric.app/.
 
 Shipped: calm AI one-box maker, simplified Media/Text/Download editor, Tools mega-menu, freemium gates (8 guest designs · register to save · 5 mild downloads/day), Supabase auth client with local fallback.  
 Missing: live Supabase project credentials in prod, Stripe checkout, paid fal AI.

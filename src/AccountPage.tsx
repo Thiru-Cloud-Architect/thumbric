@@ -8,6 +8,7 @@ import { SiteHeader } from './SiteHeader'
 import { AuthModal } from './AuthModal'
 import { loadEntitlement } from './entitlement'
 import { planPriceLabel } from './plans'
+import { useBillingCurrency } from './useBillingCurrency'
 import { useAuth } from './auth'
 import { FREE_DAILY_DOWNLOADS, loadDailyDownloads } from './usageLimits'
 import { loadThumbnailHistory } from './thumbnailHistory'
@@ -15,6 +16,7 @@ import './App.css'
 
 export default function AccountPage() {
   const { user, signOut } = useAuth()
+  const { currency } = useBillingCurrency()
   const [authOpen, setAuthOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const entitlement = loadEntitlement()
@@ -77,7 +79,7 @@ export default function AccountPage() {
           <article>
             <strong>Free</strong>
             <span>upgrade for a clean PNG</span>
-            <Link to="/pricing">See Creator {planPriceLabel('creator', 'INR')}</Link>
+            <Link to="/pricing">See Creator {planPriceLabel('creator', currency)}</Link>
           </article>
         </section>
 
