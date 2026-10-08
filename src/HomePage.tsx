@@ -48,9 +48,8 @@ import { LazyReveal } from './LazyReveal'
 import { PlushInfoSection } from './PlushInfoSection'
 import { SiteHeader } from './SiteHeader'
 import { planPriceLabel } from './plans'
-import { COLOR_PRESETS, LAYOUTS, PHOTO_SHAPES, type LayoutId, type PhotoShapeId } from './layout'
+import { LAYOUTS, PHOTO_SHAPES, type LayoutId, type PhotoShapeId } from './layout'
 import {
-  NICHE_GROUPS,
   NICHES,
   type NicheId,
   filterNiches,
@@ -129,6 +128,18 @@ import {
   simpleAuthIsDeviceOnly,
   type SimpleUser,
 } from './simpleAuth'
+import { useAuth } from './auth'
+import { AuthModal } from './AuthModal'
+import {
+  FREE_DAILY_DOWNLOADS,
+  FREE_DESIGN_CAP,
+  canDownloadWatermarked,
+  canStartDesign,
+  consumeWatermarkDownload,
+  freemiumStatusLabel,
+  recordDesignStarted,
+  watermarkDownloadsLeftToday,
+} from './usageLimits'
 import { consumeAiHandoff, loadImageFromUrl, saveAiHandoff } from './aiHandoff'
 import {
   buildCreativeBrief,
@@ -190,6 +201,7 @@ type EditorSnap = {
 
 export default function HomePage() {
   const navigate = useNavigate()
+  const { user: authUser, signOut } = useAuth()
   const [platformId, setPlatformId] = useState<PlatformId>('youtube')
   const [nicheId, setNicheId] = useState<NicheId>('tech')
   const [layout, setLayout] = useState<LayoutId>('photo-left')
@@ -218,12 +230,15 @@ export default function HomePage() {
   const [photo, setPhoto] = useState<HTMLImageElement | null>(null)
   const [photoName, setPhotoName] = useState('')
   const [photoUrl, setPhotoUrl] = useState('')
-  const [status, setStatus] = useState('Start with platform and look — preview starts clean with no stickers.')
+  const [status, setStatus] = useState('Upload a photo or pick a template — then write your title.')
   const [entitlement, setEntitlement] = useState<Entitlement>(() => loadEntitlement())
   const [modal, setModal] = useState<'none' | 'register' | 'pay' | 'login' | 'trial'>('none')
+  const [authModalReason, setAuthModalReason] = useState<'save' | 'download' | 'design-cap' | 'generic' | null>(null)
   const [emailDraft, setEmailDraft] = useState('')
   const [nameDraft, setNameDraft] = useState('')
   const [simpleUser, setSimpleUser] = useState<SimpleUser | null>(() => loadSimpleUser())
+  const isRegistered = Boolean(authUser || simpleUser)
+  const paidActive = isPaid(entitlement)
   const [aiHint, setAiHint] = useState('')
   const [aiBusy, setAiBusy] = useState(false)
   const [aiStyleId, setAiStyleId] = useState<AiStyleId>('auto')
@@ -249,9 +264,7 @@ export default function HomePage() {
   const [showAdvancedText, setShowAdvancedText] = useState(false)
   const ZOOM_PRESETS = [0.25, 0.5, 0.75, 1, 2] as const
   const [layerState, setLayerState] = useState<LayerState>(() => defaultLayerState())
-  const [photoTreatment, setPhotoTreatment] = useState<
-    'normal' | 'blur-background' | 'brand-backdrop'
-  >('normal')
+  const [photoTreatment] = useState<'normal' | 'blur-background' | 'brand-backdrop'>('normal')
   const [creatorKit, setCreatorKit] = useState<CreatorKit>(() => loadCreatorKit())
   const [logoImage, setLogoImage] = useState<HTMLImageElement | null>(null)
   const [textRotationDeg, setTextRotationDeg] = useState(0)
@@ -275,7 +288,7 @@ export default function HomePage() {
     const hash = normalizeHash(typeof window !== 'undefined' ? window.location.hash : '')
     return hash === 'editor-title' ? 'title' : 'create'
   })
-  const [editorMode, setEditorMode] = useState<EditorMode>(() => {
+  const [, setEditorMode] = useState<EditorMode>(() => {
     const hash = normalizeHash(typeof window !== 'undefined' ? window.location.hash : '')
     // Default create path is from-scratch only. AI lives at /ai-thumbnail-maker.
     return hash === 'editor-improve' ? 'improve' : 'classic'
@@ -731,9 +744,18 @@ export default function HomePage() {
     setStatus('Ready — retry remaining looks to fill the empty slots.')
   }, [aiCooldownSec, aiBusy, aiAwaitingRetry, aiVariants.length])
 
+  function gateNewDesign(): boolean {
+    if (canStartDesign(isRegistered)) return true
+    setAuthModalReason('design-cap')
+    setStatus(`Free guest limit is ${FREE_DESIGN_CAP} designs. Register to keep creating.`)
+    return false
+  }
+
   function applyTemplate(id: TemplateId) {
     const template = THUMB_TEMPLATES.find((item) => item.id === id)
     if (!template) return
+    if (!gateNewDesign()) return
+    recordDesignStarted()
     setPlatformId(template.platform)
     setLayout(template.layout)
     setFontId(template.fontId)
@@ -1085,6 +1107,8 @@ export default function HomePage() {
       setStatus('Please choose a photo file (JPG or PNG).')
       return
     }
+    if (!photo && !gateNewDesign()) return
+    if (!photo) recordDesignStarted()
     if (photoUrl) URL.revokeObjectURL(photoUrl)
     const url = URL.createObjectURL(file)
     const image = new Image()
@@ -1092,7 +1116,7 @@ export default function HomePage() {
       setPhoto(image)
       setPhotoUrl(url)
       setPhotoName(file.name)
-      setStatus('Photo added. You can change its shape below.')
+      setStatus('Photo added. Write your title on the Text step.')
     }
     image.onerror = () => {
       URL.revokeObjectURL(url)
@@ -1552,10 +1576,28 @@ export default function HomePage() {
   }
 
   function saveMarked() {
+    if (!isRegistered) {
+      setAuthModalReason('download')
+      setStatus('Register free to download — 5 mild-watermark PNGs per day.')
+      return
+    }
+    if (!canDownloadWatermarked(isRegistered, paidActive)) {
+      setModal('pay')
+      setStatus(
+        `Free daily limit is ${FREE_DAILY_DOWNLOADS} downloads. Upgrade for unlimited / clean exports.`,
+      )
+      return
+    }
     try {
       downloadThumbnail({ ...previewInput, watermark: true })
+      consumeWatermarkDownload(isRegistered, paidActive)
       recordDownloadPreview(false)
-      setStatus(`Saved free preview. Look in Downloads for ${DOWNLOAD_PREFIX}-${platform.id}.png`)
+      const left = watermarkDownloadsLeftToday(isRegistered, paidActive)
+      setStatus(
+        paidActive
+          ? `Saved. Look in Downloads for ${DOWNLOAD_PREFIX}-${platform.id}.png`
+          : `Saved with a light Thumbric mark. ${left} free download${left === 1 ? '' : 's'} left today.`,
+      )
       track('thumbnail_downloaded', { tool: 'editor', watermark: true })
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Could not save the image.')
@@ -1663,11 +1705,27 @@ export default function HomePage() {
     <div className="page">
       <DocumentHead path="/" />
       <SiteHeader
-        userLabel={simpleUser ? simpleUser.name : null}
+        userLabel={authUser?.name || simpleUser?.name || null}
         onLoginClick={() => {
-          setNameDraft(simpleUser?.name || '')
-          setEmailDraft(simpleUser?.email || '')
-          setModal('login')
+          if (authUser || simpleUser) {
+            void signOut().then(() => {
+              setSimpleUser(null)
+              setStatus('Signed out.')
+            })
+            return
+          }
+          setAuthModalReason('generic')
+        }}
+      />
+      <AuthModal
+        open={authModalReason != null}
+        reason={authModalReason || 'generic'}
+        onClose={() => setAuthModalReason(null)}
+        onSuccess={() => {
+          const u = loadSimpleUser()
+          setSimpleUser(u)
+          if (u) setEntitlement(registerEmail(u.email))
+          setStatus('Account ready — you can save and download.')
         }}
       />
 
@@ -1693,50 +1751,24 @@ export default function HomePage() {
           <PricingTeaser />
         </LazyReveal>
 
-        <section id="editor" className="editor-section" aria-label="Thumbnail editor">
+        <section id="editor" className="editor-section editor-section-plush" aria-label="Thumbnail editor">
           <OnboardingTips />
           <div className="editor-head editor-head-slim">
-            <h2 className="editor-title">
-              Thumbnail studio
-            </h2>
+            <h2 className="editor-title">Editor</h2>
             <p className="editor-lede">
-              Calm canvas for everyday creates — templates, photo, title, export. For packaging strategies, open{' '}
-              <Link to="/ai-thumbnail-maker">AI Thumbnail Maker</Link>.
+              Photo → title → download. Need AI?{' '}
+              <Link to="/ai-thumbnail-maker">AI Thumbnail Maker</Link>
             </p>
           </div>
-        <section className="workbench editor-workbench studio-grid" aria-label="Thumbnail studio">
-          <div className="editor-mode-bar editor-mode-bar-simple" aria-label="Studio path">
-            <p className="editor-mode-meta" aria-live="polite">
-              From scratch · {platform.width}×{platform.height}
-              {photoName ? ` · ${photoName}` : ''}
-            </p>
-            <div className="editor-mode-links">
-              <Link className="chip solid" to="/ai-thumbnail-maker">
-                AI Thumbnail Maker
-              </Link>
-              <Link className="chip" to="/thumbnail-doctor">
-                Analyze
-              </Link>
-              <button
-                type="button"
-                className={editorMode === 'improve' ? 'chip solid' : 'chip'}
-                onClick={() => {
-                  setEditorMode(editorMode === 'improve' ? 'classic' : 'improve')
-                  setEditorTab('create')
-                }}
-              >
-                {editorMode === 'improve' ? 'Back to create' : 'Improve existing'}
-              </button>
-            </div>
-          </div>
+        <section className="workbench editor-workbench studio-grid studio-grid-plush" aria-label="Thumbnail studio">
           <form
-            className="controls studio-tools"
+            className="controls studio-tools studio-tools-plush"
             onSubmit={(event) => {
               event.preventDefault()
               requestExportWithChecks(false)
             }}
           >
-            <div className="editor-tabs" role="tablist" aria-label="Editor steps">
+            <div className="editor-tabs editor-tabs-plush" role="tablist" aria-label="Editor steps">
               <button
                 id="editor-tab-create"
                 type="button"
@@ -1744,9 +1776,8 @@ export default function HomePage() {
                 aria-selected={editorTab === 'create'}
                 className={editorTab === 'create' ? 'editor-tab is-active' : 'editor-tab'}
                 onClick={() => setEditorTab('create')}
-                title="Scene, photo, or template"
               >
-                1 · Create
+                Media
               </button>
               <button
                 id="editor-tab-title"
@@ -1755,9 +1786,8 @@ export default function HomePage() {
                 aria-selected={editorTab === 'title'}
                 className={editorTab === 'title' ? 'editor-tab is-active' : 'editor-tab'}
                 onClick={() => setEditorTab('title')}
-                title="Title, font, and size"
               >
-                2 · Title
+                Text
               </button>
               <button
                 id="editor-tab-finish"
@@ -1766,20 +1796,21 @@ export default function HomePage() {
                 aria-selected={editorTab === 'finish'}
                 className={editorTab === 'finish' ? 'editor-tab is-active' : 'editor-tab'}
                 onClick={() => setEditorTab('finish')}
-                title="Layout, stickers, and download"
               >
-                3 · Finish
+                Download
               </button>
             </div>
+            <p className="editor-quota-line" aria-live="polite">
+              {freemiumStatusLabel({
+                isRegistered,
+                isPaid: paidActive,
+                planLabel: entitlementStatusLabel(entitlement),
+              })}
+            </p>
 
             {editorTab === 'create' ? (
-            <section className="step step-clean">
-              <p className="step-lede">
-                {editorMode === 'improve'
-                  ? 'Score an existing thumbnail, then generate stronger alternatives in AI Maker.'
-                  : 'Pick a platform, tap a template, drop a photo, then style the title. For AI, use AI Thumbnail Maker.'}
-              </p>
-              <div className="choice-row platform-row" role="radiogroup" aria-label="Platform">
+            <section className="step step-clean step-plush">
+              <div className="choice-row platform-row platform-row-compact" role="radiogroup" aria-label="Platform">
                 {PLATFORMS.map((item) => (
                   <button
                     key={item.id}
@@ -1790,56 +1821,32 @@ export default function HomePage() {
                     onClick={() => setPlatformId(item.id)}
                   >
                     <span>{item.label}</span>
-                    <small>
-                      {item.orientation} · {item.width}×{item.height}
-                    </small>
                   </button>
                 ))}
               </div>
 
-              {editorMode === 'classic' ? (
-              <div className="quick-row">
-                <button type="button" className="chip solid" onClick={applyQuickIdea}>
-                  Quick idea
-                </button>
-                <p className="field-help quick-hint">Shuffle mood, layout, font &amp; title style.</p>
-              </div>
-              ) : null}
+              <div className="photo-box classic-create-box plush-media-box">
+                <div className="photo-actions photo-actions-stack">
+                  <button
+                    type="button"
+                    className="chip solid"
+                    onClick={() => fileRef.current?.click()}
+                  >
+                    {photo ? 'Change photo' : 'Upload photo'}
+                  </button>
+                  {photo ? (
+                    <button type="button" className="chip" onClick={clearPhoto}>
+                      Remove
+                    </button>
+                  ) : null}
+                  <button type="button" className="chip" onClick={applyQuickIdea}>
+                    Surprise layout
+                  </button>
+                </div>
+                {photoName ? <p className="photo-name">Selected: {photoName}</p> : null}
 
-              {editorMode === 'improve' ? (
-              <div className="photo-box ai-scene-box">
-                <div>
-                  <p className="photo-title">Improve my thumbnail</p>
-                  <p className="photo-help">
-                    Score an existing thumbnail for contrast, face size, and title space — then
-                    open AI Thumbnail Maker for stronger packaging concepts.
-                  </p>
-                </div>
-                <div className="photo-actions">
-                  <Link className="chip solid ai-generate" to="/thumbnail-doctor">
-                    Open Thumbnail Doctor →
-                  </Link>
-                  <Link className="chip" to="/ai-thumbnail-maker">
-                    Or create with AI
-                  </Link>
-                </div>
-                <p className="ai-honesty-note">
-                  After you score, use <strong>Generate 3 alternatives</strong> — it opens AI Maker
-                  with a brief ready.
-                </p>
-              </div>
-              ) : (
-              <div className="photo-box classic-create-box">
-                <div>
-                  <p className="photo-title">Templates &amp; your photo</p>
-                  <p className="photo-help">
-                    Same live canvas as AI — tap a starter, drop a JPG/PNG, then style the title.
-                    Drag files onto the preview.
-                  </p>
-                  {photoName ? <p className="photo-name">Selected: {photoName}</p> : null}
-                </div>
                 <div className="template-category-row" role="tablist" aria-label="Template category">
-                  {TEMPLATE_CATEGORIES.map((cat) => (
+                  {TEMPLATE_CATEGORIES.slice(0, 4).map((cat) => (
                     <button
                       key={cat.id}
                       type="button"
@@ -1852,52 +1859,28 @@ export default function HomePage() {
                     </button>
                   ))}
                 </div>
-                <div className="template-gallery" role="list">
-                  {templatesForCategory(templateCategory).map((item) => {
-                    const tplPlatform = getPlatform(item.platform)
-                    return (
-                      <button
-                        key={item.id}
-                        type="button"
-                        className={
-                          activeTemplateId === item.id ? 'template-card is-selected' : 'template-card'
-                        }
-                        role="listitem"
-                        onClick={() => applyTemplate(item.id)}
-                      >
-                        <span className={`template-thumb layout-${item.layout}`} aria-hidden />
-                        <span className="template-copy">
-                          <strong>{item.label}</strong>
-                          <small>
-                            {item.blurb} · {tplPlatform.label}
-                          </small>
-                        </span>
-                      </button>
-                    )
-                  })}
-                </div>
-                <div className="photo-actions">
-                  <button
-                    type="button"
-                    className="chip solid"
-                    onClick={() => fileRef.current?.click()}
-                  >
-                    {photo ? 'Change photo' : 'Upload your photo'}
-                  </button>
-                  {photo ? (
-                    <button type="button" className="chip" onClick={clearPhoto}>
-                      Remove
+                <div className="template-gallery template-gallery-compact" role="list">
+                  {templatesForCategory(templateCategory).slice(0, 6).map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={
+                        activeTemplateId === item.id ? 'template-card is-selected' : 'template-card'
+                      }
+                      role="listitem"
+                      onClick={() => applyTemplate(item.id)}
+                    >
+                      <span className={`template-thumb layout-${item.layout}`} aria-hidden />
+                      <span className="template-copy">
+                        <strong>{item.label}</strong>
+                      </span>
                     </button>
-                  ) : null}
-                  <button type="button" className="chip solid" onClick={() => setEditorTab('title')}>
-                    Next: style the title →
-                  </button>
+                  ))}
                 </div>
-                <p className="field-help">
-                  Drop a photo on the canvas, or open AI Thumbnail Maker for a generated cover.
-                </p>
+                <button type="button" className="chip solid" onClick={() => setEditorTab('title')}>
+                  Next: Text →
+                </button>
               </div>
-              )}
 
               <input
                 ref={fileRef}
@@ -1907,94 +1890,63 @@ export default function HomePage() {
                 onChange={(event) => onPickPhoto(event.target.files?.[0])}
               />
 
-              <label className="search">
-                Search looks
-                <input
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Type travel, cooking, gaming…"
-                />
-              </label>
-              <div className="niche-board">
-                {lookList.length === 0 ? (
-                  <p className="empty">No match. Try “travel” or “finance”.</p>
-                ) : showAllLooks || query ? (
-                  NICHE_GROUPS.map((group) => {
-                    const items = lookList.filter((item) => item.group === group)
-                    if (!items.length) return null
-                    return (
-                      <div key={group} className="niche-group">
-                        <p className="group-label">{group}</p>
-                        <div className="niches">
-                          {items.map((item) => (
-                            <button
-                              key={item.id}
-                              type="button"
-                              className={item.id === nicheId ? 'niche is-selected' : 'niche'}
-                              style={{ ['--niche-accent' as string]: item.accent }}
-                              role="radio"
-                              aria-checked={item.id === nicheId}
-                              onClick={() => setNicheId(item.id)}
-                            >
-                              <span className="niche-dot" style={{ background: item.accent }} aria-hidden />
-                              <span>{item.label}</span>
-                              <small>{item.hint}</small>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )
-                  })
-                ) : (
+              <details className="editor-advanced">
+                <summary>Mood &amp; look colors</summary>
+                <label className="search">
+                  Search looks
+                  <input
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder="travel, cooking, gaming…"
+                  />
+                </label>
+                <div className="niches">
+                  {(query ? lookList : lookList.slice(0, 8)).map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={item.id === nicheId ? 'niche is-selected' : 'niche'}
+                      style={{ ['--niche-accent' as string]: item.accent }}
+                      onClick={() => setNicheId(item.id)}
+                    >
+                      <span className="niche-dot" style={{ background: item.accent }} aria-hidden />
+                      <span>{item.label}</span>
+                    </button>
+                  ))}
+                </div>
+                {!query ? (
+                  <button
+                    type="button"
+                    className="linkish"
+                    onClick={() => setShowAllLooks((value) => !value)}
+                  >
+                    {showAllLooks ? 'Show fewer' : `Show all ${NICHES.length}`}
+                  </button>
+                ) : null}
+                {showAllLooks && !query ? (
                   <div className="niches">
-                    {lookList.map((item) => (
+                    {NICHES.slice(8).map((item) => (
                       <button
                         key={item.id}
                         type="button"
                         className={item.id === nicheId ? 'niche is-selected' : 'niche'}
                         style={{ ['--niche-accent' as string]: item.accent }}
-                        role="radio"
-                        aria-checked={item.id === nicheId}
                         onClick={() => setNicheId(item.id)}
                       >
                         <span className="niche-dot" style={{ background: item.accent }} aria-hidden />
                         <span>{item.label}</span>
-                        <small>{item.hint}</small>
                       </button>
                     ))}
                   </div>
-                )}
-              </div>
-              {!query && (
-                <button
-                  type="button"
-                  className="linkish"
-                  onClick={() => setShowAllLooks((value) => !value)}
-                >
-                  {showAllLooks ? 'Show popular looks only' : `Show all ${NICHES.length} looks`}
-                </button>
-              )}
+                ) : null}
+              </details>
             </section>
             ) : null}
 
             {editorTab === 'title' ? (
-            <section id="editor-title" className="step step-clean">
-              <p className="step-lede">
-                Write the hook. Drag it on the canvas — color, outline, and size live in the inspector.
-              </p>
-
+            <section id="editor-title" className="step step-clean step-plush">
               <label>
-                Short tag (optional)
-                <input
-                  value={tag}
-                  maxLength={18}
-                  onChange={(event) => setTag(event.target.value)}
-                  placeholder={niche.badge}
-                />
-              </label>
-
-              <label>
-                Title line 1
+                Title
                 <textarea
                   id="title-input"
                   value={title}
@@ -2005,7 +1957,7 @@ export default function HomePage() {
                 />
               </label>
               <label>
-                Title line 2
+                Line 2 (optional)
                 <input
                   value={titleLine2}
                   maxLength={42}
@@ -2013,127 +1965,132 @@ export default function HomePage() {
                   placeholder="AND THIS HAPPENED"
                 />
               </label>
+              <label>
+                Tag (optional)
+                <input
+                  value={tag}
+                  maxLength={18}
+                  onChange={(event) => setTag(event.target.value)}
+                  placeholder={niche.badge}
+                />
+              </label>
 
-              <fieldset>
-                <legend>Style</legend>
-                <div className="title-style-row" role="listbox" aria-label="Title style">
-                  {TEXT_STYLES.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      role="option"
-                      aria-selected={textStyleId === item.id}
-                      className={
-                        textStyleId === item.id ? 'title-style-chip is-selected' : 'title-style-chip'
-                      }
-                      data-style={item.id}
-                      title={item.hint}
-                      onClick={() => setTextStyleId(item.id)}
-                    >
-                      <span className="title-style-sample" aria-hidden>
-                        Aa
-                      </span>
-                      <span className="title-style-label">{item.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </fieldset>
-
-              <details className="editor-advanced">
-                <summary>Position, font &amp; size</summary>
-                <fieldset>
-                  <legend>Position</legend>
-                  <div className="choice-row" role="radiogroup" aria-label="Title position">
-                    {TITLE_POSITION_PRESETS.map((preset) => (
-                      <button
-                        key={preset.id}
-                        type="button"
-                        className={titleAlign === preset.align ? 'choice is-selected' : 'choice'}
-                        role="radio"
-                        aria-checked={titleAlign === preset.align}
-                        onClick={() => applyTitlePreset(preset.id)}
-                      >
-                        <span>{preset.label}</span>
-                        <small>{preset.blurb}</small>
-                      </button>
-                    ))}
-                  </div>
-                </fieldset>
-                <button
-                  type="button"
-                  className="linkish"
-                  onClick={() => {
-                    setTextPos(defaultTextPosition(platform, layout))
-                    setTitleAlign('left')
-                    setTextSelected(false)
-                    setStatus('Title position reset for this layout.')
-                  }}
-                >
-                  Reset title position
-                </button>
-                <fieldset>
-                  <legend>Font</legend>
-                  <div className="font-menu" role="listbox" aria-label="Title font">
-                    {FONTS.map((item) => (
-                      <button
-                        key={item.id}
-                        type="button"
-                        role="option"
-                        aria-selected={fontId === item.id}
-                        className={fontId === item.id ? 'font-pick is-selected' : 'font-pick'}
-                        style={{ fontFamily: item.css, fontWeight: item.weight }}
-                        onClick={() => setFontId(item.id)}
-                      >
-                        {item.label}
-                      </button>
-                    ))}
-                  </div>
-                </fieldset>
-                <div className="size-row">
-                  <label className="size-field">
-                    Size (px at 1280w)
-                    <input
-                      type="number"
-                      min={TITLE_FONT_SIZE_MIN}
-                      max={TITLE_FONT_SIZE_MAX}
-                      step={1}
-                      value={titleFontSizePx}
-                      onChange={(event) =>
-                        setTitleFontSizePx(clampTitleFontSize(Number(event.target.value)))
-                      }
-                    />
-                  </label>
-                  <label className="size-slider">
-                    <span className="sr-only">Title size slider</span>
-                    <input
-                      type="range"
-                      min={TITLE_FONT_SIZE_MIN}
-                      max={TITLE_FONT_SIZE_MAX}
-                      value={titleFontSizePx}
-                      onChange={(event) =>
-                        setTitleFontSizePx(clampTitleFontSize(Number(event.target.value)))
-                      }
-                    />
-                  </label>
-                </div>
-              </details>
-
-              <div className="editor-next-row">
-                <button type="button" className="chip solid" onClick={() => setEditorTab('finish')}>
-                  Next: layout &amp; download →
-                </button>
+              <div className="title-style-row" role="listbox" aria-label="Title style">
+                {TEXT_STYLES.slice(0, 5).map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    role="option"
+                    aria-selected={textStyleId === item.id}
+                    className={
+                      textStyleId === item.id ? 'title-style-chip is-selected' : 'title-style-chip'
+                    }
+                    data-style={item.id}
+                    title={item.hint}
+                    onClick={() => setTextStyleId(item.id)}
+                  >
+                    <span className="title-style-sample" aria-hidden>
+                      Aa
+                    </span>
+                    <span className="title-style-label">{item.label}</span>
+                  </button>
+                ))}
               </div>
+              <p className="field-help">Drag the title on the canvas. Size &amp; color sit in the inspector.</p>
+              <button type="button" className="chip solid" onClick={() => setEditorTab('finish')}>
+                Next: Download →
+              </button>
             </section>
             ) : null}
 
             {editorTab === 'finish' ? (
-            <section className="step step-clean">
-              <p className="step-lede">
-                Place the photo, add stickers, then download. Advanced brand tools stay collapsed.
+            <section className="step step-clean step-plush save-step">
+              <div className="plan-box plan-box-plush">
+                <p>
+                  {freemiumStatusLabel({
+                    isRegistered,
+                    isPaid: paidActive,
+                    planLabel: entitlementStatusLabel(entitlement),
+                  })}
+                </p>
+                {(authUser?.email || entitlement.email) ? (
+                  <p className="plan-box-sub">{authUser?.email || entitlement.email}</p>
+                ) : null}
+              </div>
+
+              <div className="download-actions-row">
+                <button
+                  type="button"
+                  className="primary"
+                  onClick={() => requestExportWithChecks(false)}
+                >
+                  Download PNG
+                </button>
+                <button
+                  type="button"
+                  className="chip solid"
+                  onClick={() => requestExportWithChecks(true)}
+                >
+                  Clean (no mark)
+                </button>
+              </div>
+              <p className="field-help">
+                Free = light <strong>thumbric</strong> corner mark · {FREE_DAILY_DOWNLOADS}/day after
+                register. Clean needs{' '}
+                <Link to="/pricing">Creator {planPriceLabel('creator')} / Pro {planPriceLabel('pro')}</Link>.
               </p>
 
               <details className="editor-advanced">
-                <summary>Brand kit &amp; layers</summary>
+                <summary>Layout &amp; extras</summary>
+                <fieldset>
+                  <legend>Photo placement</legend>
+                  <div className="choice-row">
+                    {LAYOUTS.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        className={item.id === layout ? 'choice is-selected' : 'choice'}
+                        onClick={() => setLayout(item.id)}
+                      >
+                        <span>{item.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+                <fieldset>
+                  <legend>Shape</legend>
+                  <div className="choice-row">
+                    {PHOTO_SHAPES.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        className={item.id === photoShape ? 'choice is-selected' : 'choice'}
+                        onClick={() => setPhotoShape(item.id)}
+                      >
+                        <span>{item.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+                <fieldset>
+                  <legend>Stickers</legend>
+                  <div className="sticker-row">
+                    {STICKERS.map((sticker) => (
+                      <button
+                        key={sticker.id}
+                        type="button"
+                        className={
+                          stickers.some((item) => item.id === sticker.id)
+                            ? 'sticker active'
+                            : 'sticker'
+                        }
+                        onClick={() => toggleSticker(sticker.id)}
+                      >
+                        {sticker.label}
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
                 <LayersPanel
                   state={layerState}
                   onChange={setLayerState}
@@ -2148,169 +2105,11 @@ export default function HomePage() {
                   onCreateInMyStyle={createInMyStyle}
                 />
               </details>
-
-              <div className="fold-body">
-                  <fieldset>
-                    <legend>Photo / backdrop</legend>
-                    <div className="choice-row">
-                      {(
-                        [
-                          ['normal', 'Standard'],
-                          ['blur-background', 'Blur background'],
-                          ['brand-backdrop', 'Brand backdrop'],
-                        ] as const
-                      ).map(([id, label]) => (
-                        <button
-                          key={id}
-                          type="button"
-                          className={photoTreatment === id ? 'choice is-selected' : 'choice'}
-                          onClick={() => setPhotoTreatment(id)}
-                        >
-                          <span>{label}</span>
-                          <small>{id === 'blur-background' ? 'Full-bleed blur' : id === 'brand-backdrop' ? 'Kit colors' : 'Default'}</small>
-                        </button>
-                      ))}
-                    </div>
-                  </fieldset>
-
-                  <fieldset>
-                    <legend>Photo placement</legend>
-                    <div className="choice-row">
-                      {LAYOUTS.map((item) => (
-                        <button
-                          key={item.id}
-                          type="button"
-                          className={item.id === layout ? 'choice is-selected' : 'choice'}
-                          role="radio"
-                          aria-checked={item.id === layout}
-                          onClick={() => setLayout(item.id)}
-                        >
-                          <span>{item.label}</span>
-                          <small>{item.hint}</small>
-                        </button>
-                      ))}
-                    </div>
-                  </fieldset>
-
-                  <fieldset>
-                    <legend>Photo shape</legend>
-                    <div className="choice-row">
-                      {PHOTO_SHAPES.map((item) => (
-                        <button
-                          key={item.id}
-                          type="button"
-                          className={item.id === photoShape ? 'choice is-selected' : 'choice'}
-                          role="radio"
-                          aria-checked={item.id === photoShape}
-                          onClick={() => setPhotoShape(item.id)}
-                        >
-                          <span>{item.label}</span>
-                          <small>{item.hint}</small>
-                        </button>
-                      ))}
-                    </div>
-                  </fieldset>
-
-                  <fieldset>
-                    <legend>Accent color</legend>
-                    <div className="choice-row colors" role="radiogroup" aria-label="Accent color">
-                      {COLOR_PRESETS.map((item) => {
-                        const selected =
-                          item.value === '' ? accentOverride === '' : accentOverride === item.value
-                        return (
-                          <button
-                            key={item.id}
-                            type="button"
-                            className={selected ? 'swatch is-selected' : 'swatch'}
-                            role="radio"
-                            aria-checked={selected}
-                            onClick={() => setAccentOverride(item.value)}
-                            title={item.label}
-                            style={
-                              item.value
-                                ? { background: item.value, color: '#101820' }
-                                : { background: niche.accent, color: '#101820' }
-                            }
-                          >
-                            {item.id === 'look' ? 'From mood' : item.label}
-                          </button>
-                        )
-                      })}
-                    </div>
-                    <label className="tiny-color">
-                      Custom color
-                      <input
-                        type="color"
-                        value={accentOverride || niche.accent}
-                        onChange={(event) => setAccentOverride(event.target.value)}
-                      />
-                    </label>
-                  </fieldset>
-
-                  <fieldset>
-                    <legend>Stickers (up to 3)</legend>
-                    <div className="sticker-row">
-                      {STICKERS.map((sticker) => (
-                        <button
-                          key={sticker.id}
-                          type="button"
-                          className={
-                            stickers.some((item) => item.id === sticker.id)
-                              ? 'sticker active'
-                              : 'sticker'
-                          }
-                          aria-pressed={stickers.some((item) => item.id === sticker.id)}
-                          onClick={() => toggleSticker(sticker.id)}
-                          title={sticker.hint}
-                        >
-                          {sticker.label}
-                        </button>
-                      ))}
-                    </div>
-                  </fieldset>
-                </div>
-            </section>
-            ) : null}
-
-            <section className="step save-step">
-              <header>
-                <div>
-                  <h2>Download</h2>
-                  <p>
-                    Free preview PNG anytime. Clean exports need Creator ({planPriceLabel('creator')}) or
-                    Pro ({planPriceLabel('pro')}) — see{' '}
-                    <Link to="/pricing">pricing</Link>.
-                  </p>
-                </div>
-              </header>
-
-              <div className="plan-box">
-                <p>{entitlementStatusLabel(entitlement)}</p>
-                {entitlement.email ? (
-                  <p className="plan-box-sub">{entitlement.email}</p>
-                ) : null}
-              </div>
-
-              <div className="download-actions-row">
-                <button
-                  type="button"
-                  className="primary"
-                  onClick={() => requestExportWithChecks(false)}
-                >
-                  Save free preview
-                </button>
-                <button
-                  type="button"
-                  className="chip solid"
-                  onClick={() => requestExportWithChecks(true)}
-                >
-                  Save clean (no mark)
-                </button>
-              </div>
               <p className="hint editor-status" role="status">
                 {status}
               </p>
             </section>
+            ) : null}
           </form>
 
           <div

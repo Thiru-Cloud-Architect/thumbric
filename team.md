@@ -5,24 +5,23 @@
 
 ## Docs
 
-- **Simple UI roadmap:** `docs/SIMPLE_UI_ROADMAP.md` ← market-leader simplicity checklist
+- **Freemium model:** `docs/FREEMIUM_MODEL.md`
+- **Supabase setup:** `docs/SUPABASE_SETUP.md`
+- Simple UI roadmap: `docs/SIMPLE_UI_ROADMAP.md`
 - Master plan: `docs/THUMBRIC_PHASED_MASTER_PLAN_AI_EDITOR_FIRST.md`
-- Growth blueprint: `docs/THUMBRIC_GROWTH_AND_ACQUISITION_BLUEPRINT.md`
-- **Honest gap:** `docs/IMPLEMENTATION_GAP.md` ← read this before claiming “done”
-- Audit: `docs/AUDIT_REPORT.md`
+- **Honest gap:** `docs/IMPLEMENTATION_GAP.md`
 
 ## Truth
 
-**We have NOT implemented everything in the MD files.**  
-Shipped: Phase 0 audit, Phase 1A entry/concepts (partial), thin Phase 1B (improve/undo/zoom), growth P0/P1 tools, simple AI one-box maker.  
-Missing: wow AI (needs fal), full pro editor, payments, Phase 2–6.
+Shipped: calm AI one-box maker, simplified Media/Text/Download editor, Tools mega-menu, freemium gates (8 guest designs · register to save · 5 mild downloads/day), Supabase auth client with local fallback.  
+Missing: live Supabase project credentials in prod, Stripe checkout, paid fal AI.
 
 ## Current stamp
 
-`UI_BUILD=2026.10.08-simple-ui`
+`UI_BUILD=2026.10.08-plush-auth`
 
 ## Open threads
 
-1. Calm market-leader UI (this pass) — AI one-box, clean editor, Tools mega-menu.
-2. Paid AI path for real concept quality (fal still deferred).
-3. Continue master-plan Phase 1B gaps only after UI bar is acceptable.
+1. Add `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` for cloud accounts.
+2. Stripe / Razorpay for Creator & Pro.
+3. Paid fal path when ready for face-wow AI.

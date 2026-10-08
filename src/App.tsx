@@ -20,6 +20,7 @@ import DoctorPage from './DoctorPage'
 import FeedbackPage from './FeedbackPage'
 import RoadmapPage from './RoadmapPage'
 import ProjectsPage from './ProjectsPage'
+import { AuthProvider } from './auth'
 import { captureAttribution, markReturnVisit } from './analytics'
 import { ScrollToHash } from './nav'
 
@@ -37,6 +38,7 @@ function BootAnalytics() {
 export default function App() {
   return (
     <BrowserRouter basename={basename}>
+      <AuthProvider>
       <BootAnalytics />
       <ScrollToHash />
       <Routes>
@@ -75,6 +77,7 @@ export default function App() {
         />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </AuthProvider>
     </BrowserRouter>
   )
 }

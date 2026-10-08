@@ -6,7 +6,7 @@ const LEGACY_STORAGE_KEYS = [
   'thumbforge-entitlement-v1',
 ]
 
-export const CREATOR_CLEAN_DOWNLOADS_PER_MONTH = 9
+export const CREATOR_CLEAN_DOWNLOADS_PER_MONTH = 30
 export const TRIAL_DAYS = 7
 export const DEMO_PAID_DAYS = 30
 
@@ -179,8 +179,10 @@ export function isValidEmail(value: string) {
 
 export function entitlementStatusLabel(entitlement: Entitlement, now = Date.now()) {
   const ent = normalizeEntitlement(entitlement, now)
-  if (!ent.email) return 'Register to unlock clean exports'
-  if (!isPaid(ent, now)) return 'Choose Creator or Pro on the pricing page'
+  if (!ent.email) return 'Register free to save & download (5 mild marks / day)'
+  if (!isPaid(ent, now)) {
+    return 'Free plan — upgrade to Creator or Pro for clean (no-mark) exports'
+  }
   if (ent.plan === 'pro') {
     return ent.trial ? 'Pro trial — unlimited clean downloads' : 'Pro — unlimited clean downloads'
   }

@@ -12,6 +12,7 @@ export const SITE_URL = (
 
 export const DOWNLOAD_PREFIX = 'thumbric'
 
-export const WATERMARK_LABEL = `${PRODUCT_NAME_FULL} · free preview`
+/** Mild corner mark for free downloads — keep short so it stays subtle. */
+export const WATERMARK_LABEL = 'thumbric'
 
-export const UI_BUILD = '2026.10.08-simple-ui'
+export const UI_BUILD = '2026.10.08-plush-auth'

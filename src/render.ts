@@ -900,25 +900,25 @@ function drawCenteredWatermark(
   ctx: CanvasRenderingContext2D,
   photo: { x: number; y: number; w: number; h: number },
 ) {
-  const size = Math.max(16, Math.round(Math.min(photo.w, photo.h) * 0.045))
+  // Mild corner mark — small, soft, bottom-right (not a banner across the face).
+  const size = Math.max(13, Math.round(Math.min(photo.w, photo.h) * 0.028))
   const label = WATERMARK_LABEL
-  const pad = Math.max(12, Math.round(Math.min(photo.w, photo.h) * 0.04))
+  const pad = Math.max(10, Math.round(Math.min(photo.w, photo.h) * 0.028))
 
   ctx.save()
   ctx.beginPath()
   ctx.rect(photo.x, photo.y, photo.w, photo.h)
   ctx.clip()
 
-  // Keep the mark inside the photo, near the bottom — visible, but not over faces.
-  ctx.font = `600 ${size}px "JetBrains Mono", monospace`
-  ctx.textAlign = 'left'
+  ctx.font = `500 ${size}px "DM Sans", system-ui, sans-serif`
+  ctx.textAlign = 'right'
   ctx.textBaseline = 'bottom'
-  const x = photo.x + pad
+  const x = photo.x + photo.w - pad
   const y = photo.y + photo.h - pad
 
-  ctx.fillStyle = 'rgba(0,0,0,0.45)'
+  ctx.fillStyle = 'rgba(0,0,0,0.28)'
   ctx.fillText(label, x + 1, y + 1)
-  ctx.fillStyle = 'rgba(255,255,255,0.72)'
+  ctx.fillStyle = 'rgba(255,255,255,0.55)'
   ctx.fillText(label, x, y)
   ctx.restore()
 }
