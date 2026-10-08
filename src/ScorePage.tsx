@@ -1,13 +1,14 @@
 import { useMemo, useRef, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ToolShell } from './ToolShell'
 import { analyzeThumbnailImage, hintFromScore, type ThumbnailScore } from './score'
 import { encodeRoastPayload, shareTargets } from './sharePayload'
-import { loadImageFromUrl, saveAiHandoff } from './aiHandoff'
+import { loadImageFromUrl, objectUrlToDataUrl, saveAiHandoff } from './aiHandoff'
 import { getOrCreateReferralId, track } from './analytics'
 import { SITE_URL } from './brand'
 
 export default function ScorePage({ analyzer }: { analyzer?: boolean }) {
+  const navigate = useNavigate()
   const location = useLocation()
   const path = analyzer ? '/youtube-thumbnail-analyzer' : '/youtube-thumbnail-score'
   const inputRef = useRef<HTMLInputElement>(null)
@@ -53,16 +54,36 @@ export default function ScorePage({ analyzer }: { analyzer?: boolean }) {
     }
   }
 
-  function onGenerateAlts() {
+  async function saveHandoff() {
     if (!score) return
+    let photoDataUrl: string | undefined
+    if (preview) {
+      try {
+        photoDataUrl = await objectUrlToDataUrl(preview)
+      } catch {
+        photoDataUrl = undefined
+      }
+    }
     saveAiHandoff({
       hint: hintFromScore(score, title),
       title,
       styleId: 'auto',
+      photoDataUrl,
       source: 'score',
       mode: 'classic',
     })
+  }
+
+  async function onGenerateAlts() {
+    await saveHandoff()
     track('cta_click', { tool: 'score', cta: 'generate_3' })
+    navigate('/ai-thumbnail-maker')
+  }
+
+  async function onOpenEditor() {
+    await saveHandoff()
+    track('cta_click', { tool: 'score', cta: 'open_editor' })
+    navigate({ pathname: '/', hash: '#editor' })
   }
 
   async function onCopy() {
@@ -88,7 +109,7 @@ export default function ScorePage({ analyzer }: { analyzer?: boolean }) {
           <span className="gradient-text"> — then 3 alternatives.</span>
         </>
       }
-      lede="Upload an existing thumbnail. Get a 0–100 visual score, see what is weak, then generate 3 alternatives in the editor. No signup."
+      lede="Upload an existing thumbnail. Get a 0–100 visual score, see what is weak, then open it in the editor or rebuild it with AI."
     >
       <section className="tool-card" aria-label="Score a thumbnail">
         <div className="tool-upload">
@@ -145,12 +166,12 @@ export default function ScorePage({ analyzer }: { analyzer?: boolean }) {
                 ))}
               </ul>
               <div className="tool-actions">
-                <Link className="btn-gradient" to="/ai-thumbnail-maker" onClick={onGenerateAlts}>
+                <button type="button" className="btn-gradient" onClick={() => void onGenerateAlts()}>
                   Fix with AI Maker →
-                </Link>
-                <Link className="btn-outline" to={{ pathname: '/', hash: '#editor' }}>
-                  Open clean editor
-                </Link>
+                </button>
+                <button type="button" className="btn-outline" onClick={() => void onOpenEditor()}>
+                  Open in editor
+                </button>
                 <Link className="btn-outline" to="/youtube-thumbnail-tester">
                   Compare two thumbs
                 </Link>

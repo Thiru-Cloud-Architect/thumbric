@@ -712,8 +712,12 @@ export default function HomePage() {
         .then((image) => {
           setPhoto(image)
           setPhotoUrl(handoff.photoDataUrl!)
-          setPhotoName('AI concept')
-          setStatus('AI concept loaded — style the title, then export.')
+          setPhotoName(handoff.source === 'ai-thumbnail-maker' ? 'AI cover' : 'Your thumbnail')
+          setStatus(
+            handoff.source === 'doctor' || handoff.source === 'score'
+              ? 'Your thumbnail is on the canvas. Edit the title, then download.'
+              : 'Cover loaded. Add your title, then download.',
+          )
         })
         .catch(() => undefined)
     }
@@ -2276,12 +2280,18 @@ export default function HomePage() {
               </div>
             ) : null}
             <p className="preview-hint">
-              {aiBusy
-                ? 'Creating concepts — the first one lands on this canvas.'
-                : textSelected
-                  ? 'Title selected — drag to move, or edit size/style in the inspector.'
-                  : 'Drag the title or stickers. Drop a JPG/PNG onto the canvas to replace the photo.'}
+              {textSelected
+                ? 'Drag the title. Size and color are on the right.'
+                : 'Drag the title. Drop a photo to replace it.'}
             </p>
+            <div className="canvas-download-row">
+              <button type="button" className="primary" onClick={() => requestExportWithChecks(false)}>
+                Download PNG
+              </button>
+              <button type="button" className="chip" onClick={() => setEditorTab('title')}>
+                Edit title
+              </button>
+            </div>
           </div>
 
           <aside className="studio-inspector studio-inspector-calm" aria-label="Title inspector">

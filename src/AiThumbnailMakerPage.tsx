@@ -283,12 +283,8 @@ export default function AiThumbnailMakerPage() {
         { label: 'AI Thumbnail Maker' },
       ]}
       kicker="Free AI · YouTube-ready"
-      title={
-        <>
-          AI thumbnail maker <span className="gradient-text">that gets more clicks.</span>
-        </>
-      }
-      lede="Describe your video or paste a YouTube URL. Thumbric builds a click-optimized cover in seconds — then you finish the title in the editor."
+      title="AI thumbnail maker"
+      lede="Describe your video or paste a YouTube URL. You get a cover, then you add the title in the editor."
     >
       {phase === 'ready' && chosen ? (
         <section className="tool-card ai-ready-card" aria-label="Thumbnail result">
@@ -320,21 +316,24 @@ export default function AiThumbnailMakerPage() {
           </div>
 
           {variants.length > 1 ? (
-            <div className="ai-ready-thumbs" role="listbox" aria-label="Other concepts">
-              {variants.map((item, index) => (
-                <button
-                  key={`${item.seed}-${index}`}
-                  type="button"
-                  role="option"
-                  aria-selected={index === pick}
-                  className={index === pick ? 'ai-ready-thumb is-selected' : 'ai-ready-thumb'}
-                  onClick={() => setPick(index)}
-                >
-                  <img src={item.objectUrl} alt={`Concept ${index + 1}`} />
-                  <span>{item.lookLabel || `Look ${index + 1}`}</span>
-                </button>
-              ))}
-            </div>
+            <details className="ai-ready-more">
+              <summary>Other ideas ({variants.length - 1})</summary>
+              <div className="ai-ready-thumbs" role="listbox" aria-label="Other concepts">
+                {variants.map((item, index) => (
+                  <button
+                    key={`${item.seed}-${index}`}
+                    type="button"
+                    role="option"
+                    aria-selected={index === pick}
+                    className={index === pick ? 'ai-ready-thumb is-selected' : 'ai-ready-thumb'}
+                    onClick={() => setPick(index)}
+                  >
+                    <img src={item.objectUrl} alt={`Concept ${index + 1}`} />
+                    <span>{item.lookLabel || `Look ${index + 1}`}</span>
+                  </button>
+                ))}
+              </div>
+            </details>
           ) : null}
 
           <div className="tool-actions">

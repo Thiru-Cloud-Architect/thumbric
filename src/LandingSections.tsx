@@ -21,27 +21,27 @@ const FAQ_ITEMS = [
   },
   {
     q: 'What if I am bad at design?',
-    a: 'Pick a platform, tap Quick idea or a starter template, type your title, and export. No layers panel, no subscription required for preview saves.',
+    a: 'Open the editor, upload a photo or pick a template, type a short title, and download. Or describe the video in AI Thumbnail Maker and finish the title after.',
   },
   {
     q: 'How does the AI thumbnail work?',
-    a: 'Open AI Thumbnail Maker. Describe your video or paste a YouTube URL in one box. Free AI builds packaging concepts (studio fallbacks if the model is busy). Review “Your thumbnail is ready,” then download HD or finish the title in the clean editor. We can read a YouTube title, but we cannot pull video frames yet. Photoreal Canva-grade faces need a paid fal key later.',
+    a: 'Open AI Thumbnail Maker. Describe your video or paste a YouTube URL. You get a cover to review, then add your title in the editor. We can read a public YouTube title, but we do not pull video frames yet. Free AI is useful, not photoreal face-swap.',
   },
   {
     q: 'How long does it take?',
-    a: 'Most people get a usable thumbnail in a few minutes. The live preview updates as you type — no waiting on a server.',
+    a: 'A first draft is usually a few minutes. The editor updates as you type — the image stays in your browser until you download.',
   },
   {
     q: 'Why not Canva or Photoshop?',
-    a: `${PRODUCT_NAME} is built only for social thumbnails: correct dimensions, drag text on canvas, title styles, stickers, one-click PNG download.`,
+    a: `${PRODUCT_NAME} is only for thumbnails: the right size, a big title you can drag, and a PNG you can upload to YouTube.`,
   },
   {
     q: 'What is Thumbric Score?',
-    a: 'A free heuristic 0–100 for attention, mobile readability, emotion, text clarity, and focus. It is not a CTR prediction. Upload a thumb, then generate 3 alternatives. Share a result page if you want.',
+    a: 'A free 0–100 check for attention, mobile readability, and text clarity. It is not a prediction of your real YouTube CTR. Upload a thumb, read the notes, then fix it in AI Maker or the editor.',
   },
   {
     q: 'Do I need an account?',
-    a: 'No signup for unlimited preview downloads. Header Sign in only remembers your name and email on this device — it is not a server account yet. Start the 7-day trial when you want clean PNGs without the on-photo mark.',
+    a: 'You can try about 8 designs as a guest. Register free to save and to download (5 mild-watermark PNGs a day). Creator and Pro remove the mark.',
   },
   {
     q: 'Can I use my face in the thumbnail?',
@@ -143,10 +143,10 @@ export function HeroFlashy({ onStartTrial }: HeroFlashyProps) {
 
 export function StatsStrip() {
   const stats = [
-    { value: '$0', label: 'Preview saves', sub: 'No signup required', count: false },
+    { value: 'Free', label: 'To start', sub: 'Register to save & download', count: false },
     { value: '6', label: 'Platforms', sub: 'YouTube to LinkedIn', count: true },
-    { value: '40+', label: 'Fonts', sub: 'Real previews in picker', count: true },
-    { value: '<3 min', label: 'Typical flow', sub: 'Title to download', count: false },
+    { value: '5/day', label: 'Free downloads', sub: 'Light corner mark', count: false },
+    { value: '<3 min', label: 'Typical flow', sub: 'Photo, title, PNG', count: false },
   ]
   return (
     <section className="stats-strip" aria-label="Highlights">
@@ -492,10 +492,10 @@ export function FreeToolsSection() {
         <div className="features-head">
           <p className="section-eyebrow">Free tools</p>
           <h2 id="tools-title" className="section-title center">
-            Score it. Test it. <span className="gradient-text">Then generate 3 looks.</span>
+            Score it. Test it. Then fix it.
           </h2>
           <p className="section-lede center">
-            No signup to try. Thumbnail Score is a visual heuristic — not a CTR prediction.
+            Free checks for an existing thumbnail. The score is a visual heuristic — not your real YouTube CTR.
           </p>
         </div>
       </RevealItem>

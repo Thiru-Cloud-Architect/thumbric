@@ -33,7 +33,7 @@ export const SITE_ROUTES: SiteRouteMeta[] = [
     path: '/tools',
     title: 'Free YouTube thumbnail tools — Thumbric.ai',
     description:
-      'Free YouTube thumbnail score, A/B tester, resizer, CTR calculator, and title analyzer. No signup to try.',
+      'Free YouTube thumbnail score, A/B tester, resizer, CTR calculator, and title analyzer. Register when you want to save a design.',
     changefreq: 'weekly',
     priority: '0.9',
   },

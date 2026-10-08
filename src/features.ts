@@ -17,8 +17,8 @@ export const FEATURES: FeatureItem[] = [
     title: 'Platform-sized export',
     description: 'YouTube, Shorts, Instagram, LinkedIn, and Facebook — correct pixels in one tap.',
     href: '#editor',
-    where: 'Editor · Setup',
-    cta: 'Open Setup',
+    where: 'Editor · Media',
+    cta: 'Open editor',
     available: true,
   },
   {
@@ -74,20 +74,20 @@ export const FEATURES: FeatureItem[] = [
  */
 export const AI_FEATURE = {
   id: 'ai-scene',
-  kicker: 'AI · free · works in your browser',
-  title: 'Describe the scene. AI draws the thumbnail backdrop.',
+  kicker: 'AI · free · in your browser',
+  title: 'Describe the video. Get a cover. Add the title yourself.',
   description:
-    'Write your YouTube title, then describe the visual scene. Free AI generates a full-bleed backdrop — you finish the title on the live canvas.',
+    'One box: a short description or a YouTube URL. Free AI builds a cover, then you place the title in the editor so the words stay yours.',
   nowLabel: 'Works now',
   nowItems: [
-    'Tap Try AI Thumbnail creator, then type a short scene (person, setting, mood)',
-    'Generate 3 looks (Punch / Warm / Cinematic) — if free AI is busy, studio looks still fill',
-    'Pick a favorite look, then style the title on the live canvas',
+    'Describe a scene or paste a public YouTube link',
+    'Review the cover, then open the editor with that image loaded',
+    'If the free model is busy, a local studio still still appears',
   ],
   notYetLabel: 'Not yet',
   notYetItems: [
-    'No paste-a-YouTube-URL / full video analysis (that needs a paid model)',
-    'AI draws a scene image — it does not watch your video file',
+    'We read a YouTube title — we do not pull frames from the video',
+    'Photoreal face-swap needs a paid model later',
   ],
   href: '/ai-thumbnail-maker',
   where: 'Tools · AI Thumbnail Maker',

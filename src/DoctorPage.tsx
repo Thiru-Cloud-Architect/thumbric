@@ -1,12 +1,13 @@
 import { useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { track } from './analytics'
-import { loadImageFromUrl, saveAiHandoff } from './aiHandoff'
+import { loadImageFromUrl, objectUrlToDataUrl, saveAiHandoff } from './aiHandoff'
 import { topDoctorProblems, type DoctorProblem } from './doctorProblems'
 import { hintFromScore, analyzeThumbnailImage, type ThumbnailScore } from './score'
 import { ToolShell } from './ToolShell'
 
 export default function DoctorPage() {
+  const navigate = useNavigate()
   const inputRef = useRef<HTMLInputElement>(null)
   const [preview, setPreview] = useState('')
   const [title, setTitle] = useState('')
@@ -52,14 +53,23 @@ export default function DoctorPage() {
     }
   }
 
-  function onFix() {
+  async function onFix() {
     if (!score) return
+    let photoDataUrl: string | undefined
+    if (preview) {
+      try {
+        photoDataUrl = await objectUrlToDataUrl(preview)
+      } catch {
+        photoDataUrl = undefined
+      }
+    }
     saveAiHandoff({
       hint: hintFromScore(score, title),
       title,
       styleId: 'auto',
+      photoDataUrl,
       source: 'doctor',
-      mode: 'improve',
+      mode: 'classic',
     })
     track('cta_click', { tool: 'thumbnail-doctor', cta: 'fix_with_thumbric' })
   }
@@ -135,19 +145,30 @@ export default function DoctorPage() {
           </article>
 
           <article className="tool-card doctor-fix-card">
-            <h2>Fix with Thumbric</h2>
+            <h2>Fix it in the editor</h2>
             <p>
-              Jump into Improve mode with a creative brief tuned to these weak spots. You edit every title and layer —
-              photoreal AI upgrades come later with the paid tier.
+              Your thumbnail opens on the canvas so you can change the title and download.
+              Or rebuild a new cover from this diagnosis.
             </p>
             <div className="doctor-fix-actions">
-              <Link
+              <button
+                type="button"
                 className="chip solid"
-                to={{ pathname: '/', hash: '#editor-improve' }}
-                onClick={onFix}
+                onClick={() => {
+                  void onFix().then(() => navigate({ pathname: '/', hash: '#editor' }))
+                }}
               >
-                Fix with Thumbric →
-              </Link>
+                Open in editor →
+              </button>
+              <button
+                type="button"
+                className="chip"
+                onClick={() => {
+                  void onFix().then(() => navigate('/ai-thumbnail-maker'))
+                }}
+              >
+                Rebuild with AI
+              </button>
               <Link className="chip" to="/youtube-thumbnail-tester">
                 Compare in A/B Tester
               </Link>
@@ -166,7 +187,7 @@ export default function DoctorPage() {
           </article>
           <article className="tool-card">
             <h2>3 · Fix</h2>
-            <p>Open the editor with packaging angles matched to what failed.</p>
+            <p>Open the same image in the editor, or rebuild a new cover with AI.</p>
           </article>
         </div>
       )}
