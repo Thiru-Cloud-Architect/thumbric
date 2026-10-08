@@ -1708,6 +1708,7 @@ export default function HomePage() {
 
       <main id="top" className="page-main page-main-calm">
         <HeroFlashy onStartTrial={startTrialFlow} />
+        <HowItWorks />
 
         <section id="editor" className="editor-section editor-fit" aria-label="Thumbnail editor">
           <div className="editor-fit-bar">
@@ -2157,16 +2158,6 @@ export default function HomePage() {
               />
               {photoDragOver ? (
                 <div className="canvas-drop-overlay">Drop photo to place it</div>
-              ) : !photo && !aiBusy && !title.trim() ? (
-                <div className="canvas-empty-hint">
-                  <p>Drop a photo or pick a template</p>
-                  <button type="button" className="chip solid" onClick={() => fileRef.current?.click()}>
-                    Upload photo
-                  </button>
-                  <Link className="chip" to="/ai-thumbnail-maker">
-                    Or use AI Maker
-                  </Link>
-                </div>
               ) : null}
             </div>
             </div>
@@ -2484,9 +2475,6 @@ export default function HomePage() {
         </LazyReveal>
         <LazyReveal staggerMs={90} variant="rise">
           <ProblemSection />
-        </LazyReveal>
-        <LazyReveal staggerMs={85} variant="fade-scale">
-          <HowItWorks />
         </LazyReveal>
         <LazyReveal staggerMs={70} variant="soft-rise">
           <FeaturesSection />

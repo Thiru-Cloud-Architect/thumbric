@@ -7,6 +7,7 @@ import {
   generateAiThumbnailVariants,
   isAiRateLimitedError,
   type AiGeneratedImage,
+  type AiStyleId,
 } from './aiThumbnail'
 import { consumeAiHandoff, objectUrlToDataUrl, saveAiHandoff } from './aiHandoff'
 import { buildCreativeBrief, visualHintForConcept, type CreativeBrief } from './creativeBrief'
@@ -22,6 +23,20 @@ import {
 } from './youtubeUrl'
 
 type Phase = 'compose' | 'busy' | 'ready' | 'err'
+
+const LOOKS: Array<{ id: AiStyleId; label: string }> = [
+  { id: 'cartoon', label: 'Illustration' },
+  { id: 'dark-moody', label: 'Filmic' },
+  { id: 'product-hero', label: 'Minimal' },
+  { id: 'kids-fun', label: 'Vibrant' },
+  { id: 'face-reaction', label: 'Face' },
+]
+
+const EXAMPLES = [
+  'Smartphone in hand, tech review shot',
+  'Creator cooking in a home kitchen',
+  'Neon gaming desk, shocked reaction',
+]
 
 const LOADING_LINES = [
   'Analysing idea…',
@@ -47,6 +62,7 @@ function attachConcepts(items: AiGeneratedImage[], brief: CreativeBrief | null) 
 export default function AiThumbnailMakerPage() {
   const navigate = useNavigate()
   const [input, setInput] = useState('')
+  const [styleId, setStyleId] = useState<AiStyleId>('cartoon')
   const [phase, setPhase] = useState<Phase>('compose')
   const [statusLine, setStatusLine] = useState('')
   const [errorText, setErrorText] = useState('')
@@ -165,7 +181,7 @@ export default function AiThumbnailMakerPage() {
           niche,
           platform,
           hint: primaryHint,
-          styleId: 'auto',
+          styleId,
         },
         {
           count: AI_LOOK_TARGET,
@@ -282,84 +298,57 @@ export default function AiThumbnailMakerPage() {
         { label: 'Tools', to: '/tools' },
         { label: 'AI Thumbnail Maker' },
       ]}
-      kicker="Free AI · YouTube-ready"
-      title="AI thumbnail maker"
-      lede="Describe your video or paste a YouTube URL. You get a cover, then you add the title in the editor."
+      kicker="AI Thumbnail Maker"
+      title="Free AI thumbnail maker"
+      lede="Describe the shot or paste a YouTube URL. You get one cover, then you can download it or open it in the editor."
     >
       {phase === 'ready' && chosen ? (
-        <section className="tool-card ai-ready-card" aria-label="Thumbnail result">
-          <div className="ai-ready-head">
-            <div>
-              <h2 className="ai-ready-title">Your thumbnail is ready</h2>
-              <p className="ai-ready-sub">Review your result and download it in HD — or finish the title in the editor.</p>
+        <section className="ai-canva-result" aria-label="Thumbnail result">
+          <img src={chosen.objectUrl} alt="Generated thumbnail" />
+          {chosen.lookHeadline ? <p className="ai-canva-hook">Suggested title: {chosen.lookHeadline}</p> : null}
+          {variants.length > 1 ? (
+            <div className="ai-canva-thumbs" role="listbox" aria-label="Other covers">
+              {variants.map((item, index) => (
+                <button
+                  key={`${item.seed}-${index}`}
+                  type="button"
+                  role="option"
+                  aria-selected={index === pick}
+                  className={index === pick ? 'is-selected' : ''}
+                  onClick={() => setPick(index)}
+                >
+                  <img src={item.objectUrl} alt="" />
+                </button>
+              ))}
             </div>
+          ) : null}
+          <div className="ai-canva-actions">
+            <button type="button" className="btn-gradient" onClick={() => void downloadHd()}>
+              Download
+            </button>
+            <button type="button" className="btn-outline" onClick={() => void finishInEditor()}>
+              Open in editor
+            </button>
             <button
               type="button"
-              className="btn-gradient ai-ready-again"
+              className="btn-outline"
+              disabled={cooldown > 0}
               onClick={() => {
                 resetCompose()
                 void runGenerate()
               }}
-              disabled={cooldown > 0}
             >
-              {cooldown > 0 ? `Try again in ${cooldown}s` : 'Generate again'}
-            </button>
-          </div>
-
-          <div className="ai-ready-preview">
-            <img src={chosen.objectUrl} alt="Generated thumbnail preview" />
-            {chosen.lookHeadline ? (
-              <p className="ai-ready-hook" aria-hidden>
-                Suggested hook: {chosen.lookHeadline}
-              </p>
-            ) : null}
-          </div>
-
-          {variants.length > 1 ? (
-            <details className="ai-ready-more">
-              <summary>Other ideas ({variants.length - 1})</summary>
-              <div className="ai-ready-thumbs" role="listbox" aria-label="Other concepts">
-                {variants.map((item, index) => (
-                  <button
-                    key={`${item.seed}-${index}`}
-                    type="button"
-                    role="option"
-                    aria-selected={index === pick}
-                    className={index === pick ? 'ai-ready-thumb is-selected' : 'ai-ready-thumb'}
-                    onClick={() => setPick(index)}
-                  >
-                    <img src={item.objectUrl} alt={`Concept ${index + 1}`} />
-                    <span>{item.lookLabel || `Look ${index + 1}`}</span>
-                  </button>
-                ))}
-              </div>
-            </details>
-          ) : null}
-
-          <div className="tool-actions">
-            <button type="button" className="btn-gradient" onClick={() => void finishInEditor()}>
-              Finish in editor →
-            </button>
-            <button type="button" className="btn-outline" onClick={() => void downloadHd()}>
-              Download HD
-            </button>
-            <button type="button" className="btn-outline" onClick={resetCompose}>
-              Edit prompt
+              {cooldown > 0 ? `Wait ${cooldown}s` : 'Try again'}
             </button>
           </div>
         </section>
       ) : (
-        <section className="tool-card ai-simple-card" aria-label="Create a thumbnail">
-          <div className="ai-simple-head">
-            <h2 className="ai-simple-title">Create a thumbnail</h2>
-            <p className="ai-simple-sub">Start with a description or YouTube URL.</p>
-          </div>
-
-          <label className="ai-simple-field">
-            <span className="ai-simple-label">Describe your video or paste a YouTube URL</span>
+        <section className="ai-canva" aria-label="Create a thumbnail">
+          <label className="ai-canva-prompt">
+            <span className="sr-only">Describe your thumbnail or paste a YouTube URL</span>
             <textarea
               id="ai-maker-hint"
-              rows={4}
+              rows={2}
               value={input}
               disabled={phase === 'busy'}
               onChange={(event) => {
@@ -369,43 +358,39 @@ export default function AiThumbnailMakerPage() {
                   setErrorText('')
                 }
               }}
-              placeholder="Describe the thumbnail you want, or paste a YouTube video URL"
+              placeholder="Describe the thumbnail, or paste a YouTube URL"
             />
           </label>
-
-          {urlMode ? <p className="ai-simple-note">{YOUTUBE_FRAME_HONESTY}</p> : null}
-
+          <div className="ai-canva-examples">
+            <span>Try these</span>
+            {EXAMPLES.map((example) => (
+              <button key={example} type="button" onClick={() => setInput(example)} disabled={phase === 'busy'}>
+                {example}
+              </button>
+            ))}
+          </div>
+          <div className="ai-canva-styles" role="listbox" aria-label="Look">
+            {LOOKS.map((look) => (
+              <button
+                key={look.id}
+                type="button"
+                role="option"
+                aria-selected={styleId === look.id}
+                className={styleId === look.id ? 'is-selected' : ''}
+                onClick={() => setStyleId(look.id)}
+                disabled={phase === 'busy'}
+              >
+                {look.label}
+              </button>
+            ))}
+          </div>
+          {urlMode ? <p className="ai-canva-note">{YOUTUBE_FRAME_HONESTY}</p> : null}
           {youtubeMeta?.title && phase === 'busy' ? (
-            <p className="ai-simple-note" role="status">
+            <p className="ai-canva-note" role="status">
               Using title: <strong>{youtubeMeta.title}</strong>
-              {youtubeMeta.authorName ? ` · ${youtubeMeta.authorName}` : ''}
             </p>
           ) : null}
-
-          <div className="ai-simple-or" aria-hidden>
-            <span>or</span>
-          </div>
-
-          <div className="ai-simple-secondary">
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              hidden
-              onChange={(event) => void onPhotoPick(event.target.files?.[0])}
-            />
-            <button
-              type="button"
-              className="btn-outline ai-simple-upload"
-              disabled={phase === 'busy'}
-              onClick={() => fileRef.current?.click()}
-            >
-              {photoName ? `Photo: ${photoName}` : 'Optional: upload a reference photo'}
-            </button>
-            <p className="hint">Video file upload is not required. Paste a link or describe the scene.</p>
-          </div>
-
-          <div className="tool-actions">
+          <div className="ai-canva-actions">
             <button
               type="button"
               className="btn-gradient"
@@ -413,11 +398,7 @@ export default function AiThumbnailMakerPage() {
               aria-busy={phase === 'busy'}
               onClick={() => void runGenerate()}
             >
-              {phase === 'busy'
-                ? 'Creating…'
-                : cooldown > 0
-                  ? `Try again in ${cooldown}s`
-                  : 'Create thumbnail'}
+              {phase === 'busy' ? 'Creating…' : cooldown > 0 ? `Try again in ${cooldown}s` : 'Create a thumbnail with AI'}
             </button>
             {phase === 'busy' ? (
               <button
@@ -433,25 +414,25 @@ export default function AiThumbnailMakerPage() {
               </button>
             ) : (
               <Link className="btn-outline" to={{ pathname: '/', hash: '#editor' }}>
-                Open clean editor
+                Open editor
               </Link>
             )}
           </div>
-
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            hidden
+            onChange={(event) => void onPhotoPick(event.target.files?.[0])}
+          />
+          <button type="button" className="ai-canva-photo" disabled={phase === 'busy'} onClick={() => fileRef.current?.click()}>
+            {photoName ? `Reference photo: ${photoName}` : 'Add a reference photo'}
+          </button>
           {phase === 'busy' ? (
-            <div className="ai-simple-loading" role="status" aria-live="polite">
-              <span className="ai-inline-spinner" aria-hidden />
-              <p>{statusLine || 'Preparing your thumbnail…'}</p>
-              <div className="ai-simple-loading-preview" aria-hidden>
-                {variants[0] ? (
-                  <img src={variants[0].objectUrl} alt="" />
-                ) : (
-                  <div className="ai-look-skel" />
-                )}
-              </div>
-            </div>
+            <p className="ai-canva-note" role="status">
+              <span className="ai-inline-spinner" aria-hidden /> {statusLine || 'Preparing your thumbnail…'}
+            </p>
           ) : null}
-
           {phase === 'err' && errorText ? (
             <p className="tool-error" role="alert">
               {errorText}

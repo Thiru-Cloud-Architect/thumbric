@@ -210,60 +210,107 @@ export function ProblemSection() {
   )
 }
 
+function HowIcon({ name }: { name: 'link' | 'spark' | 'pen' | 'down' }) {
+  const common = {
+    width: 22,
+    height: 22,
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'white',
+    strokeWidth: 1.8,
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+    'aria-hidden': true,
+  }
+  if (name === 'link') {
+    return (
+      <svg {...common}>
+        <path d="M10 13a5 5 0 0 0 7.07 0l1.41-1.41a5 5 0 0 0-7.07-7.07L10 5.93" />
+        <path d="M14 11a5 5 0 0 0-7.07 0L5.5 12.43a5 5 0 0 0 7.07 7.07L14 18.07" />
+      </svg>
+    )
+  }
+  if (name === 'spark') {
+    return (
+      <svg {...common}>
+        <path d="M12 3l1.6 5.2L19 10l-5.4 1.8L12 17l-1.6-5.2L5 10l5.4-1.8L12 3z" />
+      </svg>
+    )
+  }
+  if (name === 'pen') {
+    return (
+      <svg {...common}>
+        <path d="M12 20h9" />
+        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5z" />
+      </svg>
+    )
+  }
+  return (
+    <svg {...common}>
+      <path d="M12 4v11" />
+      <path d="M7 11l5 5 5-5" />
+      <path d="M5 20h14" />
+    </svg>
+  )
+}
+
 export function HowItWorks() {
-  const steps = [
+  const steps: Array<{
+    n: number
+    tone: 'violet' | 'pink' | 'blue' | 'green'
+    title: string
+    body: string
+    icon: 'link' | 'spark' | 'pen' | 'down'
+  }> = [
     {
       n: 1,
       tone: 'violet',
-      title: 'Idea',
-      body: 'Describe the video, upload a photo, or drop an existing thumbnail. No video file required.',
+      icon: 'link',
+      title: 'Paste your YouTube URL',
+      body: 'Or describe the scene in one line. No video file, and no design tool to learn.',
     },
     {
       n: 2,
       tone: 'pink',
-      title: 'AI concepts',
-      body: 'Three packaging strategies with editable titles — pick the angle that fits the click.',
+      icon: 'spark',
+      title: 'AI generates a cover',
+      body: 'You get a YouTube-sized image in seconds. Pick another look if the first one misses.',
     },
     {
       n: 3,
       tone: 'blue',
-      title: 'Editor + mobile preview',
-      body: 'Layers, brand kit, snap guides, YouTube feed simulation — refine until it reads at phone size.',
+      icon: 'pen',
+      title: 'Add the title',
+      body: 'Open the editor, drop your photo if you have one, and set the words that have to be readable on a phone.',
     },
     {
       n: 4,
       tone: 'green',
-      title: 'Export',
-      body: 'Download a platform-sized PNG. Projects save locally so you can come back and iterate.',
+      icon: 'down',
+      title: 'Download and upload',
+      body: 'Export a 1280×720 PNG. Free downloads carry a small corner mark. Clean exports are on Creator and Pro.',
     },
   ]
   return (
-    <section id="how" className="how-section" aria-labelledby="how-title">
-      <RevealItem index={0}>
-        <p className="section-eyebrow">How it works</p>
-        <h2 id="how-title" className="section-title center">
-          Idea → concepts → editor → <span className="gradient-text">export.</span>
-        </h2>
-      </RevealItem>
-      <div className="how-steps">
-        <ol className="how-connector" aria-hidden>
-          <li />
-          <li />
-          <li />
-          <li />
-        </ol>
-        {steps.map((step, index) => (
-          <RevealItem key={step.n} index={index + 1}>
-            <article className={`how-card tone-${step.tone}`}>
-              <span className="how-num" aria-hidden="true">
-                {step.n}
-              </span>
-              <h3>{step.title}</h3>
-              <p>{step.body}</p>
-            </article>
-          </RevealItem>
+    <section id="how" className="how-rail" aria-labelledby="how-title">
+      <p className="section-eyebrow">How it works</p>
+      <h2 id="how-title">
+        From a link to a click-worthy
+        <br />
+        thumbnail
+      </h2>
+      <ol className="how-rail-steps">
+        {steps.map((step) => (
+          <li key={step.n}>
+            <span className={`how-rail-icon tone-${step.tone}`}>
+              <HowIcon name={step.icon} />
+              <span className="how-rail-badge">{step.n}</span>
+            </span>
+            <h3>{step.title}</h3>
+            <p>{step.body}</p>
+          </li>
         ))}
-      </div>
+      </ol>
     </section>
   )
 }

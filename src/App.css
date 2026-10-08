@@ -4430,6 +4430,10 @@ footer {
   max-width: 56rem;
   margin: 0 auto;
   padding: 1.25rem clamp(1rem, 4vw, 2rem) 2.5rem;
+  background:
+    radial-gradient(ellipse 42% 28% at 0% 0%, rgba(255, 93, 122, 0.14), transparent 60%),
+    radial-gradient(ellipse 36% 26% at 100% 8%, rgba(96, 165, 250, 0.12), transparent 55%),
+    radial-gradient(ellipse 32% 22% at 72% 100%, rgba(192, 132, 252, 0.14), transparent 50%);
 }
 
 .tool-hero {
@@ -6505,6 +6509,15 @@ body {
   color: #fff8f5;
 }
 
+.price-amount {
+  font-size: clamp(2.4rem, 4vw, 3.1rem);
+  letter-spacing: -0.04em;
+}
+
+.price-card.is-popular {
+  box-shadow: 0 0 0 1px rgba(192, 132, 252, 0.55), 0 18px 50px rgba(124, 58, 237, 0.18);
+}
+
 .price-card .price-was,
 .price-card .price-tagline,
 .price-card ul {
@@ -6623,6 +6636,231 @@ body {
 
 .editor-fit .studio-inspector {
   grid-area: inspect;
+}
+
+.how-rail {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 3.25rem 1.25rem 1rem;
+  text-align: center;
+}
+
+.how-rail h2 {
+  margin: 0.35rem auto 2.4rem;
+  max-width: 16ch;
+  font-size: clamp(2rem, 4.4vw, 3rem);
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+}
+
+.how-rail-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.5rem;
+  position: relative;
+}
+
+.how-rail-steps::before {
+  content: '';
+  position: absolute;
+  top: 1.7rem;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.how-rail-steps li {
+  position: relative;
+  z-index: 1;
+}
+
+.how-rail-icon {
+  width: 3.4rem;
+  height: 3.4rem;
+  margin: 0 auto 0.9rem;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  position: relative;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+}
+
+.how-rail-icon.tone-violet { background: #7c5cff; }
+.how-rail-icon.tone-pink { background: #ff5d8f; }
+.how-rail-icon.tone-blue { background: #3b82f6; }
+.how-rail-icon.tone-green { background: #22c55e; }
+
+.how-rail-badge {
+  position: absolute;
+  top: -0.2rem;
+  right: -0.2rem;
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 999px;
+  background: #161214;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+}
+
+.how-rail-steps h3 {
+  margin: 0 0 0.4rem;
+  font-size: 1.02rem;
+}
+
+.how-rail-steps p {
+  margin: 0 auto;
+  max-width: 16rem;
+  color: #cbbdb6;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.ai-canva,
+.ai-canva-result {
+  max-width: 40rem;
+  margin: 0 auto;
+  display: grid;
+  gap: 0.85rem;
+  justify-items: start;
+}
+
+.ai-canva-prompt,
+.ai-canva-prompt textarea {
+  width: 100%;
+}
+
+.ai-canva-prompt textarea {
+  min-height: 4.5rem;
+  resize: vertical;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: #1c1618;
+  color: #fff8f5;
+  padding: 0.9rem 1rem;
+  font: 500 1rem/1.45 'DM Sans', system-ui, sans-serif;
+}
+
+.ai-canva-examples,
+.ai-canva-styles,
+.ai-canva-actions,
+.ai-canva-thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.ai-canva-examples span {
+  color: #cbbdb6;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.ai-canva-examples button,
+.ai-canva-styles button,
+.ai-canva-photo {
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  color: #fff8f5;
+  border-radius: 999px;
+  padding: 0.4rem 0.75rem;
+  font: 650 0.82rem/1.2 'DM Sans', system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.ai-canva-styles button.is-selected {
+  background: #fff8f5;
+  color: #1a0c0e;
+  border-color: transparent;
+}
+
+.ai-canva-photo {
+  background: none;
+  padding-left: 0;
+  border: 0;
+  color: #ffc2c8;
+}
+
+.ai-canva-note {
+  margin: 0;
+  color: #cbbdb6;
+  font-size: 0.86rem;
+}
+
+.ai-canva,
+.ai-canva-result,
+.ai-ready-card,
+.ai-simple-card,
+.tool-card {
+  background:
+    radial-gradient(ellipse 80% 55% at 0% 0%, rgba(255, 93, 122, 0.22), transparent 58%),
+    radial-gradient(ellipse 70% 50% at 100% 0%, rgba(96, 165, 250, 0.18), transparent 52%),
+    radial-gradient(ellipse 60% 45% at 70% 100%, rgba(192, 132, 252, 0.22), transparent 55%),
+    #161014;
+  color: #fff8f5;
+  border: 1px solid rgba(255, 127, 138, 0.28);
+  box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.12), 0 22px 50px rgba(0, 0, 0, 0.35);
+}
+
+.ai-canva-result {
+  justify-items: center;
+  text-align: center;
+  padding: 1.1rem;
+  border-radius: 24px;
+}
+
+.ai-canva-result > img {
+  width: min(100%, 36rem);
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 14px;
+  background: #000;
+}
+
+.ai-canva-hook {
+  margin: 0;
+  color: #cbbdb6;
+}
+
+.ai-canva-thumbs button {
+  width: 7.2rem;
+  padding: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid transparent;
+  background: #000;
+  cursor: pointer;
+}
+
+.ai-canva-thumbs button.is-selected {
+  border-color: #ff7f8a;
+}
+
+.ai-canva-thumbs img {
+  display: block;
+  width: 100%;
+  height: 4rem;
+  object-fit: cover;
+}
+
+@media (max-width: 800px) {
+  .how-rail-steps {
+    grid-template-columns: 1fr;
+    gap: 1.75rem;
+  }
+
+  .how-rail-steps::before {
+    display: none;
+  }
 }
 
 @media (max-width: 980px) {

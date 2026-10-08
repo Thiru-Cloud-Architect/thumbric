@@ -18,7 +18,7 @@ Missing: live Supabase project credentials in prod, Stripe checkout, paid fal AI
 
 ## Current stamp
 
-`UI_BUILD=2026.10.08-coral`
+`UI_BUILD=2026.10.08-market`
 
 ## Open threads
 
