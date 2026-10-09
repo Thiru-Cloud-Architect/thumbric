@@ -7,6 +7,10 @@ Repo workdir: `/home/ubuntu/thumbforge` (not `/workspace`).
 
 Honest snapshot for product owners. The free AI path and coral studio UI are real; the full orchestrator (paid models, critic, layered docs, billing) is **not** finished.
 
+### Live audit pointer
+
+See `docs/LIVE_SITE_AUDIT_2026-10-09.md`. P0 build break fixed so the title-options popover can deploy. Local `:43201` verified for More-options layout + download gate; production checked for routes/UI before redeploy. No staging.
+
 ### COMPLETED (in repo today)
 
 - One-field AI maker (scene **or** YouTube URL) — `/ai-thumbnail-maker`

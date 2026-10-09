@@ -16,4 +16,4 @@ export const DOWNLOAD_PREFIX = 'thumbric'
 /** Mild corner mark for free downloads — keep short so it stays subtle. */
 export const WATERMARK_LABEL = 'thumbric'
 
-export const UI_BUILD = '2026.10.09-editor-ai'
+export const UI_BUILD = '2026.10.09-live-audit'

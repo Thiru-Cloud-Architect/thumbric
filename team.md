@@ -13,6 +13,7 @@
 - **AI orchestrator master:** `docs/THUMBRIC_AI_ENGINE_ORCHESTRATOR_IMPLEMENTATION_MASTER.md`
 - Design system: `docs/THUMBRIC_DESIGN_SYSTEM.md`
 - **Honest gap:** `docs/IMPLEMENTATION_GAP.md`
+- **Live audit 2026-10-09:** `docs/LIVE_SITE_AUDIT_2026-10-09.md` (screenshots under `.walkthrough/live-audit-2026-10-09/`)
 
 ## Truth
 
@@ -28,7 +29,15 @@ Shipped: calm AI one-box maker, **multi-stage generation progress**, **3 packagi
 
 ## Current stamp
 
-`UI_BUILD=2026.10.09-editor-ai`
+`UI_BUILD=2026.10.09-live-audit`
+
+## Live audit note (2026-10-09)
+
+- Directive file `THUMBRIC_LIVE_SITE_DEEP_REANALYSIS.md` was **not** on the VM (Windows Downloads path inaccessible); audit still ran against https://thumbric.app + local `:43201`.
+- **P0 fixed in repo:** unread `editorTab` broke `tsc`/`npm run build`, which blocked Pages from shipping the More-options popover. Regression: `src/titleOptionsLayout.test.ts`.
+- **Verified local:** More title options opens `#title-options-popover` with `deltaScrollH=0`; download gate + AI demo stub exercised.
+- **Verified production (pre-redeploy of this stamp):** routes 200 except `/roast/:code` HTTP 404 with working SPA; More-options popover **absent** in live JS until this build deploys.
+- **Staging:** none.
 
 ## Open threads
 

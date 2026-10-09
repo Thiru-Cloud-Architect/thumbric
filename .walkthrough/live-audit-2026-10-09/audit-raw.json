@@ -1,0 +1,539 @@
+{
+  "startedAt": "2026-10-09T11:30:40.295Z",
+  "local": "http://127.0.0.1:43201",
+  "prod": "https://thumbric.app",
+  "pages": [
+    {
+      "name": "prod-home-1280",
+      "url": "https://thumbric.app/",
+      "width": 1280,
+      "height": 900,
+      "navStatus": 200,
+      "shotPath": ".walkthrough/live-audit-2026-10-09/prod-home-1280.png",
+      "stamp": {
+        "dataUiBuild": "2026.10.09-editor-ai",
+        "footerBuild": null,
+        "title": "Thumbric — free YouTube & Shorts thumbnail maker",
+        "bodyText": "▶\nThumbric\nCreate\nAI Maker\nAnalyze\nTools\n▾\nPricing\n☾\nDark\nSign in\nCreate thumbnail\nNEW\nI tried this for 30 days\nWOW\nThey said it was impossible\nFIX\nStop doing this wrong\nHOT\nEarn more on autopilot\nAI\nBuilt in one weekend\nTRIP\n48 hours in Chennai\nPR\nProduction PR review\nGO\nWatch before you buy\nNEW\nI tried this for 30 days\nWOW\nThey said it was impossible\nFIX\nStop doing this wrong\nHOT\nEarn more on autopilot\nAI\nBuilt in one weekend\nTRIP\n48 hours in Chennai\nPR\nProduction PR review\nGO\nWatch before you buy\nHOT\nEarn more on autopilot\nAI\nBuilt in one weekend\nTRIP\n48 hours in Chennai\nPR\nProduction PR review\nGO\nWatch before you buy\nNEW\nI tried this for 30 days\nWOW\nThey said it was impossible\nFIX\nStop doing this wrong\nHOT\nEarn more on autopilot\nAI\nBuilt in one weekend\nTRIP\n48 hours in Chennai\nPR\nProduction PR review\nGO\nWatch before you buy\nNEW\nI tried this for 30 days\nWOW\nThey said it was impossible\nFIX\nStop doing this wrong\nTRIP\n48 hours in Chennai\nPR\nProduction PR review\nGO\nWatch before you buy\nNEW\nI tried this for 30 days\nWOW\nThey said it was impossible\nFIX\nStop doing this wrong\nHOT\nEarn more on autopilot\nAI\nBuilt in one weekend\nTRIP\n48 hours in Chennai\nPR\nProduction PR review\nGO\nWatch befo"
+      },
+      "consoles": [],
+      "pageErrors": [],
+      "failedRequests": [
+        {
+          "url": "https://images.unsplash.com/photo-1611162617474-5b21e939e113?w=640&h=360&fit=crop&q=80",
+          "err": "net::ERR_BLOCKED_BY_ORB"
+        }
+      ]
+    },
+    {
+      "name": "prod-editor-1280",
+      "url": "https://thumbric.app/#editor",
+      "width": 1280,
+      "height": 1000,
+      "navStatus": 200,
+      "shotPath": ".walkthrough/live-audit-2026-10-09/prod-editor-1280.png",
+      "stamp": {
+        "dataUiBuild": "2026.10.09-editor-ai",
+        "footerBuild": null,
+        "title": "Thumbric — free YouTube & Shorts thumbnail maker",
+        "bodyText": "▶\nThumbric\nCreate\nAI Maker\nAnalyze\nTools\n▾\nPricing\n☾\nDark\nSign in\nCreate thumbnail\nNEW\nI tried this for 30 days\nWOW\nThey said it was impossible\nFIX\nStop doing this wrong\nHOT\nEarn more on autopilot\nAI\nBuilt in one weekend\nTRIP\n48 hours in Chennai\nPR\nProduction PR review\nGO\nWatch before you buy\nNEW\nI tried this for 30 days\nWOW\nThey said it was impossible\nFIX\nStop doing this wrong\nHOT\nEarn more on autopilot\nAI\nBuilt in one weekend\nTRIP\n48 hours in Chennai\nPR\nProduction PR review\nGO\nWatch before you buy\nHOT\nEarn more on autopilot\nAI\nBuilt in one weekend\nTRIP\n48 hours in Chennai\nPR\nProduction PR review\nGO\nWatch before you buy\nNEW\nI tried this for 30 days\nWOW\nThey said it was impossible\nFIX\nStop doing this wrong\nHOT\nEarn more on autopilot\nAI\nBuilt in one weekend\nTRIP\n48 hours in Chennai\nPR\nProduction PR review\nGO\nWatch before you buy\nNEW\nI tried this for 30 days\nWOW\nThey said it was impossible\nFIX\nStop doing this wrong\nTRIP\n48 hours in Chennai\nPR\nProduction PR review\nGO\nWatch before you buy\nNEW\nI tried this for 30 days\nWOW\nThey said it was impossible\nFIX\nStop doing this wrong\nHOT\nEarn more on autopilot\nAI\nBuilt in one weekend\nTRIP\n48 hours in Chennai\nPR\nProduction PR review\nGO\nWatch befo"
+      },
+      "consoles": [],
+      "pageErrors": [],
+      "failedRequests": [
+        {
+          "url": "https://images.unsplash.com/photo-1611162617474-5b21e939e113?w=640&h=360&fit=crop&q=80",
+          "err": "net::ERR_BLOCKED_BY_ORB"
+        },
+        {
+          "url": "https://images.unsplash.com/photo-1611162617474-5b21e939e113?w=640&h=360&fit=crop&q=80",
+          "err": "net::ERR_BLOCKED_BY_ORB"
+        }
+      ]
+    },
+    {
+      "name": "prod-ai-maker-1280",
+      "url": "https://thumbric.app/ai-thumbnail-maker/",
+      "width": 1280,
+      "height": 900,
+      "navStatus": 200,
+      "shotPath": ".walkthrough/live-audit-2026-10-09/prod-ai-maker-1280.png",
+      "stamp": {
+        "dataUiBuild": null,
+        "footerBuild": "2026.10.09-editor-ai",
+        "title": "AI Thumbnail Maker — describe or paste a URL | Thumbric",
+        "bodyText": "▶\nThumbric\nCreate\nAI Maker\nAnalyze\nTools\n▾\nPricing\n☾\nDark\nSign in\nCreate thumbnail\nHome\nTools\nAI Thumbnail Maker\n\nAI THUMBNAIL MAKER\n\nAI thumbnail maker\n\nOne field: paste a YouTube link or describe the scene. We create a cover you can download or finish in the editor.\n\nFree preview engine\n\nPaste a YouTube link, or describe the scene\nCreate thumbnail\n\nTip: keep the idea short — subject, emotion, and one bold claim.\n\nThumbric\n\nFree browser thumbnail maker for YouTube & social.\n\nCreate\n\nThumbnail editor\nAI Thumbnail Maker\nHow it works\nPlans & pricing\nFAQ\n\nFree tools\n\nThumbnail Score\nA/B Tester\nResizer\nCTR Calculator\nTitle Analyzer\nThumbnail Doctor\n\nResources\n\nLessons\nProjects\nDashboard\nAccount\nFeedback\nRoadmap\nPrivacy & terms\nCareers\nSitemap\n\nThumbric · UI 2026.10.09-editor-ai"
+      },
+      "consoles": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "name": "prod-pricing-1280",
+      "url": "https://thumbric.app/pricing/",
+      "width": 1280,
+      "height": 900,
+      "navStatus": 200,
+      "shotPath": ".walkthrough/live-audit-2026-10-09/prod-pricing-1280.png",
+      "stamp": {
+        "dataUiBuild": null,
+        "footerBuild": "2026.10.09-editor-ai",
+        "title": "Thumbric pricing — Creator & Pro",
+        "bodyText": "▶\nThumbric\nCreate\nAI Maker\nAnalyze\nTools\n▾\nPricing\n☾\nDark\nSign in\nCreate thumbnail\n\nPRICING\n\nThree simple tiers. Launch pricing.\n\nStart free. Upgrade when you want downloads without the small corner mark.\n\nNever again at these rates.\n\nUSD\nINR\n\nPrices are in US dollars.\n\nFree\n\nCreate, register, download lightly marked\n\n$0\n\n8 guest designs, then free register to continue\nSave projects after you register\n5 mild-watermark downloads / day\nAI Maker, Doctor, Score & Resizer\nStart free\n\nMOST POPULAR\n\nCreator\n\nFor weekly uploads\n\n$5\n$1/mo\n\n30 clean PNGs / month · includes 7-day trial\n\nUnlimited watermarked downloads\n30 clean exports / month (no mark)\nCloud save when Supabase is connected\n7-day trial unlock (demo until Stripe)\nGet Creator\nPro\n\nDaily publishers\n\n$9\n$3/mo\n\nUnlimited clean downloads\n\nEverything in Creator\nUnlimited clean exports\nPriority when paid AI ships\n7-day trial unlock available (demo)\nGo Pro\n\nCreator includes 30 clean downloads per calendar month. Pro is unlimited. Struck-through amounts are regular rates; launch pricing ends when checkout goes live. Demo unlocks need no card.\n\nThumbric\n\nFree browser thumbnail maker for YouTube & social.\n\nCreate\n\nThumbnail editor\nAI Thum"
+      },
+      "consoles": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "name": "prod-tools-1280",
+      "url": "https://thumbric.app/tools/",
+      "width": 1280,
+      "height": 900,
+      "navStatus": 200,
+      "shotPath": ".walkthrough/live-audit-2026-10-09/prod-tools-1280.png",
+      "stamp": {
+        "dataUiBuild": null,
+        "footerBuild": "2026.10.09-editor-ai",
+        "title": "Free YouTube thumbnail tools — Thumbric",
+        "bodyText": "▶\nThumbric\nCreate\nAI Maker\nAnalyze\nTools\n▾\nPricing\n☾\nDark\nSign in\nCreate thumbnail\nHome\nTools\nTool\n\nFREE TOOLS\n\nFree YouTube thumbnail tools. Try before signup.\n\nScore, test, resize, calculate CTR, and analyze titles — then create with AI Thumbnail Maker when you are ready.\n\nAI Thumbnail Maker\n\nDescribe or paste a URL — get a ready cover.\n\nOpen →\nThumbnail Doctor\n\nScore → compare → improve funnel.\n\nOpen →\nThumbnail Score\n\nUpload a thumb. Get a 0–100 heuristic score.\n\nOpen →\nA/B Tester\n\nCompare two thumbnails at phone size.\n\nOpen →\nTitle Analyzer\n\nLength, mobile cutoff, hook words.\n\nOpen →\nResizer\n\nSizes, 50%/25% shrink, 3 quality tiers.\n\nOpen →\nCTR Calculator\n\nImpressions + clicks → your real CTR.\n\nOpen →\n\nMAKERS BY NICHE\n\nYouTube maker\n\n1280×720 canvas + AI scene.\n\nOpen →\nGaming\n\nRGB hype covers.\n\nOpen →\nPodcast\n\nTalk-show faces + type.\n\nOpen →\nFaceless\n\nObject/scene channels.\n\nOpen →\nShorts\n\nVertical 9:16 covers.\n\nOpen →\n\nMORE FREE TOOLS\n\nAI Thumbnail Maker\nDescribe or paste a URL — get a ready cover.\nThumbnail Doctor\nScore → compare → improve funnel.\nThumbnail Score\nUpload a thumb. Get a 0–100 heuristic score.\nA/B Tester\nCompare two thumbnails at phone size.\nTitle Analyzer\nLengt"
+      },
+      "consoles": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "name": "prod-doctor-1280",
+      "url": "https://thumbric.app/thumbnail-doctor/",
+      "width": 1280,
+      "height": 900,
+      "navStatus": 200,
+      "shotPath": ".walkthrough/live-audit-2026-10-09/prod-doctor-1280.png",
+      "stamp": {
+        "dataUiBuild": null,
+        "footerBuild": "2026.10.09-editor-ai",
+        "title": "Thumbnail Doctor — score & improve | Thumbric",
+        "bodyText": "▶\nThumbric\nCreate\nAI Maker\nAnalyze\nTools\n▾\nPricing\n☾\nDark\nSign in\nCreate thumbnail\nHome\nTools\nTool\n\nTHUMBNAIL DOCTOR\n\nDiagnose the click. Then fix it.\n\nUpload an existing thumbnail. Get a honest heuristic score, the top 3 problems, then fix it in the editor — no video upload required.\n\nDrop or choose a thumbnail\nVideo title (optional)\nRun Doctor\n\nStays in this browser. Heuristic score — not a CTR forecast.\n\n1 · Upload\n\nAny existing YouTube thumbnail JPG/PNG.\n\n2 · Diagnose\n\nScore + three concrete problems — focal point, text, mobile, clutter.\n\n3 · Fix\n\nOpen the same image in the editor, or rebuild a new cover with AI.\n\nMORE FREE TOOLS\n\nAI Thumbnail Maker\nDescribe or paste a URL — get a ready cover.\nThumbnail Score\nUpload a thumb. Get a 0–100 heuristic score.\nA/B Tester\nCompare two thumbnails at phone size.\nTitle Analyzer\nLength, mobile cutoff, hook words.\nResizer\nSizes, 50%/25% shrink, 3 quality tiers.\nCTR Calculator\nImpressions + clicks → your real CTR.\nAll free tools\nBrowse the full toolkit\n\nThumbric\n\nFree browser thumbnail maker for YouTube & social.\n\nCreate\n\nThumbnail editor\nAI Thumbnail Maker\nHow it works\nPlans & pricing\nFAQ\n\nFree tools\n\nThumbnail Score\nA/B Tester\nResizer\nCTR C"
+      },
+      "consoles": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "name": "prod-home-390",
+      "url": "https://thumbric.app/",
+      "width": 390,
+      "height": 844,
+      "navStatus": 200,
+      "shotPath": ".walkthrough/live-audit-2026-10-09/prod-home-390.png",
+      "stamp": {
+        "dataUiBuild": "2026.10.09-editor-ai",
+        "footerBuild": null,
+        "title": "Thumbric — free YouTube & Shorts thumbnail maker",
+        "bodyText": "▶\nThumbric\n☾\nSign in\nCreate thumbnail\nNEW\nI tried this for 30 days\nWOW\nThey said it was impossible\nFIX\nStop doing this wrong\nHOT\nEarn more on autopilot\nAI\nBuilt in one weekend\nTRIP\n48 hours in Chennai\nPR\nProduction PR review\nGO\nWatch before you buy\nNEW\nI tried this for 30 days\nWOW\nThey said it was impossible\nFIX\nStop doing this wrong\nHOT\nEarn more on autopilot\nAI\nBuilt in one weekend\nTRIP\n48 hours in Chennai\nPR\nProduction PR review\nGO\nWatch before you buy\nHOT\nEarn more on autopilot\nAI\nBuilt in one weekend\nTRIP\n48 hours in Chennai\nPR\nProduction PR review\nGO\nWatch before you buy\nNEW\nI tried this for 30 days\nWOW\nThey said it was impossible\nFIX\nStop doing this wrong\nHOT\nEarn more on autopilot\nAI\nBuilt in one weekend\nTRIP\n48 hours in Chennai\nPR\nProduction PR review\nGO\nWatch before you buy\nNEW\nI tried this for 30 days\nWOW\nThey said it was impossible\nFIX\nStop doing this wrong\nTRIP\n48 hours in Chennai\nPR\nProduction PR review\nGO\nWatch before you buy\nNEW\nI tried this for 30 days\nWOW\nThey said it was impossible\nFIX\nStop doing this wrong\nHOT\nEarn more on autopilot\nAI\nBuilt in one weekend\nTRIP\n48 hours in Chennai\nPR\nProduction PR review\nGO\nWatch before you buy\nNEW\nI tried this for 30 days\nWOW\nT"
+      },
+      "consoles": [],
+      "pageErrors": [],
+      "failedRequests": [
+        {
+          "url": "https://images.unsplash.com/photo-1611162617474-5b21e939e113?w=640&h=360&fit=crop&q=80",
+          "err": "net::ERR_BLOCKED_BY_ORB"
+        }
+      ]
+    },
+    {
+      "name": "prod-ai-maker-390",
+      "url": "https://thumbric.app/ai-thumbnail-maker/",
+      "width": 390,
+      "height": 844,
+      "navStatus": 200,
+      "shotPath": ".walkthrough/live-audit-2026-10-09/prod-ai-maker-390.png",
+      "stamp": {
+        "dataUiBuild": null,
+        "footerBuild": "2026.10.09-editor-ai",
+        "title": "AI Thumbnail Maker — describe or paste a URL | Thumbric",
+        "bodyText": "▶\nThumbric\n☾\nSign in\nCreate thumbnail\nHome\nTools\nAI Thumbnail Maker\n\nAI THUMBNAIL MAKER\n\nAI thumbnail maker\n\nOne field: paste a YouTube link or describe the scene. We create a cover you can download or finish in the editor.\n\nFree preview engine\n\nPaste a YouTube link, or describe the scene\nCreate thumbnail\n\nTip: keep the idea short — subject, emotion, and one bold claim.\n\nThumbric\n\nFree browser thumbnail maker for YouTube & social.\n\nCreate\n\nThumbnail editor\nAI Thumbnail Maker\nHow it works\nPlans & pricing\nFAQ\n\nFree tools\n\nThumbnail Score\nA/B Tester\nResizer\nCTR Calculator\nTitle Analyzer\nThumbnail Doctor\n\nResources\n\nLessons\nProjects\nDashboard\nAccount\nFeedback\nRoadmap\nPrivacy & terms\nCareers\nSitemap\n\nThumbric · UI 2026.10.09-editor-ai"
+      },
+      "consoles": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "name": "prod-pricing-390",
+      "url": "https://thumbric.app/pricing/",
+      "width": 390,
+      "height": 844,
+      "navStatus": 200,
+      "shotPath": ".walkthrough/live-audit-2026-10-09/prod-pricing-390.png",
+      "stamp": {
+        "dataUiBuild": null,
+        "footerBuild": "2026.10.09-editor-ai",
+        "title": "Thumbric pricing — Creator & Pro",
+        "bodyText": "▶\nThumbric\n☾\nSign in\nCreate thumbnail\n\nPRICING\n\nThree simple tiers. Launch pricing.\n\nStart free. Upgrade when you want downloads without the small corner mark.\n\nNever again at these rates.\n\nUSD\nINR\n\nPrices are in US dollars.\n\nFree\n\nCreate, register, download lightly marked\n\n$0\n\n8 guest designs, then free register to continue\nSave projects after you register\n5 mild-watermark downloads / day\nAI Maker, Doctor, Score & Resizer\nStart free\n\nMOST POPULAR\n\nCreator\n\nFor weekly uploads\n\n$5\n$1/mo\n\n30 clean PNGs / month · includes 7-day trial\n\nUnlimited watermarked downloads\n30 clean exports / month (no mark)\nCloud save when Supabase is connected\n7-day trial unlock (demo until Stripe)\nGet Creator\nPro\n\nDaily publishers\n\n$9\n$3/mo\n\nUnlimited clean downloads\n\nEverything in Creator\nUnlimited clean exports\nPriority when paid AI ships\n7-day trial unlock available (demo)\nGo Pro\n\nCreator includes 30 clean downloads per calendar month. Pro is unlimited. Struck-through amounts are regular rates; launch pricing ends when checkout goes live. Demo unlocks need no card.\n\nThumbric\n\nFree browser thumbnail maker for YouTube & social.\n\nCreate\n\nThumbnail editor\nAI Thumbnail Maker\nHow it works\nPlans & pricing\nFAQ\n"
+      },
+      "consoles": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "name": "prod-roast-1280",
+      "url": "https://thumbric.app/roast/demo-code/",
+      "width": 1280,
+      "height": 900,
+      "navStatus": 404,
+      "shotPath": ".walkthrough/live-audit-2026-10-09/prod-roast-1280.png",
+      "stamp": {
+        "dataUiBuild": null,
+        "footerBuild": "2026.10.09-editor-ai",
+        "title": "Thumbnail Score result — Thumbric",
+        "bodyText": "▶\nThumbric\nCreate\nAI Maker\nAnalyze\nTools\n▾\nPricing\n☾\nDark\nSign in\nCreate thumbnail\nHome\nTools\nTool\n\nSHARED RESULT\n\nThis share link is unreadable.\n\nAsk the sender to copy the link again, or score your own thumbnail.\n\nScore a thumbnail\n\nMORE FREE TOOLS\n\nAI Thumbnail Maker\nDescribe or paste a URL — get a ready cover.\nThumbnail Doctor\nScore → compare → improve funnel.\nThumbnail Score\nUpload a thumb. Get a 0–100 heuristic score.\nA/B Tester\nCompare two thumbnails at phone size.\nTitle Analyzer\nLength, mobile cutoff, hook words.\nResizer\nSizes, 50%/25% shrink, 3 quality tiers.\nCTR Calculator\nImpressions + clicks → your real CTR.\nAll free tools\nBrowse the full toolkit\n\nThumbric\n\nFree browser thumbnail maker for YouTube & social.\n\nCreate\n\nThumbnail editor\nAI Thumbnail Maker\nHow it works\nPlans & pricing\nFAQ\n\nFree tools\n\nThumbnail Score\nA/B Tester\nResizer\nCTR Calculator\nTitle Analyzer\nThumbnail Doctor\n\nResources\n\nLessons\nProjects\nDashboard\nAccount\nFeedback\nRoadmap\nPrivacy & terms\nCareers\nSitemap\n\nThumbric · UI 2026.10.09-editor-ai"
+      },
+      "consoles": [
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 404 ()"
+        }
+      ],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "name": "local-home-1280",
+      "url": "http://127.0.0.1:43201/",
+      "width": 1280,
+      "height": 900,
+      "navStatus": 200,
+      "shotPath": ".walkthrough/live-audit-2026-10-09/local-home-1280.png",
+      "stamp": {
+        "dataUiBuild": "2026.10.09-editor-ai",
+        "footerBuild": null,
+        "title": "Thumbric — free YouTube & Shorts thumbnail maker",
+        "bodyText": "▶\nThumbric\nCreate\nAI Maker\nAnalyze\nTools\n▾\nPricing\n☾\nDark\nSign in\nCreate thumbnail\nNEW\nI tried this for 30 days\nWOW\nThey said it was impossible\nFIX\nStop doing this wrong\nHOT\nEarn more on autopilot\nAI\nBuilt in one weekend\nTRIP\n48 hours in Chennai\nPR\nProduction PR review\nGO\nWatch before you buy\nNEW\nI tried this for 30 days\nWOW\nThey said it was impossible\nFIX\nStop doing this wrong\nHOT\nEarn more on autopilot\nAI\nBuilt in one weekend\nTRIP\n48 hours in Chennai\nPR\nProduction PR review\nGO\nWatch before you buy\nHOT\nEarn more on autopilot\nAI\nBuilt in one weekend\nTRIP\n48 hours in Chennai\nPR\nProduction PR review\nGO\nWatch before you buy\nNEW\nI tried this for 30 days\nWOW\nThey said it was impossible\nFIX\nStop doing this wrong\nHOT\nEarn more on autopilot\nAI\nBuilt in one weekend\nTRIP\n48 hours in Chennai\nPR\nProduction PR review\nGO\nWatch before you buy\nNEW\nI tried this for 30 days\nWOW\nThey said it was impossible\nFIX\nStop doing this wrong\nTRIP\n48 hours in Chennai\nPR\nProduction PR review\nGO\nWatch before you buy\nNEW\nI tried this for 30 days\nWOW\nThey said it was impossible\nFIX\nStop doing this wrong\nHOT\nEarn more on autopilot\nAI\nBuilt in one weekend\nTRIP\n48 hours in Chennai\nPR\nProduction PR review\nGO\nWatch befo"
+      },
+      "consoles": [
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 429 ()"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 429 ()"
+        }
+      ],
+      "pageErrors": [],
+      "failedRequests": [
+        {
+          "url": "https://images.unsplash.com/photo-1611162617474-5b21e939e113?w=640&h=360&fit=crop&q=80",
+          "err": "net::ERR_BLOCKED_BY_ORB"
+        },
+        {
+          "url": "https://ipwho.is/",
+          "err": "net::ERR_ABORTED"
+        },
+        {
+          "url": "https://ipwho.is/",
+          "err": "net::ERR_ABORTED"
+        }
+      ]
+    },
+    {
+      "name": "local-pricing-1280",
+      "url": "http://127.0.0.1:43201/pricing/",
+      "width": 1280,
+      "height": 900,
+      "navStatus": 200,
+      "shotPath": ".walkthrough/live-audit-2026-10-09/local-pricing-1280.png",
+      "stamp": {
+        "dataUiBuild": null,
+        "footerBuild": "2026.10.09-editor-ai",
+        "title": "Thumbric pricing — Creator & Pro",
+        "bodyText": "▶\nThumbric\nCreate\nAI Maker\nAnalyze\nTools\n▾\nPricing\n☾\nDark\nSign in\nCreate thumbnail\n\nPRICING\n\nThree simple tiers. Launch pricing.\n\nStart free. Upgrade when you want downloads without the small corner mark.\n\nNever again at these rates.\n\nUSD\nINR\n\nPrices are in US dollars.\n\nFree\n\nCreate, register, download lightly marked\n\n$0\n\n8 guest designs, then free register to continue\nSave projects after you register\n5 mild-watermark downloads / day\nAI Maker, Doctor, Score & Resizer\nStart free\n\nMOST POPULAR\n\nCreator\n\nFor weekly uploads\n\n$5\n$1/mo\n\n30 clean PNGs / month · includes 7-day trial\n\nUnlimited watermarked downloads\n30 clean exports / month (no mark)\nCloud save when Supabase is connected\n7-day trial unlock (demo until Stripe)\nGet Creator\nPro\n\nDaily publishers\n\n$9\n$3/mo\n\nUnlimited clean downloads\n\nEverything in Creator\nUnlimited clean exports\nPriority when paid AI ships\n7-day trial unlock available (demo)\nGo Pro\n\nCreator includes 30 clean downloads per calendar month. Pro is unlimited. Struck-through amounts are regular rates; launch pricing ends when checkout goes live. Demo unlocks need no card.\n\nThumbric\n\nFree browser thumbnail maker for YouTube & social.\n\nCreate\n\nThumbnail editor\nAI Thum"
+      },
+      "consoles": [
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 429 ()"
+        }
+      ],
+      "pageErrors": [],
+      "failedRequests": [
+        {
+          "url": "https://ipwho.is/",
+          "err": "net::ERR_ABORTED"
+        }
+      ]
+    },
+    {
+      "name": "local-tools-1280",
+      "url": "http://127.0.0.1:43201/tools/",
+      "width": 1280,
+      "height": 900,
+      "navStatus": 200,
+      "shotPath": ".walkthrough/live-audit-2026-10-09/local-tools-1280.png",
+      "stamp": {
+        "dataUiBuild": null,
+        "footerBuild": "2026.10.09-editor-ai",
+        "title": "Free YouTube thumbnail tools — Thumbric",
+        "bodyText": "▶\nThumbric\nCreate\nAI Maker\nAnalyze\nTools\n▾\nPricing\n☾\nDark\nSign in\nCreate thumbnail\nHome\nTools\nTool\n\nFREE TOOLS\n\nFree YouTube thumbnail tools. Try before signup.\n\nScore, test, resize, calculate CTR, and analyze titles — then create with AI Thumbnail Maker when you are ready.\n\nAI Thumbnail Maker\n\nDescribe or paste a URL — get a ready cover.\n\nOpen →\nThumbnail Doctor\n\nScore → compare → improve funnel.\n\nOpen →\nThumbnail Score\n\nUpload a thumb. Get a 0–100 heuristic score.\n\nOpen →\nA/B Tester\n\nCompare two thumbnails at phone size.\n\nOpen →\nTitle Analyzer\n\nLength, mobile cutoff, hook words.\n\nOpen →\nResizer\n\nSizes, 50%/25% shrink, 3 quality tiers.\n\nOpen →\nCTR Calculator\n\nImpressions + clicks → your real CTR.\n\nOpen →\n\nMAKERS BY NICHE\n\nYouTube maker\n\n1280×720 canvas + AI scene.\n\nOpen →\nGaming\n\nRGB hype covers.\n\nOpen →\nPodcast\n\nTalk-show faces + type.\n\nOpen →\nFaceless\n\nObject/scene channels.\n\nOpen →\nShorts\n\nVertical 9:16 covers.\n\nOpen →\n\nMORE FREE TOOLS\n\nAI Thumbnail Maker\nDescribe or paste a URL — get a ready cover.\nThumbnail Doctor\nScore → compare → improve funnel.\nThumbnail Score\nUpload a thumb. Get a 0–100 heuristic score.\nA/B Tester\nCompare two thumbnails at phone size.\nTitle Analyzer\nLengt"
+      },
+      "consoles": [],
+      "pageErrors": [],
+      "failedRequests": []
+    }
+  ],
+  "e2e": {
+    "notes": [
+      {
+        "step": "open-editor",
+        "ok": true
+      },
+      {
+        "step": "title-edit",
+        "ok": true,
+        "tag": "INPUT",
+        "id": "",
+        "placeholder": ""
+      },
+      {
+        "step": "title-keyboard",
+        "selector": "input[aria-label*=\"itle\" i]",
+        "ok": true
+      },
+      {
+        "step": "more-options-click",
+        "ok": true,
+        "text": "More title options"
+      },
+      {
+        "step": "more-options-layout",
+        "before": {
+          "scrollH": 5291,
+          "bodyH": 5291
+        },
+        "after": {
+          "scrollH": 5291,
+          "bodyH": 5291,
+          "popoverOpen": false,
+          "detailsOpen": false
+        },
+        "deltaScrollH": 0,
+        "ok": true
+      },
+      {
+        "step": "file-input",
+        "ok": true,
+        "accept": "image/png,image/jpeg,image/webp",
+        "id": null
+      },
+      {
+        "step": "upload-fixture",
+        "ok": true
+      },
+      {
+        "step": "download-gate-visible",
+        "ok": true,
+        "text": "Download",
+        "disabled": false,
+        "classes": "editor-fit-download"
+      },
+      {
+        "step": "download-click",
+        "hasModal": true,
+        "mentionsSignIn": true,
+        "snippet": "▶\nThumbric\nCreate\nAI Maker\nAnalyze\nTools\n▾\nPricing\n☾\nDark\nSign in\nCreate thumbnail\n\nFREE ACCOUNT\n\nRegister to download\n\nFree accounts get 5 mild-watermarked PNGs per day. Upgrade anytime for clean exports.\n\nSign up\nSign in\nName\nEmail\n\nFree account on this browser. You can save designs and download after you sign up.\n\nCreate free account\nCancel\nNEW\nI tried this for 30 days\nWOW\nThey said it was impossible\nFIX\nStop doing this wrong\nHOT\nEarn more on autopilot\nAI\nBuilt in one weekend\nTRIP\n48 hours in"
+      },
+      {
+        "step": "ai-maker",
+        "ok": true,
+        "hasInput": true,
+        "chip": "",
+        "headline": "AI thumbnail maker"
+      },
+      {
+        "step": "ai-demo-result",
+        "cardCount": 0,
+        "textHasConcepts": true
+      }
+    ],
+    "at": "2026-10-09T11:31:30.576Z"
+  },
+  "routes": [
+    {
+      "base": "https://thumbric.app",
+      "route": "/",
+      "status": 200,
+      "ok": true,
+      "bytes": 5996,
+      "asset": "assets/index-DqDLc-gl.js"
+    },
+    {
+      "base": "https://thumbric.app",
+      "route": "/ai-thumbnail-maker/",
+      "status": 200,
+      "ok": true,
+      "bytes": 5936,
+      "asset": "assets/index-DqDLc-gl.js"
+    },
+    {
+      "base": "https://thumbric.app",
+      "route": "/pricing/",
+      "status": 200,
+      "ok": true,
+      "bytes": 5876,
+      "asset": "assets/index-DqDLc-gl.js"
+    },
+    {
+      "base": "https://thumbric.app",
+      "route": "/tools/",
+      "status": 200,
+      "ok": true,
+      "bytes": 5900,
+      "asset": "assets/index-DqDLc-gl.js"
+    },
+    {
+      "base": "https://thumbric.app",
+      "route": "/thumbnail-doctor/",
+      "status": 200,
+      "ok": true,
+      "bytes": 5890,
+      "asset": "assets/index-DqDLc-gl.js"
+    },
+    {
+      "base": "https://thumbric.app",
+      "route": "/projects/",
+      "status": 200,
+      "ok": true,
+      "bytes": 5851,
+      "asset": "assets/index-DqDLc-gl.js"
+    },
+    {
+      "base": "https://thumbric.app",
+      "route": "/youtube-thumbnail-score/",
+      "status": 200,
+      "ok": true,
+      "bytes": 5926,
+      "asset": "assets/index-DqDLc-gl.js"
+    },
+    {
+      "base": "https://thumbric.app",
+      "route": "/youtube-thumbnail-resizer/",
+      "status": 200,
+      "ok": true,
+      "bytes": 5917,
+      "asset": "assets/index-DqDLc-gl.js"
+    },
+    {
+      "base": "https://thumbric.app",
+      "route": "/youtube-ctr-calculator/",
+      "status": 200,
+      "ok": true,
+      "bytes": 5892,
+      "asset": "assets/index-DqDLc-gl.js"
+    },
+    {
+      "base": "https://thumbric.app",
+      "route": "/youtube-title-analyzer/",
+      "status": 200,
+      "ok": true,
+      "bytes": 5872,
+      "asset": "assets/index-DqDLc-gl.js"
+    },
+    {
+      "base": "https://thumbric.app",
+      "route": "/roast/demo-code/",
+      "status": 404,
+      "ok": false,
+      "bytes": 5996,
+      "asset": "assets/index-DqDLc-gl.js"
+    },
+    {
+      "base": "http://127.0.0.1:43201",
+      "route": "/",
+      "status": 200,
+      "ok": true,
+      "bytes": 6563,
+      "asset": null
+    },
+    {
+      "base": "http://127.0.0.1:43201",
+      "route": "/ai-thumbnail-maker/",
+      "status": 200,
+      "ok": true,
+      "bytes": 6563,
+      "asset": null
+    },
+    {
+      "base": "http://127.0.0.1:43201",
+      "route": "/pricing/",
+      "status": 200,
+      "ok": true,
+      "bytes": 6563,
+      "asset": null
+    },
+    {
+      "base": "http://127.0.0.1:43201",
+      "route": "/tools/",
+      "status": 200,
+      "ok": true,
+      "bytes": 6563,
+      "asset": null
+    },
+    {
+      "base": "http://127.0.0.1:43201",
+      "route": "/thumbnail-doctor/",
+      "status": 200,
+      "ok": true,
+      "bytes": 6563,
+      "asset": null
+    },
+    {
+      "base": "http://127.0.0.1:43201",
+      "route": "/projects/",
+      "status": 200,
+      "ok": true,
+      "bytes": 6563,
+      "asset": null
+    },
+    {
+      "base": "http://127.0.0.1:43201",
+      "route": "/youtube-thumbnail-score/",
+      "status": 200,
+      "ok": true,
+      "bytes": 6563,
+      "asset": null
+    },
+    {
+      "base": "http://127.0.0.1:43201",
+      "route": "/youtube-thumbnail-resizer/",
+      "status": 200,
+      "ok": true,
+      "bytes": 6563,
+      "asset": null
+    },
+    {
+      "base": "http://127.0.0.1:43201",
+      "route": "/youtube-ctr-calculator/",
+      "status": 200,
+      "ok": true,
+      "bytes": 6563,
+      "asset": null
+    },
+    {
+      "base": "http://127.0.0.1:43201",
+      "route": "/youtube-title-analyzer/",
+      "status": 200,
+      "ok": true,
+      "bytes": 6563,
+      "asset": null
+    },
+    {
+      "base": "http://127.0.0.1:43201",
+      "route": "/roast/demo-code/",
+      "status": 200,
+      "ok": true,
+      "bytes": 6563,
+      "asset": null
+    }
+  ],
+  "finishedAt": "2026-10-09T11:31:30.669Z"
+}

@@ -171,7 +171,6 @@ import './App.css'
 const POPULAR: NicheId[] = ['tech', 'finance', 'gaming', 'cooking', 'travel', 'fitness', 'education', 'vlog']
 
 type DragTarget = 'sticker' | 'text' | null
-type EditorTab = 'create' | 'title' | 'finish'
 type EditorMode = 'ai' | 'classic' | 'improve'
 
 type EditorSnap = {
@@ -277,10 +276,6 @@ export default function HomePage() {
   const [aiStatus, setAiStatus] = useState<{ kind: 'idle' | 'busy' | 'ok' | 'err'; text: string }>({
     kind: 'idle',
     text: '',
-  })
-  const [editorTab, setEditorTab] = useState<EditorTab>(() => {
-    const hash = normalizeHash(typeof window !== 'undefined' ? window.location.hash : '')
-    return hash === 'editor-title' ? 'title' : 'create'
   })
   const [, setEditorMode] = useState<EditorMode>(() => {
     const hash = normalizeHash(typeof window !== 'undefined' ? window.location.hash : '')
@@ -458,17 +453,14 @@ export default function HomePage() {
       } else if (hash === 'editor-improve') {
         flushSync(() => {
           setEditorMode('improve')
-          setEditorTab('create')
         })
       } else if (hash === 'editor-title') {
         flushSync(() => {
-          setEditorTab('title')
           setTextSelected(true)
         })
       } else if (hash === 'editor') {
         flushSync(() => {
           setEditorMode('classic')
-          setEditorTab('create')
         })
       }
 
@@ -555,7 +547,6 @@ export default function HomePage() {
         return
       }
       if (key === 't') {
-        setEditorTab('title')
         setTextSelected(true)
         return
       }
@@ -734,7 +725,7 @@ export default function HomePage() {
     // Handoffs always land in the clean from-scratch studio (photo + title ready).
     const mode: EditorMode = handoff.mode === 'improve' ? 'improve' : 'classic'
     setEditorMode(mode)
-    setEditorTab(handoff.photoDataUrl || handoff.title ? 'title' : 'create')
+    if (handoff.photoDataUrl || handoff.title) setTextSelected(true)
     if (handoff.photoDataUrl) {
       void loadImageFromUrl(handoff.photoDataUrl)
         .then((image) => {
@@ -1398,7 +1389,6 @@ export default function HomePage() {
     setAiStyleId(preset.styleId)
     setAiStyleTip(null)
     setEditorMode('ai')
-    setEditorTab('create')
     setStatus(`Preset “${preset.label}” loaded. Generate when you are ready.`)
   }
 
