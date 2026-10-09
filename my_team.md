@@ -83,14 +83,16 @@ Cloud Agents run on a remote Linux VM and **cannot read** `C:\Users\…\Download
 
 ---
 
-## Acceptance — color (premium sky studio + themes)
+## Acceptance — color (coral + purple studio + themes)
 
-- [x] Light: cohesive sky surface — deepened wash (less blank white); corner lavenders
-- [x] Dark: cool navy/slate sky-dark (not coral-black); soft sky + mild purple accents
+- [x] Light: warm cream/peach wash; coral `#f05d6a`/`#ff7f8a` + purple `#c084fc`; white cards
+- [x] Dark: warm ink `#0d0a0a`/`#161010`; coral+purple CTAs; dark raised cards (not white panels)
 - [x] Theme toggle next to Sign in; `localStorage` `thumbric-theme`; `data-theme` on `<html>`
-- [x] Primary `#6366f1` (light) / brighter indigo accents in dark; sky secondary for links
-- [x] Cards use elevated surfaces in both themes (`--raise` / `--raise-2`)
-- [x] Primary CTAs: sky→purple gradient; readable contrast in both modes
+- [x] Header uses `--header-bg` in both modes (no hardcoded white bar in dark)
+- [x] Editor panels use `--panel-surface` / `--panel-stage` (theme-matched)
+- [x] Brighter hero mosaic scrim in both modes; coral→purple CTA gradients
+- [x] Homepage: StatsStrip + Problem + Phase 4 privacy block removed; How-it-works tighter + larger
+- [x] Phase 4 “Understand my video” kept on `/roadmap` only
 
 ## Acceptance — AI maker (`/ai-thumbnail-maker`)
 
@@ -102,7 +104,7 @@ Cloud Agents run on a remote Linux VM and **cannot read** `C:\Users\…\Download
 
 ## Acceptance — Editor (`/#editor`)
 
-- [x] One elevated card; canvas in light grey / dark stage frame; empty canvas uses studio shell
+- [x] One elevated card; canvas stage + side panels match theme (white/light raise in light; dark cards in dark)
 - [x] AI maker handoff applies title + optional line 2 + placement
 - [x] Upload: dashed drop zone with icon + helper text
 - [x] Templates closed by default — compact summary row when closed
@@ -110,9 +112,13 @@ Cloud Agents run on a remote Linux VM and **cannot read** `C:\Users\…\Download
 - [x] Top bar: Editor · Size · Download (+ AI maker link)
 - [x] Canvas toolbar: Undo, Redo, More
 
+## UI correction (2026-10-09)
+
+User feedback: sky theme unclear; dark mode left white header + light-grey editor panels. Restored coral+purple brand base, brighter hero, theme-matched editor cards; removed homepage StatsStrip / Problem / Phase 4 privacy essay.
+
 ## Screenshot evidence
 
-Desktop 1440×900: `.walkthrough/theme-pass/` — light + dark for `/`, `/#editor`, `/ai-thumbnail-maker`, `/pricing`.
+Desktop 1440×900: `.walkthrough/coral-pass/` — light + dark for `/` (hero + how), `/#editor`, `/pricing`.
 
 ## Still open
 

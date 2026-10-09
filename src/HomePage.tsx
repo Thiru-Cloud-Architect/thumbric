@@ -39,9 +39,7 @@ import {
   HeroFlashy,
   HowItWorks,
   PricingTeaser,
-  ProblemSection,
   SiteFooter,
-  StatsStrip,
   Testimonials,
 } from './LandingSections'
 import { LazyReveal } from './LazyReveal'
@@ -164,7 +162,6 @@ import { DOWNLOAD_PREFIX, PRODUCT_NAME_FULL, UI_BUILD } from './brand'
 import {
   HASH_NAV_EVENT,
   focusHashTarget,
-  goToHash,
   normalizeHash,
   scrollToElementId,
   type HashNavDetail,
@@ -2476,12 +2473,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        <LazyReveal staggerMs={75} variant="soft-rise">
-          <StatsStrip />
-        </LazyReveal>
-        <LazyReveal staggerMs={90} variant="rise">
-          <ProblemSection />
-        </LazyReveal>
         <LazyReveal staggerMs={70} variant="soft-rise">
           <FeaturesSection />
         </LazyReveal>
@@ -2499,42 +2490,6 @@ export default function HomePage() {
         </LazyReveal>
       </main>
 
-      <section id="video-optional" className="video-optional-section" aria-labelledby="video-optional-title">
-        <div className="video-optional-inner">
-          <p className="section-eyebrow">Optional · Phase 4 preview</p>
-          <h2 id="video-optional-title" className="section-title">
-            Understand my video — <span className="gradient-text">never required</span>
-          </h2>
-          <p className="section-lede">
-            Thumbric works from an idea, a photo, or an existing thumbnail. You do not need to upload
-            unpublished videos or connect YouTube. If you want a still from your own file, pick a frame
-            locally — it stays in this browser.
-          </p>
-          <ul className="video-privacy-list">
-            <li>What you share: only a frame or photo you choose — not your full upload by default.</li>
-            <li>Retention: local browser only until you export.</li>
-            <li>Training: we do not claim model training on your media.</li>
-            <li>Delete: clear site data or remove the photo in the editor anytime.</li>
-          </ul>
-          <div className="video-optional-actions">
-            <button
-              type="button"
-              className="chip solid"
-              onClick={() => {
-                setEditorMode('classic')
-                setEditorTab('create')
-                goToHash('editor')
-                window.setTimeout(() => fileRef.current?.click(), 200)
-              }}
-            >
-              Pick a local still frame
-            </button>
-            <Link className="chip" to="/roadmap">
-              See roadmap for YouTube loop
-            </Link>
-          </div>
-        </div>
-      </section>
       <ShortcutsModal open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
       {exportChecks ? (
         <div className="modal-backdrop" role="presentation" onClick={() => setExportChecks(null)}>

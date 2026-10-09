@@ -7,13 +7,13 @@ body,
 #root {
   min-height: 100%;
   margin: 0;
-  background-color: var(--bg-soft, #e6edf8);
+  background-color: var(--bg-soft, #fff7f2);
   background-image: var(--page-wash);
-  color: var(--ink, #152033);
+  color: var(--ink, #1a0c0e);
 }
 
 html[data-theme='dark'],
 html[data-theme='dark'] body,
 html[data-theme='dark'] #root {
-  color: var(--ink, #e8eef8);
+  color: var(--ink, #fffaf7);
 }
