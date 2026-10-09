@@ -204,7 +204,7 @@ const FACTORIES: Record<CreativeStrategyId, StrategyFactory> = {
 }
 
 /** Pick three strategy families that fit the topic — never three grades of one image. */
-export function pickStrategyIds(topic: string): CreativeStrategyId[] {
+export function pickStrategyIds(topic: string, rotate = 0): CreativeStrategyId[] {
   const t = topic.toLowerCase()
   const ranked: CreativeStrategyId[] = []
 
@@ -225,19 +225,25 @@ export function pickStrategyIds(topic: string): CreativeStrategyId[] {
     'transformation',
   ]
 
-  const out: CreativeStrategyId[] = []
-  for (const id of [...ranked, ...fallback]) {
-    if (!out.includes(id)) out.push(id)
-    if (out.length === 3) break
+  const ordered = [...ranked, ...fallback]
+  const unique: CreativeStrategyId[] = []
+  for (const id of ordered) {
+    if (!unique.includes(id)) unique.push(id)
   }
-  return out
+  // §49 — “Generate 3 new directions” rotates the strategy set instead of rerunning the same three.
+  const shift = ((rotate % unique.length) + unique.length) % unique.length
+  const rotated = shift === 0 ? unique : [...unique.slice(shift), ...unique.slice(0, shift)]
+  return rotated.slice(0, 3)
 }
 
 /** Build a creative brief from a natural-language video description. */
-export function buildCreativeBrief(rawTopic: string): CreativeBrief {
+export function buildCreativeBrief(
+  rawTopic: string,
+  options: { rotate?: number } = {},
+): CreativeBrief {
   const topic = cleanTopic(rawTopic) || 'my YouTube video'
   const keys = keywords(topic)
-  const ids = pickStrategyIds(topic)
+  const ids = pickStrategyIds(topic, options.rotate ?? 0)
   const concepts = ids.map((id) => FACTORIES[id](topic, keys))
   return {
     topic,

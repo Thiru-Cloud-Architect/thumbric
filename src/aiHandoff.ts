@@ -5,6 +5,12 @@ export type AiHandoffMode = 'ai' | 'improve' | 'classic'
 export type AiHandoff = {
   hint?: string
   title?: string
+  /** Second editable title line from creative brief. */
+  titleLine2?: string
+  /** Title placement preset id: left | center | right. */
+  placement?: 'left' | 'center' | 'right'
+  /** Strategy label for editor status (e.g. The Curiosity Gap). */
+  strategy?: string
   styleId?: AiStyleId
   photoDataUrl?: string
   source?: string

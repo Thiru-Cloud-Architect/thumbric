@@ -709,7 +709,16 @@ export default function HomePage() {
     if (!handoff) return
     if (handoff.hint) setAiHint(handoff.hint)
     if (handoff.title) setTitle(handoff.title)
+    if (handoff.titleLine2 != null) setTitleLine2(handoff.titleLine2)
     if (handoff.styleId) setAiStyleId(handoff.styleId)
+    if (handoff.placement) {
+      const preset = TITLE_POSITION_PRESETS.find((item) => item.id === handoff.placement)
+      if (preset) {
+        setTitleAlign(preset.align)
+        setTextPos({ x: preset.x, y: preset.y })
+        setTextSelected(true)
+      }
+    }
     // Handoffs always land in the clean from-scratch studio (photo + title ready).
     const mode: EditorMode = handoff.mode === 'improve' ? 'improve' : 'classic'
     setEditorMode(mode)
@@ -719,11 +728,19 @@ export default function HomePage() {
         .then((image) => {
           setPhoto(image)
           setPhotoUrl(handoff.photoDataUrl!)
-          setPhotoName(handoff.source === 'ai-thumbnail-maker' ? 'AI cover' : 'Your thumbnail')
+          setPhotoName(
+            handoff.source === 'ai-thumbnail-maker'
+              ? handoff.strategy
+                ? `Concept · ${handoff.strategy}`
+                : 'AI cover'
+              : 'Your thumbnail',
+          )
           setStatus(
             handoff.source === 'doctor' || handoff.source === 'score'
               ? 'Your thumbnail is on the canvas. Edit the title, then download.'
-              : 'Cover loaded. Add your title, then download.',
+              : handoff.source === 'ai-thumbnail-maker'
+                ? 'Cover + editable title loaded from AI maker. Tweak, then download.'
+                : 'Cover loaded. Add your title, then download.',
           )
         })
         .catch(() => undefined)

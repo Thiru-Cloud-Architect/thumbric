@@ -6914,14 +6914,21 @@ footer {
   color: var(--muted);
 }
 
+.ai-canva-thumbs {
+  justify-content: center;
+  width: 100%;
+}
+
 .ai-canva-thumbs button {
-  width: 7.2rem;
+  width: 7.6rem;
   padding: 0;
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
   border: 2px solid transparent;
   background: #dce8ff;
   cursor: pointer;
+  display: grid;
+  gap: 0;
 }
 
 .ai-canva-thumbs button.is-selected {
@@ -6933,6 +6940,104 @@ footer {
   width: 100%;
   height: 4rem;
   object-fit: cover;
+}
+
+.ai-concept-chip {
+  display: block;
+  padding: 0.35rem 0.4rem 0.45rem;
+  font: 650 0.68rem/1.2 'DM Sans', system-ui, sans-serif;
+  color: var(--ink);
+  background: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ai-concept-meta {
+  width: min(100%, 36rem);
+  text-align: left;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.ai-concept-strategy {
+  margin: 0;
+  font: 700 0.78rem/1.3 'DM Sans', system-ui, sans-serif;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.ai-concept-headline {
+  margin: 0;
+  font: 750 1.15rem/1.25 'DM Sans', system-ui, sans-serif;
+  color: var(--ink);
+}
+
+.ai-concept-why {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.ai-stage-list {
+  list-style: none;
+  margin: 0;
+  padding: 0.15rem 0.1rem;
+  display: grid;
+  gap: 0.45rem;
+  width: 100%;
+}
+
+.ai-stage-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font: 600 0.92rem/1.3 'DM Sans', system-ui, sans-serif;
+  color: var(--muted);
+}
+
+.ai-stage-list li[data-state='active'] {
+  color: var(--ink);
+}
+
+.ai-stage-list li[data-state='done'] {
+  color: var(--accent-2, #0ea5e9);
+}
+
+.ai-stage-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: rgba(99, 102, 241, 0.25);
+  flex: 0 0 auto;
+}
+
+.ai-stage-list li[data-state='active'] .ai-stage-dot {
+  background: var(--accent);
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.16);
+  animation: ai-stage-pulse 1.4s ease-in-out infinite;
+}
+
+.ai-stage-list li[data-state='done'] .ai-stage-dot {
+  background: var(--accent-2, #0ea5e9);
+}
+
+@keyframes ai-stage-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.18);
+  }
+}
+
+.ai-failure {
+  display: grid;
+  gap: 0.35rem;
+  justify-items: start;
 }
 
 /* AI maker: one centered composition — atmosphere + prompt card, not a void. */

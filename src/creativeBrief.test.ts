@@ -30,4 +30,11 @@ describe('creativeBrief', () => {
     const ids = pickStrategyIds('the truth about investing myths nobody tells you')
     expect(ids.some((id) => id === 'contrarian' || id === 'curiosity')).toBe(true)
   })
+
+  it('rotates strategy order when generate-new-directions asks for a fresh set', () => {
+    const base = pickStrategyIds('I tested 10 AI coding tools', 0)
+    const rotated = pickStrategyIds('I tested 10 AI coding tools', 2)
+    expect(rotated).toHaveLength(3)
+    expect(rotated).not.toEqual(base)
+  })
 })

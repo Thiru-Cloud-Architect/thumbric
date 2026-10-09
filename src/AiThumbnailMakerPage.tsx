@@ -5,10 +5,19 @@ import {
   AI_LOOK_TARGET,
   AI_RATE_LIMIT_COOLDOWN_SEC,
   generateAiThumbnailVariants,
-  isAiRateLimitedError,
   type AiGeneratedImage,
   type AiStyleId,
 } from './aiThumbnail'
+import {
+  GENERATION_PROGRESS_STAGES,
+  attachCreativeConcepts,
+  labelForStage,
+  progressStageIndex,
+  stageForPipeline,
+  structuredAiFailure,
+  thumbOptionsFromBrief,
+  type GenerationStage,
+} from './aiOrchestrator'
 import { consumeAiHandoff, objectUrlToDataUrl, saveAiHandoff } from './aiHandoff'
 import { buildCreativeBrief, visualHintForConcept, type CreativeBrief } from './creativeBrief'
 import { getNiche } from './niches'
@@ -23,49 +32,31 @@ import {
 
 type Phase = 'compose' | 'busy' | 'ready' | 'err'
 
-const LOADING_LINES = [
-  'Analysing idea…',
-  'Building high-CTR packaging…',
-  'Preparing your thumbnail…',
-  'Refining the cover concept…',
-] as const
-
-function attachConcepts(items: AiGeneratedImage[], brief: CreativeBrief | null) {
-  if (!brief) return items
-  return items.map((item, index) => {
-    const concept = brief.concepts[index]
-    if (!concept) return item
-    return {
-      ...item,
-      lookLabel: concept.strategy,
-      lookWhy: concept.why,
-      lookHeadline: concept.headline,
-    }
-  })
-}
-
 export default function AiThumbnailMakerPage() {
   const navigate = useNavigate()
   const [input, setInput] = useState('')
   const [phase, setPhase] = useState<Phase>('compose')
+  const [stage, setStage] = useState<GenerationStage>('idle')
   const [statusLine, setStatusLine] = useState('')
   const [errorText, setErrorText] = useState('')
+  const [errorHint, setErrorHint] = useState('')
   const [variants, setVariants] = useState<AiGeneratedImage[]>([])
   const [pick, setPick] = useState(0)
   const [brief, setBrief] = useState<CreativeBrief | null>(null)
   const [youtubeMeta, setYoutubeMeta] = useState<YoutubeMeta | null>(null)
   const [cooldown, setCooldown] = useState(0)
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null)
+  const [directionRotate, setDirectionRotate] = useState(0)
   const abortRef = useRef<AbortController | null>(null)
   const runIdRef = useRef(0)
   const objectUrls = useRef<string[]>([])
-  const loadTick = useRef(0)
 
   const niche = useMemo(() => getNiche('vlog'), [])
   const platform = useMemo(() => getPlatform('youtube'), [])
   const urlMode = looksLikeYoutubeUrl(input)
   const canGenerate = input.trim().length >= 3 && phase !== 'busy' && cooldown === 0
   const chosen = variants[pick] ?? variants[0] ?? null
+  const activeProgressIndex = progressStageIndex(stage)
 
   useEffect(() => {
     track('landing_page_view', { path: '/ai-thumbnail-maker' })
@@ -96,9 +87,11 @@ export default function AiThumbnailMakerPage() {
           lookLabel: 'Demo',
           lookWhy: 'UI preview stub',
           lookHeadline: 'Your thumbnail',
+          lookPlacement: 'left',
           source: 'studio',
         } satisfies AiGeneratedImage,
       ])
+      setStage('completed')
       setPhase('ready')
     }
     return () => {
@@ -113,19 +106,13 @@ export default function AiThumbnailMakerPage() {
     return () => window.clearTimeout(timer)
   }, [cooldown])
 
-  useEffect(() => {
-    if (phase !== 'busy') return
-    setStatusLine(LOADING_LINES[0]!)
-    loadTick.current = 0
-    const timer = window.setInterval(() => {
-      loadTick.current += 1
-      setStatusLine(LOADING_LINES[loadTick.current % LOADING_LINES.length]!)
-    }, 2200)
-    return () => window.clearInterval(timer)
-  }, [phase])
+  function setBusyStage(next: GenerationStage) {
+    setStage(next)
+    setStatusLine(labelForStage(next))
+  }
 
-  async function runGenerate() {
-    if (!canGenerate) return
+  async function runGenerate(options: { rotateExtra?: number } = {}) {
+    if (phase === 'busy' || cooldown > 0 || input.trim().length < 3) return
 
     abortRef.current?.abort()
     const controller = new AbortController()
@@ -133,38 +120,41 @@ export default function AiThumbnailMakerPage() {
     abortRef.current = controller
     setPhase('busy')
     setErrorText('')
+    setErrorHint('')
     setPick(0)
     setYoutubeMeta(null)
     for (const url of objectUrls.current) URL.revokeObjectURL(url)
     objectUrls.current = []
     setVariants([])
-    setStatusLine(LOADING_LINES[0]!)
+    setBusyStage('planning')
+
+    const rotate = directionRotate + (options.rotateExtra ?? 0)
 
     let meta: YoutubeMeta | null = null
     if (urlMode) {
-      setStatusLine('Analysing idea…')
       meta = await resolveYoutubeMeta(input, controller.signal)
       if (runId !== runIdRef.current) return
       setYoutubeMeta(meta)
     }
 
     const sceneText = sceneBriefFromInput(input, meta)
-    const nextBrief = buildCreativeBrief(sceneText || input || 'YouTube video idea')
+    const nextBrief = buildCreativeBrief(sceneText || input || 'YouTube video idea', { rotate })
     setBrief(nextBrief)
-    const primaryHint =
-      nextBrief?.concepts[0] != null
-        ? visualHintForConcept(nextBrief, nextBrief.concepts[0])
-        : sceneText
+    setDirectionRotate(rotate)
+    const thumbOptions = thumbOptionsFromBrief({
+      brief: nextBrief,
+      niche,
+      platform,
+      fallbackTitle: meta?.title || input || 'Thumbnail',
+      conceptIndex: 0,
+    })
 
-    setStatusLine('Building high-CTR packaging…')
+    setBusyStage('generating')
 
     try {
       const batch = await generateAiThumbnailVariants(
         {
-          title: nextBrief?.concepts[0]?.headline || meta?.title || input || 'Thumbnail',
-          niche,
-          platform,
-          hint: primaryHint,
+          ...thumbOptions,
           styleId: 'auto' satisfies AiStyleId,
         },
         {
@@ -172,16 +162,13 @@ export default function AiThumbnailMakerPage() {
           signal: controller.signal,
           onProgress: (done, total) => {
             if (runId !== runIdRef.current) return
-            setStatusLine(
-              done >= total
-                ? 'Preparing your thumbnail…'
-                : LOADING_LINES[Math.min(done + 1, LOADING_LINES.length - 1)]!,
-            )
+            const nextStage = stageForPipeline(done, total, true)
+            setBusyStage(nextStage)
           },
           onItem: (item, index) => {
             if (runId !== runIdRef.current) return
             objectUrls.current.push(item.objectUrl)
-            const tagged = attachConcepts([item], nextBrief)[0]!
+            const tagged = attachCreativeConcepts([item], nextBrief)[0]!
             setVariants((current) => {
               const next = [...current]
               next[index] = tagged
@@ -192,12 +179,14 @@ export default function AiThumbnailMakerPage() {
       )
       if (runId !== runIdRef.current) return
 
-      const merged = attachConcepts(batch.results.slice(0, AI_LOOK_TARGET), nextBrief)
+      setBusyStage('assembling')
+      const merged = attachCreativeConcepts(batch.results.slice(0, AI_LOOK_TARGET), nextBrief)
       for (const item of merged) {
         if (!objectUrls.current.includes(item.objectUrl)) objectUrls.current.push(item.objectUrl)
       }
       setVariants(merged)
       if (batch.rateLimited) setCooldown(AI_RATE_LIMIT_COOLDOWN_SEC)
+      setStage('completed')
       setPhase('ready')
       setStatusLine('')
       track('concepts_generated', {
@@ -210,16 +199,18 @@ export default function AiThumbnailMakerPage() {
     } catch (error) {
       if (runId !== runIdRef.current) return
       if (error instanceof DOMException && error.name === 'AbortError' && controller.signal.aborted) {
+        setStage('cancelled')
         setPhase('compose')
         setStatusLine('')
         return
       }
-      const message = error instanceof Error ? error.message : 'Could not create that thumbnail.'
-      const rateLimited = isAiRateLimitedError(error) || /busy|try again in a minute/i.test(message)
-      setErrorText(message)
+      const failure = structuredAiFailure(error)
+      setErrorText(failure.message)
+      setErrorHint(failure.actionHint)
+      setStage('failed')
       setPhase('err')
-      track('generation_failed', { tool: 'ai-thumbnail-maker', rateLimited })
-      if (rateLimited) setCooldown(AI_RATE_LIMIT_COOLDOWN_SEC)
+      track('generation_failed', { tool: 'ai-thumbnail-maker', rateLimited: failure.rateLimited })
+      if (failure.rateLimited) setCooldown(AI_RATE_LIMIT_COOLDOWN_SEC)
     } finally {
       if (runId === runIdRef.current) {
         if (abortRef.current === controller) abortRef.current = null
@@ -229,7 +220,9 @@ export default function AiThumbnailMakerPage() {
 
   async function finishInEditor() {
     if (!chosen) return
-    const headline = chosen.lookHeadline || brief?.concepts[pick]?.headline || youtubeMeta?.title || ''
+    const concept = brief?.concepts[pick]
+    const headline =
+      chosen.lookHeadline || concept?.headline || youtubeMeta?.title || ''
     let handoffPhoto = photoDataUrl ?? undefined
     if (!handoffPhoto && chosen.objectUrl) {
       try {
@@ -241,6 +234,9 @@ export default function AiThumbnailMakerPage() {
     saveAiHandoff({
       hint: input.trim() || primaryFallbackHint(brief),
       title: headline,
+      titleLine2: chosen.lookSubheadline || concept?.subheadline || '',
+      placement: chosen.lookPlacement || concept?.placement,
+      strategy: chosen.lookLabel || concept?.strategy,
       styleId: 'auto',
       photoDataUrl: handoffPhoto,
       source: 'ai-thumbnail-maker',
@@ -263,15 +259,19 @@ export default function AiThumbnailMakerPage() {
       URL.revokeObjectURL(url)
       track('cta_click', { tool: 'ai-thumbnail-maker', cta: 'download_hd' })
     } catch {
-      setErrorText('Could not download that image. Try Finish in editor instead.')
+      setErrorText('Could not download that image. Try Open in editor instead.')
+      setErrorHint('Your concept is still selected.')
+      setStage('failed')
       setPhase('err')
     }
   }
 
   function resetCompose() {
     setPhase('compose')
+    setStage('idle')
     setStatusLine('')
     setErrorText('')
+    setErrorHint('')
   }
 
   return (
@@ -289,8 +289,38 @@ export default function AiThumbnailMakerPage() {
     >
       {phase === 'ready' && chosen ? (
         <section className="ai-canva-result" aria-label="Thumbnail result">
-          <p className="ai-canva-hook">Your thumbnail is ready</p>
+          <p className="ai-canva-hook">
+            {variants.length > 1
+              ? `I found ${variants.length} ways to package your video.`
+              : 'Your thumbnail is ready'}
+          </p>
+          {variants.length > 1 ? (
+            <div className="ai-canva-thumbs" role="listbox" aria-label="Concept picks">
+              {variants.map((item, index) => (
+                <button
+                  key={`${item.seed}-${index}`}
+                  type="button"
+                  role="option"
+                  aria-selected={pick === index}
+                  className={pick === index ? 'is-selected' : undefined}
+                  onClick={() => setPick(index)}
+                >
+                  <img src={item.objectUrl} alt="" />
+                  <span className="ai-concept-chip">{item.lookLabel || `Look ${index + 1}`}</span>
+                </button>
+              ))}
+            </div>
+          ) : null}
           <img src={chosen.objectUrl} alt="Generated thumbnail" />
+          {(chosen.lookLabel || chosen.lookWhy || chosen.lookHeadline) && (
+            <div className="ai-concept-meta">
+              {chosen.lookLabel ? <p className="ai-concept-strategy">{chosen.lookLabel}</p> : null}
+              {chosen.lookHeadline ? (
+                <p className="ai-concept-headline">{chosen.lookHeadline}</p>
+              ) : null}
+              {chosen.lookWhy ? <p className="ai-concept-why">{chosen.lookWhy}</p> : null}
+            </div>
+          )}
           <div className="ai-canva-actions">
             <button type="button" className="btn-gradient" onClick={() => void downloadHd()}>
               Download
@@ -304,15 +334,15 @@ export default function AiThumbnailMakerPage() {
             className="ai-text-btn"
             disabled={cooldown > 0}
             onClick={() => {
-              resetCompose()
-              void runGenerate()
+              void runGenerate({ rotateExtra: 1 })
             }}
           >
-            {cooldown > 0 ? `Try again in ${cooldown}s` : 'Try again'}
+            {cooldown > 0 ? `Try again in ${cooldown}s` : 'Generate 3 new directions'}
           </button>
           {errorText ? (
             <p className="tool-error" role="alert">
               {errorText}
+              {errorHint ? ` ${errorHint}` : ''}
             </p>
           ) : null}
         </section>
@@ -329,12 +359,28 @@ export default function AiThumbnailMakerPage() {
                 setInput(event.target.value)
                 if (phase === 'err') {
                   setPhase('compose')
+                  setStage('idle')
                   setErrorText('')
+                  setErrorHint('')
                 }
               }}
               placeholder="Paste a YouTube link, or describe the scene"
             />
           </label>
+          {phase === 'busy' ? (
+            <ol className="ai-stage-list" aria-live="polite" aria-label="Generation progress">
+              {GENERATION_PROGRESS_STAGES.map((item, index) => {
+                const state =
+                  index < activeProgressIndex ? 'done' : index === activeProgressIndex ? 'active' : 'todo'
+                return (
+                  <li key={item} data-state={state}>
+                    <span className="ai-stage-dot" aria-hidden="true" />
+                    <span>{labelForStage(item)}</span>
+                  </li>
+                )
+              })}
+            </ol>
+          ) : null}
           <div className="ai-canva-actions">
             <button
               type="button"
@@ -343,7 +389,11 @@ export default function AiThumbnailMakerPage() {
               aria-busy={phase === 'busy'}
               onClick={() => void runGenerate()}
             >
-              {phase === 'busy' ? statusLine || 'Creating…' : cooldown > 0 ? `Try again in ${cooldown}s` : 'Create thumbnail'}
+              {phase === 'busy'
+                ? statusLine || 'Creating…'
+                : cooldown > 0
+                  ? `Try again in ${cooldown}s`
+                  : 'Create thumbnail'}
             </button>
           </div>
           {urlMode ? (
@@ -356,9 +406,21 @@ export default function AiThumbnailMakerPage() {
             <p className="ai-canva-note">Tip: keep the idea short — subject, emotion, and one bold claim.</p>
           )}
           {phase === 'err' && errorText ? (
-            <p className="tool-error" role="alert">
-              {errorText}
-            </p>
+            <div className="ai-failure" role="alert">
+              <p className="tool-error">{errorText}</p>
+              {errorHint ? <p className="ai-canva-note">{errorHint}</p> : null}
+              <button
+                type="button"
+                className="ai-text-btn"
+                disabled={cooldown > 0}
+                onClick={() => {
+                  resetCompose()
+                  void runGenerate()
+                }}
+              >
+                {cooldown > 0 ? `Try again in ${cooldown}s` : 'Try again'}
+              </button>
+            </div>
           ) : null}
         </section>
       )}

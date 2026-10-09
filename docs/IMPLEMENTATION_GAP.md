@@ -16,6 +16,14 @@
 | Nav / hero UI bar (§52–56) | **Corrected** — Create · Projects · Analyze · Tools · Pricing |
 | SEO landings | + `/youtube-thumbnail-generator`, `/finance-thumbnail-maker` |
 
+## Orchestrator master (2026-10-09)
+
+Doc: `docs/THUMBRIC_AI_ENGINE_ORCHESTRATOR_IMPLEMENTATION_MASTER.md`
+
+**Shipped (free path):** multi-stage progress UI, brief→variant wiring, 3-concept results, strategy rotation, structured errors/cooldown, editor handoff fidelity (title / line2 / placement).
+
+**Not shipped:** Gemini/fal provider router, AI critic, ThumbnailDocument layers, paid face-wow, YouTube frames, Stripe.
+
 ## Still deferred (paid / OAuth — by request)
 
 - Photoreal fal 3-concept generation
