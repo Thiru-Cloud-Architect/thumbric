@@ -36,7 +36,7 @@ Shipped: calm AI one-box maker, **multi-stage generation progress**, **3 packagi
 - Directive file `THUMBRIC_LIVE_SITE_DEEP_REANALYSIS.md` was **not** on the VM (Windows Downloads path inaccessible); audit still ran against https://thumbric.app + local `:43201`.
 - **P0 fixed in repo:** unread `editorTab` broke `tsc`/`npm run build`, which blocked Pages from shipping the More-options popover. Regression: `src/titleOptionsLayout.test.ts`.
 - **Verified local:** More title options opens `#title-options-popover` with `deltaScrollH=0`; download gate + AI demo stub exercised.
-- **Verified production (pre-redeploy of this stamp):** routes 200 except `/roast/:code` HTTP 404 with working SPA; More-options popover **absent** in live JS until this build deploys.
+- **Verified production after Pages deploy (`fbac6a6`):** stamp `2026.10.09-live-audit`; More title options popover present; `deltaScrollH=0`. Pre-deploy audit also recorded routes 200 except `/roast/:code` HTTP 404 with working SPA.
 - **Staging:** none.
 
 ## Open threads

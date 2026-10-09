@@ -160,7 +160,7 @@ All listed routes **200**, including `/roast/demo-code/`.
 | Remove unread `editorTab` / restore `tsc -b` + `npm run build` | **Fixed in repo** | `npm test` 100 passed; `npm run build` OK; stamp `2026.10.09-live-audit` |
 | Regression: absolute More-options panel | **Added** | `src/titleOptionsLayout.test.ts` |
 | Local More-options layout | **Verified runtime** | popover present, `deltaScrollH=0` → `.walkthrough/live-audit-2026-10-09/local-p0-verify-more-options.png` |
-| Production popover after Pages deploy | **Pending deploy of this commit** | Re-check https://thumbric.app/#editor for `#title-options-popover` + stamp `live-audit` |
+| Production popover after Pages deploy | **Verified on live** | Pages run success for `fbac6a6`; asset `index-CQFGM_1w.js`; `data-ui-build=2026.10.09-live-audit`; `#title-options-popover` opens with `deltaScrollH=0` → `prod-p0-verify-more-options.png` |
 
 P1 modal stacking and roast 404 status **not** fixed in this pass (deferred per P0-first rule).
 
