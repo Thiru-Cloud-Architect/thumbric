@@ -16,7 +16,7 @@
 
 Visible UI brand is **Thumbric** (no .ai). The live domain stays https://thumbric.app/.
 
-**Color system (active):** soft sky blue surfaces + mild purple accents (`--bg #e8f2fc`, `--cta/#accent #6d5efc`). Coral-on-black is retired.
+**Color system (active):** cohesive sky studio (`--bg #e3f0ff`, `--bg-soft #f0f5ff`) + mild purple primary (`--accent/#cta #6366f1`) and sky secondary (`--accent-2 #0ea5e9`). Corner lavenders only — no edge stripe columns. Coral-on-black is retired.
 
 Shipped: calm AI one-box maker (centered sky composition), canvas-first editor card, Tools mega-menu, freemium gates, Supabase auth client with local fallback, brief → generate → editor handoff.
 
@@ -24,7 +24,7 @@ Missing: `THUMBRIC_AI_ENGINE_ORCHESTRATOR_IMPLEMENTATION_MASTER.md` (not on VM �
 
 ## Current stamp
 
-`UI_BUILD=2026.10.08-sky`
+`UI_BUILD=2026.10.09-polish`
 
 ## Open threads
 

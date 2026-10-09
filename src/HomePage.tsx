@@ -352,6 +352,7 @@ export default function HomePage() {
       letterSpacing,
       lineHeight,
       titleOpacity,
+      studioShell: !photo,
     }),
     [
       title,
@@ -1752,17 +1753,33 @@ export default function HomePage() {
             }}
           >
             <section className="step step-clean step-plush">
-              <div className="photo-box classic-create-box plush-media-box">
-                <button
-                  type="button"
-                  className="editor-fit-upload"
-                  onClick={() => fileRef.current?.click()}
-                >
-                  {photo ? 'Change photo' : 'Upload photo'}
-                </button>
+              <div
+                className={photo ? 'editor-upload-zone has-photo' : 'editor-upload-zone'}
+                role="button"
+                tabIndex={0}
+                onClick={() => fileRef.current?.click()}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault()
+                    fileRef.current?.click()
+                  }
+                }}
+              >
+                <span className="editor-upload-icon" aria-hidden>
+                  ↑
+                </span>
+                <strong>{photo ? 'Change photo' : 'Drop a photo here'}</strong>
+                <span className="editor-upload-meta">JPG, PNG, WebP · or drop on the canvas</span>
                 {photo ? (
-                  <button type="button" className="chip" onClick={clearPhoto}>
-                    Remove photo
+                  <button
+                    type="button"
+                    className="chip ghost editor-upload-remove"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      clearPhoto()
+                    }}
+                  >
+                    Remove
                   </button>
                 ) : null}
               </div>
@@ -1776,7 +1793,10 @@ export default function HomePage() {
               />
 
               <details className="editor-advanced editor-templates">
-                <summary>Templates</summary>
+                <summary className="editor-templates-summary">
+                  <span>Templates</span>
+                  <span className="editor-templates-kicker">Layouts &amp; moods</span>
+                </summary>
                 <div className="template-gallery template-gallery-fit" role="list">
                   {templatesForCategory('all').slice(0, 4).map((item) => (
                     <button
@@ -1856,12 +1876,11 @@ export default function HomePage() {
             onDragLeave={() => setPhotoDragOver(false)}
             onDrop={onPhotoDrop}
           >
-            <div className="preview-chrome">
+            <div className="preview-chrome preview-chrome-calm">
               <div className="preview-chrome-copy">
-                <p className="preview-label">Live canvas</p>
-                <p className="preview-meta">
+                <p className="preview-label preview-label-quiet">Canvas</p>
+                <p className="preview-meta preview-meta-quiet">
                   {platform.label} · {platform.width}×{platform.height}
-                  {dragging ? ' · placing…' : textSelected ? ' · title selected' : ''}
                 </p>
               </div>
               <div className="preview-toolbar" role="toolbar" aria-label="Canvas tools">
@@ -2020,14 +2039,11 @@ export default function HomePage() {
                 <p className="mobile-preview-note">Simulated preview — toggle YouTube feed for home-layout chrome.</p>
               </div>
             ) : null}
-            <p className="preview-hint">Drag the title. Drop a photo on the canvas.</p>
+            <p className="preview-hint preview-hint-quiet">Drag the title · drop a photo on the canvas</p>
           </div>
 
           <aside className="studio-inspector studio-inspector-calm" aria-label="Title inspector">
             <h3 className="studio-inspector-title">Title</h3>
-            {!textSelected && !photo ? (
-              <p className="inspector-empty">Click the title on the canvas to edit it.</p>
-            ) : null}
             {textSelected ? (
               <label className="inspector-field" id="editor-title">
                 Title
@@ -2041,17 +2057,19 @@ export default function HomePage() {
                 />
               </label>
             ) : null}
-            <div className="inspector-row">
+            <div className="inspector-row inspector-row-compact">
               <span className="inspector-label">Align</span>
-              <div className="inspector-pills">
+              <div className="inspector-pills inspector-pills-icons" role="group" aria-label="Title alignment">
                 {TITLE_POSITION_PRESETS.map((preset) => (
                   <button
                     key={preset.id}
                     type="button"
                     className={titleAlign === preset.align ? 'inspector-pill is-selected' : 'inspector-pill'}
                     onClick={() => applyTitlePreset(preset.id)}
+                    title={preset.label}
+                    aria-label={preset.label}
                   >
-                    {preset.label}
+                    {preset.align === 'left' ? '⬅' : preset.align === 'center' ? '▬' : '➡'}
                   </button>
                 ))}
               </div>

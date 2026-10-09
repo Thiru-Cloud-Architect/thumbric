@@ -8,14 +8,15 @@ Soft cool sky surfaces with mild purple accents. **Not** coral-on-black.
 
 | Token | Value | Role |
 |-------|-------|------|
-| `--bg` | `#e8f2fc` | Page base |
-| `--bg-soft` | `#eef1ff` | Soft panels |
+| `--bg` | `#e3f0ff` | Page base |
+| `--bg-soft` | `#f0f5ff` | Soft panels |
 | `--raise` / `--raise-2` | `#f7faff` / `#ffffff` | Cards |
 | `--ink` | `#152033` | Primary text |
 | `--muted` | `#5a6b82` | Secondary text |
-| `--accent` / `--cta` | `#6d5efc` | Mild purple actions / selected |
-| `--accent-bright` | `#8b7cff` | Hover / bright accent |
-| `--accent-2` | `#5b8def` | Sky secondary |
+| `--accent` / `--cta` | `#6366f1` | Mild purple actions / selected |
+| `--accent-bright` | `#818cf8` | Hover / bright accent |
+| `--accent-2` | `#0ea5e9` | Sky links / secondary |
+| `--accent-sky` | `#38bdf8` | Gradient sky stop |
 | `--line` | `rgba(90, 107, 130, 0.18)` | Borders |
 | `--shadow` | soft cool slate | Elevation |
 
