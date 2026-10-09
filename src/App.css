@@ -32,12 +32,12 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background:
-    radial-gradient(ellipse 42% 38% at 0% 0%, rgba(167, 154, 255, 0.2), transparent 72%),
-    radial-gradient(ellipse 38% 36% at 100% 0%, rgba(167, 154, 255, 0.16), transparent 70%),
-    radial-gradient(ellipse 36% 32% at 100% 100%, rgba(56, 189, 248, 0.14), transparent 68%),
-    radial-gradient(ellipse 40% 34% at 0% 100%, rgba(99, 102, 241, 0.1), transparent 65%),
-    linear-gradient(180deg, #e3f0ff 0%, #f0f5ff 52%, #eef4fc 100%);
+  /* Soft sky field + tiny corner lavenders — never full-height edge stripes */
+  background-color: #eef4fc;
+  background-image:
+    radial-gradient(ellipse 18rem 14rem at 8% 0%, rgba(186, 176, 255, 0.16), transparent 72%),
+    radial-gradient(ellipse 16rem 12rem at 92% 0%, rgba(167, 154, 255, 0.14), transparent 70%),
+    linear-gradient(180deg, #e3f0ff 0%, #f0f5ff 45%, #eef4fc 100%);
   color: var(--ink);
 }
 
@@ -1013,9 +1013,9 @@ main {
   position: absolute;
   inset: 0;
   z-index: 1;
+  /* Soft veil only — keep edges same sky as the page (no white center column) */
   background:
-    radial-gradient(ellipse 58% 52% at 50% 42%, rgba(247, 250, 255, 0.96), rgba(238, 241, 255, 0.82) 62%, transparent 78%),
-    linear-gradient(180deg, rgba(232, 242, 252, 0.72), rgba(244, 247, 255, 0.92));
+    radial-gradient(ellipse 55% 48% at 50% 42%, rgba(247, 250, 255, 0.88), rgba(240, 245, 255, 0.55) 58%, transparent 76%);
   pointer-events: none;
 }
 
@@ -4372,10 +4372,7 @@ footer {
   max-width: 56rem;
   margin: 0 auto;
   padding: 0.75rem clamp(1rem, 4vw, 2rem) 1.5rem;
-  background:
-    radial-gradient(ellipse 42% 28% at 0% 0%, rgba(125, 184, 255, 0.2), transparent 60%),
-    radial-gradient(ellipse 36% 26% at 100% 8%, rgba(167, 154, 255, 0.16), transparent 55%),
-    radial-gradient(ellipse 32% 22% at 72% 100%, rgba(91, 141, 239, 0.12), transparent 50%);
+  background: transparent;
 }
 
 .tool-hero {
@@ -6509,13 +6506,10 @@ footer {
   display: grid;
   gap: 0.7rem;
   padding: 0.85rem 0.95rem 0.9rem;
-  border-radius: 22px;
-  border: 1px solid rgba(109, 94, 252, 0.16);
-  background:
-    radial-gradient(ellipse 70% 48% at 0% 0%, rgba(125, 184, 255, 0.18), transparent 58%),
-    radial-gradient(ellipse 60% 46% at 100% 0%, rgba(167, 154, 255, 0.16), transparent 54%),
-    #ffffff;
-  box-shadow: 0 18px 44px rgba(45, 74, 120, 0.1);
+  border-radius: 20px;
+  border: 1px solid rgba(99, 102, 241, 0.14);
+  background: #ffffff;
+  box-shadow: var(--shadow-card);
 }
 
 .editor-fit-bar {
@@ -6588,7 +6582,7 @@ footer {
   display: grid;
   grid-template-columns: 230px minmax(0, 1fr) 240px;
   grid-template-areas: 'tools stage inspect';
-  align-items: stretch;
+  align-items: start;
   gap: 0.85rem;
   max-width: 1180px;
   margin: 0 auto;
@@ -6599,9 +6593,13 @@ footer {
 }
 
 .editor-card .studio-tools,
-.editor-card .studio-inspector,
+.editor-card .studio-inspector {
+  align-self: start;
+  min-height: 0;
+}
+
 .editor-card .studio-stage {
-  align-self: stretch;
+  align-self: start;
   min-height: 0;
 }
 
@@ -7439,16 +7437,41 @@ footer {
   color: var(--muted);
 }
 
+.editor-card .editor-templates {
+  margin-top: 0.45rem;
+}
+
 .editor-card .editor-templates:not([open]) {
-  padding: 0.45rem 0.55rem;
-  border-radius: 12px;
-  border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.65);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  border-radius: 0;
+  min-height: 0;
 }
 
 .editor-card .editor-templates:not([open]) > summary {
   margin: 0;
-  padding: 0;
+  padding: 0.4rem 0.15rem;
+  border-radius: 10px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.editor-card .editor-templates:not([open]) > summary:hover {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.editor-card .editor-templates[open] {
+  padding: 0.55rem;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.72);
 }
 
 .preview-chrome-calm {
@@ -7517,13 +7540,11 @@ footer {
 
 .hero-scrim {
   background:
-    radial-gradient(ellipse 62% 58% at 50% 44%, rgba(247, 250, 255, 0.97), rgba(240, 245, 255, 0.88) 68%, transparent 82%),
-    linear-gradient(180deg, rgba(227, 240, 255, 0.55), rgba(240, 245, 255, 0.92));
+    radial-gradient(ellipse 55% 48% at 50% 42%, rgba(247, 250, 255, 0.88), rgba(240, 245, 255, 0.55) 58%, transparent 76%);
 }
 
 .tool-page-main.ai-maker-shell {
   background:
-    radial-gradient(ellipse 38% 32% at 0% 0%, rgba(167, 154, 255, 0.18), transparent 70%),
-    radial-gradient(ellipse 36% 30% at 100% 0%, rgba(167, 154, 255, 0.14), transparent 68%),
-    radial-gradient(ellipse 34% 28% at 100% 100%, rgba(56, 189, 248, 0.12), transparent 65%);
+    radial-gradient(ellipse 16rem 12rem at 12% 8%, rgba(186, 176, 255, 0.14), transparent 72%),
+    radial-gradient(ellipse 14rem 11rem at 88% 6%, rgba(167, 154, 255, 0.12), transparent 70%);
 }

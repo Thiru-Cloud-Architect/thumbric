@@ -388,6 +388,9 @@ function drawPhoto(
   input: ThumbInput,
   box: Box,
 ) {
+  // Empty studio canvas already has a light shell background — skip the dark niche void.
+  if (!input.photo && input.studioShell) return
+
   const accent = accentOf(input)
   const radius = photoRadius(input.photoShape, box)
 
