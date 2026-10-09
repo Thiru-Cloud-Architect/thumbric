@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Headless Chrome profiles used for local screenshot scripts
+.walkthrough/.chrome-*/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
