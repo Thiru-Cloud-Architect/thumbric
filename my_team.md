@@ -11,7 +11,7 @@ Honest snapshot for product owners. The free AI path and coral studio UI are rea
 
 See `docs/LIVE_SITE_AUDIT_2026-10-09.md` + `docs/THUMBRIC_LIVE_SITE_DEEP_REANALYSIS.md`.  
 P0: build + More-options — **prod verified**.  
-P1: export gate no modal stack — `exportGate.test.ts`; **local verified** (quality then auth). Prod after `2026.10.09-export-gate`. No staging.
+P1: export gate no modal stack — `exportGate.test.ts`; **local + production verified** (`2026.10.09-export-gate`). No staging.
 
 ### COMPLETED (in repo today)
 

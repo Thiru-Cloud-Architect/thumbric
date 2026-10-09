@@ -36,7 +36,7 @@ Shipped: calm AI one-box maker, **multi-stage generation progress**, **3 packagi
 
 - Directive: `docs/THUMBRIC_LIVE_SITE_DEEP_REANALYSIS.md` (chat brief; Windows Downloads path was inaccessible on the VM).
 - **P0 fixed:** unread `editorTab` blocked Pages; More-options popover shipped. Regression: `src/titleOptionsLayout.test.ts`. **Prod verified.**
-- **P1 fixed:** download no longer stacks quality + Register. Regression: `src/exportGate.test.ts`. **Local verified** (quality-only → auth-only). Prod after this stamp deploys.
+- **P1 fixed:** download no longer stacks quality + Register. Regression: `src/exportGate.test.ts`. **Local + production verified** (quality-only → auth-only; stamp `export-gate`).
 - **Staging:** none.
 
 ## Open threads

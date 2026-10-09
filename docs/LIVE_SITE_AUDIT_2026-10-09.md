@@ -138,7 +138,7 @@ All listed routes **200**, including `/roast/demo-code/`.
 | Title edit via `#title-input` | yes | yes | n/a |
 | More title options: no page-height growth | **yes** (`deltaScrollH=0`, popover DOM present) | **yes** after deploy (`prod-p0-verify-more-options.png`) | n/a |
 | Upload fixture image | yes | not re-run (same client code path) | n/a |
-| Download gate (quality then auth, no stack) | **yes** (quality-only then auth-only) | pending / after `export-gate` deploy | n/a |
+| Download gate (quality then auth, no stack) | **yes** (quality-only then auth-only) | **yes** (`export-gate`; `prod-p1-download-*.png`) | n/a |
 | AI maker UI + demo stub | yes | maker UI yes; demo query not required on prod | n/a |
 | Roast deep link UX | 200 + UI | **404 status** + UI | n/a |
 | `npm run build` | **FAIL** (P0) at audit start | deploy of latest main blocked | n/a |
@@ -170,8 +170,7 @@ All listed routes **200**, including `/roast/demo-code/`.
 | Item | Status | Proof |
 |------|--------|-------|
 | More title options popover on production | **Verified production** | earlier same-day deploy |
-| Download modal stacking | **Implemented + local runtime** | `exportGate.test.ts`; `local-p1-download-quality-only.png` → `local-p1-download-auth-after.png` |
-| Production download gate re-check | **After Pages** for `UI_BUILD=2026.10.09-export-gate` | see note below when live |
+| Download modal stacking | **Implemented + local + production** | `exportGate.test.ts`; local + `prod-p1-download-quality-only.png` → `prod-p1-download-auth-after.png` (1 backdrop each step) |
 
 P2 roast HTTP 404 / Unsplash ORB **not** fixed (deferred).
 
