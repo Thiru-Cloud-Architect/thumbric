@@ -40,9 +40,9 @@ export default function DashboardPage() {
             <strong>Upload thumbnail to improve</strong>
             <span>Doctor score + top 3 fixes</span>
           </Link>
-          <Link className="dashboard-action" to={{ pathname: '/', hash: '#video-optional' }}>
+          <Link className="dashboard-action" to="/roadmap">
             <strong>Optional: understand my video</strong>
-            <span>Privacy-first · never required</span>
+            <span>Phase 4 on roadmap · never required</span>
           </Link>
         </section>
 
