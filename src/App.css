@@ -78,12 +78,13 @@
     linear-gradient(180deg, #0f172a 0%, #132033 42%, #15253a 100%);
   --hero-scrim:
     radial-gradient(
-      ellipse 55% 48% at 50% 42%,
-      rgba(19, 32, 51, 0.78),
-      rgba(15, 23, 42, 0.45) 58%,
-      transparent 76%
+      ellipse 62% 55% at 50% 42%,
+      rgba(15, 23, 42, 0.92),
+      rgba(19, 32, 51, 0.72) 52%,
+      rgba(15, 23, 42, 0.2) 78%,
+      transparent 90%
     );
-  --hero-mosaic-filter: saturate(0.7) brightness(0.72);
+  --hero-mosaic-filter: saturate(0.65) brightness(0.55);
   font-family: 'DM Sans', 'Plus Jakarta Sans', system-ui, sans-serif;
 }
 
