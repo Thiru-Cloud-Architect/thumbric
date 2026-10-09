@@ -5,7 +5,7 @@ Repo workdir: `/home/ubuntu/thumbforge` (not `/workspace`).
 
 ## Completion status
 
-Honest snapshot for product owners. The free AI path and sky studio UI are real; the full orchestrator (paid models, critic, layered docs, billing) is **not** finished.
+Honest snapshot for product owners. The free AI path and coral studio UI are real; the full orchestrator (paid models, critic, layered docs, billing) is **not** finished.
 
 ### COMPLETED (in repo today)
 
@@ -18,8 +18,9 @@ Honest snapshot for product owners. The free AI path and sky studio UI are real;
 - Editor handoff (title, line 2, placement, cover) — §57 (raster cover honest, not fake layers)
 - Client rate limits + cooldown UI
 - Free Pollinations path (+ studio fallback looks)
-- Sky studio polish (soft sky + mild purple); light/dark theme toggle
-- Editor elevated card + canvas shell
+- Coral + purple brand; light/dark theme toggle
+- Calm canvas-first editor card (soft stage, compact tools/templates, quiet inspector)
+- **AI imaging infra started:** provider readiness (`aiConfig`), `ImagingJob` plan→generate→assemble (`aiImaging`), Worker `GET /api/ai/ready`, maker status chip
 - Freemium gates / usage limits
 - Supabase client with local fallback when keys unset
 - INR/USD geo pricing display
@@ -27,16 +28,16 @@ Honest snapshot for product owners. The free AI path and sky studio UI are real;
 
 ### NOT COMPLETED (orchestrator / paid infra — do not claim)
 
-- Paid **fal** / `FAL_KEY` “wow” photoreal path (Worker code exists; keys unset) — master Phase 1 image quality
+- Paid **fal** / `FAL_KEY` “wow” photoreal path (Worker + readiness exist; keys unset here) — master Phase 1 image quality
 - YouTube **frame extraction** from video (public title only today) — §32 optional future
-- Gemini / Nano Banana **provider router** — §2–3
+- Gemini / Nano Banana **provider router** — §2–3 (documented only; not wired)
 - AI **critic** + targeted patch ops — §16–21
 - Canonical **ThumbnailDocument** layer model as source of truth — §10–11, §57 full
 - Stripe / Razorpay checkout
 - Supabase **prod** credentials wired in live deploy
 - YouTube OAuth CTR / A-B learning — Phase 5–6
 
-See also: `docs/THUMBRIC_AI_ENGINE_ORCHESTRATOR_IMPLEMENTATION_MASTER.md`, `docs/IMPLEMENTATION_GAP.md`.
+See also: `docs/THUMBRIC_AI_ENGINE_ORCHESTRATOR_IMPLEMENTATION_MASTER.md`, `docs/AI_IMAGING_SETUP.md`, `docs/IMPLEMENTATION_GAP.md`.
 
 ---
 
@@ -69,13 +70,22 @@ Cloud Agents run on a remote Linux VM and **cannot read** `C:\Users\…\Download
 | Honest YouTube note — **public title when available; no video frame extraction** | `youtubeUrl.ts`, FAQ, maker copy |
 | Demo stub for QA only (`?demoResult=1`) | `AiThumbnailMakerPage.tsx` |
 
-**We do not ship:** face-swap, photoreal fal “wow” path, or YouTube frame/thumbnail extraction from video.
+### STARTED (imaging infra — 2026-10-09)
 
-### Still open (orchestrator / later — needs paid infra or larger build)
+| Capability | Where | Needs user action? |
+|------------|--------|--------------------|
+| Provider readiness (`Free preview engine` / `Pro imaging ready`) | `aiConfig.ts`, maker chip | No for free; **yes** for pro (`FAL_KEY` + `VITE_API_BASE`) |
+| Worker readiness route | `GET /api/ai/ready` | Deploy Worker + `wrangler secret put FAL_KEY` |
+| `ImagingJob` plan → generate → assemble hooks | `aiImaging.ts` (+ tests) | No — free path uses it; pixels still Pollinations until keys |
+| Env + setup docs | `.env.example`, `docs/AI_IMAGING_SETUP.md` | Set secrets in deploy |
 
-- Preferred Gemini / Nano Banana provider abstraction + server keys (§2–3, Phase 1)
+**We do not ship:** face-swap, photoreal fal “wow” pixels without keys, or YouTube frame/thumbnail extraction from video.
+
+### Still open / blocked on keys (orchestrator / later)
+
+- Preferred Gemini / Nano Banana provider abstraction + server keys (§2–3, Phase 1) — **blocked on wiring + keys**
 - Full `ThumbnailDocument` layer model + AI critic / patch ops (§10–11, §16–21)
-- Paid **fal** photoreal multi-concept pipeline (Worker exists; `FAL_KEY` / `VITE_API_BASE` not set here)
+- Paid **fal** photoreal multi-concept pipeline (Worker exists; set `FAL_KEY` / `VITE_API_BASE`)
 - Phase 4 optional **video intelligence** beyond public title
 - Phase 5–6 YouTube OAuth CTR / A/B learning
 - Stripe / Razorpay; Supabase prod credentials
@@ -83,47 +93,47 @@ Cloud Agents run on a remote Linux VM and **cannot read** `C:\Users\…\Download
 
 ---
 
-## Acceptance — color (coral + purple studio + themes)
+## Acceptance — color (coral + purple + themes)
 
 - [x] Light: warm cream/peach wash; coral `#f05d6a`/`#ff7f8a` + purple `#c084fc`; white cards
 - [x] Dark: warm ink `#0d0a0a`/`#161010`; coral+purple CTAs; dark raised cards (not white panels)
 - [x] Theme toggle next to Sign in; `localStorage` `thumbric-theme`; `data-theme` on `<html>`
 - [x] Header uses `--header-bg` in both modes (no hardcoded white bar in dark)
-- [x] Editor panels use `--panel-surface` / `--panel-stage` (theme-matched)
+- [x] Editor panels use `--panel-surface` / soft `--canvas-stage` (theme-matched)
 - [x] Brighter hero mosaic scrim in both modes; coral→purple CTA gradients
-- [x] Homepage: StatsStrip + Problem + Phase 4 privacy block removed; How-it-works tighter + larger
-- [x] Phase 4 “Understand my video” kept on `/roadmap` only
 
 ## Acceptance — AI maker (`/ai-thumbnail-maker`)
 
 - [x] One field (YouTube link OR scene), centered composition
 - [x] Multi-stage progress list while busy
+- [x] Honest provider status chip (free vs pro-configured)
 - [x] Result: 3 concepts (when available) + Download + Open in editor; handoff via `aiHandoff`
 - [x] Honest YouTube / no fake frames note
 - [x] Rate limit cooldown when provider throttles
 
 ## Acceptance — Editor (`/#editor`)
 
-- [x] One elevated card; canvas stage + side panels match theme (white/light raise in light; dark cards in dark)
+- [x] One elevated card; canvas stage + side panels match theme
+- [x] Soft warm stage behind preview (not harsh cool grid chrome, not dead void)
 - [x] AI maker handoff applies title + optional line 2 + placement
 - [x] Upload: dashed drop zone with icon + helper text
 - [x] Templates closed by default — compact summary row when closed
-- [x] Right panel: tighter labels; Title / Size / Fill default
+- [x] Right panel: Align / Size / Fill obvious; quieter disclosure chrome
 - [x] Top bar: Editor · Size · Download (+ AI maker link)
 - [x] Canvas toolbar: Undo, Redo, More
 
 ## UI correction (2026-10-09)
 
-User feedback: sky theme unclear; dark mode left white header + light-grey editor panels. Restored coral+purple brand base, brighter hero, theme-matched editor cards; removed homepage StatsStrip / Problem / Phase 4 privacy essay.
+User feedback: editor felt unclear / not soothing. Softened stage, tightened card spacing for a larger canvas, quieter inspector/toolbar chrome, clearer upload + title controls. Coral theme kept.
 
 ## Screenshot evidence
 
-Desktop 1440×900: `.walkthrough/coral-pass/` — light + dark for `/` (hero + how), `/#editor`, `/pricing`.
+Desktop 1440×900: `.walkthrough/coral-pass/` — light + dark for `/#editor` (and prior home/pricing shots).
 
 ## Still open
 
-1. Paid fal / face-wow AI (deferred — Worker code present, keys not configured)
+1. Paid fal / face-wow AI (infra started; **needs `FAL_KEY` + `VITE_API_BASE`**)
 2. Real YouTube frame extraction (deferred — do not claim)
 3. Supabase prod credentials + Stripe
-4. AI critic / ThumbnailDocument / provider router (master Phase 1 remainder)
+4. AI critic / ThumbnailDocument / Gemini provider router (master Phase 1 remainder)
 5. Mobile editor stacking polish (optional)

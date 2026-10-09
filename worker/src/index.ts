@@ -256,10 +256,30 @@ export default {
       return json({ users, total: users.length })
     }
 
+    if (request.method === 'GET' && (path === '/api/ai/ready' || path === '/ai/ready')) {
+      const fal = Boolean(env.FAL_KEY)
+      const workersAi = Boolean(env.AI)
+      return json({
+        service: 'thumbric-api',
+        ready: fal || workersAi,
+        backend: fal ? 'fal' : workersAi ? 'workers-ai' : null,
+        /** Honest: keys stay server-side; never echo secrets. */
+        hint: fal || workersAi
+          ? 'Pro imaging ready'
+          : 'Set FAL_KEY (`wrangler secret put FAL_KEY`) or bind Workers AI.',
+      })
+    }
+
     if (path === '/' || path === '/api') {
       return json({
         service: 'thumbric-api',
-        endpoints: ['POST /api/register', 'GET /api/users', 'POST /api/ai/image', 'POST /api/events'],
+        endpoints: [
+          'POST /api/register',
+          'GET /api/users',
+          'POST /api/ai/image',
+          'GET /api/ai/ready',
+          'POST /api/events',
+        ],
         premiumAi: Boolean(env.FAL_KEY || env.AI),
       })
     }

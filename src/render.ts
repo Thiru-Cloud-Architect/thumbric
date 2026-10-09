@@ -235,17 +235,18 @@ function drawBackground(ctx: CanvasRenderingContext2D, input: ThumbInput) {
   const H = platform.height
 
   if (!input.photo && input.studioShell) {
+    // Soft warm empty stage — calm in both light and dark chrome (not a cool blue grid).
     const shell = ctx.createLinearGradient(0, 0, W, H)
-    shell.addColorStop(0, '#eef3f9')
-    shell.addColorStop(0.55, '#e4ebf3')
-    shell.addColorStop(1, '#d9e3ed')
+    shell.addColorStop(0, '#f6ebe4')
+    shell.addColorStop(0.5, '#efe2da')
+    shell.addColorStop(1, '#e7d6cc')
     ctx.fillStyle = shell
     ctx.fillRect(0, 0, W, H)
     ctx.save()
-    ctx.strokeStyle = 'rgba(90, 107, 130, 0.12)'
-    ctx.globalAlpha = 0.55
+    ctx.strokeStyle = 'rgba(120, 80, 70, 0.07)'
+    ctx.globalAlpha = 0.45
     ctx.lineWidth = 1
-    const step = Math.max(36, Math.round(Math.min(W, H) * 0.06))
+    const step = Math.max(48, Math.round(Math.min(W, H) * 0.08))
     for (let x = 0; x <= W; x += step) {
       ctx.beginPath()
       ctx.moveTo(x, 0)
@@ -259,9 +260,10 @@ function drawBackground(ctx: CanvasRenderingContext2D, input: ThumbInput) {
       ctx.stroke()
     }
     ctx.restore()
-    const wash = ctx.createRadialGradient(W * 0.5, H * 0.45, 20, W * 0.5, H * 0.45, Math.max(W, H) * 0.55)
-    wash.addColorStop(0, 'rgba(99, 102, 241, 0.08)')
-    wash.addColorStop(1, 'rgba(99, 102, 241, 0)')
+    const wash = ctx.createRadialGradient(W * 0.5, H * 0.42, 24, W * 0.5, H * 0.42, Math.max(W, H) * 0.58)
+    wash.addColorStop(0, 'rgba(240, 93, 106, 0.07)')
+    wash.addColorStop(0.55, 'rgba(192, 132, 252, 0.05)')
+    wash.addColorStop(1, 'rgba(240, 93, 106, 0)')
     ctx.fillStyle = wash
     ctx.fillRect(0, 0, W, H)
     return
@@ -388,7 +390,7 @@ function drawPhoto(
   input: ThumbInput,
   box: Box,
 ) {
-  // Empty studio canvas already has a light shell background — skip the dark niche void.
+  // Empty studio canvas already has a soft warm shell — skip the dark niche void.
   if (!input.photo && input.studioShell) return
 
   const accent = accentOf(input)

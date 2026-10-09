@@ -20,9 +20,11 @@
 
 Doc: `docs/THUMBRIC_AI_ENGINE_ORCHESTRATOR_IMPLEMENTATION_MASTER.md`
 
-**Shipped (free path):** multi-stage progress UI, brief→variant wiring, 3-concept results, strategy rotation, structured errors/cooldown, editor handoff fidelity (title / line2 / placement), light/dark theme toggle.
+**Shipped (free path):** multi-stage progress UI, brief→variant wiring, 3-concept results, strategy rotation, structured errors/cooldown, editor handoff fidelity (title / line2 / placement), light/dark theme toggle, calm editor card.
 
-**Not shipped:** Gemini/fal provider router, AI critic, ThumbnailDocument layers, paid face-wow, YouTube frames, Stripe. See `my_team.md` Completion status.
+**Imaging infra started:** provider readiness (`aiConfig`), `ImagingJob` plan→generate→assemble (`aiImaging`), Worker `GET /api/ai/ready`, maker status chip. Docs: `docs/AI_IMAGING_SETUP.md`.
+
+**Not shipped:** Gemini provider router, AI critic, ThumbnailDocument layers, paid face-wow pixels (needs `FAL_KEY`), YouTube frames, Stripe. See `my_team.md` Completion status.
 
 ## Still deferred (paid / OAuth — by request)
 

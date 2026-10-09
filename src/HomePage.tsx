@@ -197,7 +197,7 @@ export default function HomePage() {
   const { user: authUser } = useAuth()
   const { currency } = useBillingCurrency()
   const [platformId, setPlatformId] = useState<PlatformId>('youtube')
-  const [nicheId, setNicheId] = useState<NicheId>('tech')
+  const [nicheId, setNicheId] = useState<NicheId>('vlog')
   const [layout, setLayout] = useState<LayoutId>('photo-left')
   const [photoShape, setPhotoShape] = useState<PhotoShapeId>('rounded')
   const [accentOverride, setAccentOverride] = useState('')
@@ -1782,8 +1782,10 @@ export default function HomePage() {
                 <span className="editor-upload-icon" aria-hidden>
                   ↑
                 </span>
-                <strong>{photo ? 'Change photo' : 'Drop a photo here'}</strong>
-                <span className="editor-upload-meta">JPG, PNG, WebP · or drop on the canvas</span>
+                <strong>{photo ? 'Change photo' : 'Add your photo'}</strong>
+                <span className="editor-upload-meta">
+                  {photo ? 'Click to replace · JPG, PNG, WebP' : 'Drop or click · JPG, PNG, WebP'}
+                </span>
                 {photo ? (
                   <button
                     type="button"
@@ -2058,19 +2060,17 @@ export default function HomePage() {
 
           <aside className="studio-inspector studio-inspector-calm" aria-label="Title inspector">
             <h3 className="studio-inspector-title">Title</h3>
-            {textSelected ? (
-              <label className="inspector-field" id="editor-title">
-                Title
-                <textarea
-                  id="title-input"
-                  value={title}
-                  maxLength={42}
-                  rows={2}
-                  onChange={(event) => setTitle(event.target.value)}
-                  placeholder="I SPENT $1"
-                />
-              </label>
-            ) : null}
+            <label className="inspector-field" id="editor-title">
+              Text
+              <textarea
+                id="title-input"
+                value={title}
+                maxLength={42}
+                rows={2}
+                onChange={(event) => setTitle(event.target.value)}
+                placeholder="I SPENT $1"
+              />
+            </label>
             <div className="inspector-row inspector-row-compact">
               <span className="inspector-label">Align</span>
               <div className="inspector-pills inspector-pills-icons" role="group" aria-label="Title alignment">

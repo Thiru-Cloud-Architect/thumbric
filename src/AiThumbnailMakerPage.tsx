@@ -2,6 +2,11 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { track } from './analytics'
 import {
+  getProviderReadiness,
+  resolveProviderReadiness,
+  type ProviderReadiness,
+} from './aiConfig'
+import {
   AI_LOOK_TARGET,
   AI_RATE_LIMIT_COOLDOWN_SEC,
   generateAiThumbnailVariants,
@@ -13,11 +18,20 @@ import {
   attachCreativeConcepts,
   labelForStage,
   progressStageIndex,
-  stageForPipeline,
   structuredAiFailure,
   thumbOptionsFromBrief,
   type GenerationStage,
 } from './aiOrchestrator'
+import {
+  advanceImagingJob,
+  cancelImagingJob,
+  completeImagingJob,
+  createImagingJob,
+  failImagingJob,
+  imagingRecoveryHint,
+  markImagingPlanningDone,
+  type ImagingJob,
+} from './aiImaging'
 import { consumeAiHandoff, objectUrlToDataUrl, saveAiHandoff } from './aiHandoff'
 import { buildCreativeBrief, visualHintForConcept, type CreativeBrief } from './creativeBrief'
 import { getNiche } from './niches'
@@ -47,6 +61,8 @@ export default function AiThumbnailMakerPage() {
   const [cooldown, setCooldown] = useState(0)
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null)
   const [directionRotate, setDirectionRotate] = useState(0)
+  const [provider, setProvider] = useState<ProviderReadiness>(() => getProviderReadiness())
+  const imagingJobRef = useRef<ImagingJob | null>(null)
   const abortRef = useRef<AbortController | null>(null)
   const runIdRef = useRef(0)
   const objectUrls = useRef<string[]>([])
@@ -57,6 +73,14 @@ export default function AiThumbnailMakerPage() {
   const canGenerate = input.trim().length >= 3 && phase !== 'busy' && cooldown === 0
   const chosen = variants[pick] ?? variants[0] ?? null
   const activeProgressIndex = progressStageIndex(stage)
+
+  useEffect(() => {
+    const controller = new AbortController()
+    void resolveProviderReadiness(controller.signal).then((next) => {
+      if (!controller.signal.aborted) setProvider(next)
+    })
+    return () => controller.abort()
+  }, [])
 
   useEffect(() => {
     track('landing_page_view', { path: '/ai-thumbnail-maker' })
@@ -106,9 +130,10 @@ export default function AiThumbnailMakerPage() {
     return () => window.clearTimeout(timer)
   }, [cooldown])
 
-  function setBusyStage(next: GenerationStage) {
-    setStage(next)
-    setStatusLine(labelForStage(next))
+  function applyImagingJob(job: ImagingJob) {
+    imagingJobRef.current = job
+    setStage(job.stage)
+    setStatusLine(job.progressCopy)
   }
 
   async function runGenerate(options: { rotateExtra?: number } = {}) {
@@ -126,7 +151,12 @@ export default function AiThumbnailMakerPage() {
     for (const url of objectUrls.current) URL.revokeObjectURL(url)
     objectUrls.current = []
     setVariants([])
-    setBusyStage('planning')
+
+    let job = createImagingJob({
+      conceptTotal: AI_LOOK_TARGET,
+      provider,
+    })
+    applyImagingJob(job)
 
     const rotate = directionRotate + (options.rotateExtra ?? 0)
 
@@ -149,7 +179,8 @@ export default function AiThumbnailMakerPage() {
       conceptIndex: 0,
     })
 
-    setBusyStage('generating')
+    job = markImagingPlanningDone(job)
+    applyImagingJob(job)
 
     try {
       const batch = await generateAiThumbnailVariants(
@@ -162,8 +193,13 @@ export default function AiThumbnailMakerPage() {
           signal: controller.signal,
           onProgress: (done, total) => {
             if (runId !== runIdRef.current) return
-            const nextStage = stageForPipeline(done, total, true)
-            setBusyStage(nextStage)
+            const current = imagingJobRef.current ?? job
+            applyImagingJob(
+              advanceImagingJob(
+                { ...current, conceptTotal: total },
+                { planningDone: true, conceptsDone: done, status: 'running' },
+              ),
+            )
           },
           onItem: (item, index) => {
             if (runId !== runIdRef.current) return
@@ -179,7 +215,8 @@ export default function AiThumbnailMakerPage() {
       )
       if (runId !== runIdRef.current) return
 
-      setBusyStage('assembling')
+      job = completeImagingJob(imagingJobRef.current ?? job)
+      applyImagingJob(job)
       const merged = attachCreativeConcepts(batch.results.slice(0, AI_LOOK_TARGET), nextBrief)
       for (const item of merged) {
         if (!objectUrls.current.includes(item.objectUrl)) objectUrls.current.push(item.objectUrl)
@@ -194,22 +231,30 @@ export default function AiThumbnailMakerPage() {
         count: merged.length,
         studio: batch.usedStudioFallback,
         youtube: Boolean(meta),
+        providerTier: provider.tier,
       })
       track('thumbnail_generated', { tool: 'ai-thumbnail-maker', looks: merged.length })
     } catch (error) {
       if (runId !== runIdRef.current) return
       if (error instanceof DOMException && error.name === 'AbortError' && controller.signal.aborted) {
+        applyImagingJob(cancelImagingJob(imagingJobRef.current ?? job))
         setStage('cancelled')
         setPhase('compose')
         setStatusLine('')
         return
       }
-      const failure = structuredAiFailure(error)
+      const failed = failImagingJob(imagingJobRef.current ?? job, error)
+      applyImagingJob(failed)
+      const failure = failed.failure ?? structuredAiFailure(error)
       setErrorText(failure.message)
-      setErrorHint(failure.actionHint)
+      setErrorHint(imagingRecoveryHint(failed))
       setStage('failed')
       setPhase('err')
-      track('generation_failed', { tool: 'ai-thumbnail-maker', rateLimited: failure.rateLimited })
+      track('generation_failed', {
+        tool: 'ai-thumbnail-maker',
+        rateLimited: failure.rateLimited,
+        providerTier: provider.tier,
+      })
       if (failure.rateLimited) setCooldown(AI_RATE_LIMIT_COOLDOWN_SEC)
     } finally {
       if (runId === runIdRef.current) {
@@ -283,10 +328,18 @@ export default function AiThumbnailMakerPage() {
         { label: 'AI Thumbnail Maker' },
       ]}
       kicker="AI Thumbnail Maker"
-      title="Free AI thumbnail maker"
+      title="AI thumbnail maker"
       lede="One field: paste a YouTube link or describe the scene. We create a cover you can download or finish in the editor."
       hideMoreTools
     >
+      <p
+        className="ai-provider-status"
+        data-tier={provider.tier}
+        title={provider.statusHint}
+        aria-live="polite"
+      >
+        {provider.statusLabel}
+      </p>
       {phase === 'ready' && chosen ? (
         <section className="ai-canva-result" aria-label="Thumbnail result">
           <p className="ai-canva-hook">
