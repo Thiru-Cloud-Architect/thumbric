@@ -7,10 +7,13 @@ body,
 #root {
   min-height: 100%;
   margin: 0;
-  background-color: #eef4fc;
-  background-image:
-    radial-gradient(ellipse 18rem 14rem at 8% 0%, rgba(186, 176, 255, 0.16), transparent 72%),
-    radial-gradient(ellipse 16rem 12rem at 92% 0%, rgba(167, 154, 255, 0.14), transparent 70%),
-    linear-gradient(180deg, #e3f0ff 0%, #f0f5ff 45%, #eef4fc 100%);
-  color: #152033;
+  background-color: var(--bg-soft, #e6edf8);
+  background-image: var(--page-wash);
+  color: var(--ink, #152033);
+}
+
+html[data-theme='dark'],
+html[data-theme='dark'] body,
+html[data-theme='dark'] #root {
+  color: var(--ink, #e8eef8);
 }

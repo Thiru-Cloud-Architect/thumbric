@@ -20,9 +20,9 @@
 
 Doc: `docs/THUMBRIC_AI_ENGINE_ORCHESTRATOR_IMPLEMENTATION_MASTER.md`
 
-**Shipped (free path):** multi-stage progress UI, brief→variant wiring, 3-concept results, strategy rotation, structured errors/cooldown, editor handoff fidelity (title / line2 / placement).
+**Shipped (free path):** multi-stage progress UI, brief→variant wiring, 3-concept results, strategy rotation, structured errors/cooldown, editor handoff fidelity (title / line2 / placement), light/dark theme toggle.
 
-**Not shipped:** Gemini/fal provider router, AI critic, ThumbnailDocument layers, paid face-wow, YouTube frames, Stripe.
+**Not shipped:** Gemini/fal provider router, AI critic, ThumbnailDocument layers, paid face-wow, YouTube frames, Stripe. See `my_team.md` Completion status.
 
 ## Still deferred (paid / OAuth — by request)
 

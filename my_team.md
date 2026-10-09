@@ -3,6 +3,43 @@
 Call with: `@my_team.md`  
 Repo workdir: `/home/ubuntu/thumbforge` (not `/workspace`).
 
+## Completion status
+
+Honest snapshot for product owners. The free AI path and sky studio UI are real; the full orchestrator (paid models, critic, layered docs, billing) is **not** finished.
+
+### COMPLETED (in repo today)
+
+- One-field AI maker (scene **or** YouTube URL) — `/ai-thumbnail-maker`
+- Brief → variants (`buildCreativeBrief`, `thumbOptionsFromBrief`, `attachCreativeConcepts`)
+- Multi-stage progress UI (`planning → generating → assembling`) — master §26 / §54
+- 3 packaging concepts with strategy / why / headline — §8 / §48
+- Generate 3 new directions (strategy rotation) — §49
+- Structured failure + cooldown UX — §50
+- Editor handoff (title, line 2, placement, cover) — §57 (raster cover honest, not fake layers)
+- Client rate limits + cooldown UI
+- Free Pollinations path (+ studio fallback looks)
+- Sky studio polish (soft sky + mild purple); light/dark theme toggle
+- Editor elevated card + canvas shell
+- Freemium gates / usage limits
+- Supabase client with local fallback when keys unset
+- INR/USD geo pricing display
+- Tools mega-menu, Doctor / Score / Resizer / CTR / titles, etc.
+
+### NOT COMPLETED (orchestrator / paid infra — do not claim)
+
+- Paid **fal** / `FAL_KEY` “wow” photoreal path (Worker code exists; keys unset) — master Phase 1 image quality
+- YouTube **frame extraction** from video (public title only today) — §32 optional future
+- Gemini / Nano Banana **provider router** — §2–3
+- AI **critic** + targeted patch ops — §16–21
+- Canonical **ThumbnailDocument** layer model as source of truth — §10–11, §57 full
+- Stripe / Razorpay checkout
+- Supabase **prod** credentials wired in live deploy
+- YouTube OAuth CTR / A-B learning — Phase 5–6
+
+See also: `docs/THUMBRIC_AI_ENGINE_ORCHESTRATOR_IMPLEMENTATION_MASTER.md`, `docs/IMPLEMENTATION_GAP.md`.
+
+---
+
 ## Local Downloads path — why it was inaccessible
 
 Cloud Agents run on a remote Linux VM and **cannot read** `C:\Users\…\Downloads\…` on the user’s Windows disk until a file is uploaded/attached into the session.
@@ -14,7 +51,7 @@ Cloud Agents run on a remote Linux VM and **cannot read** `C:\Users\…\Download
 
 ---
 
-## AI imaging layer — honest status
+## AI imaging layer — detail
 
 ### SHIPPED (in repo today)
 
@@ -34,15 +71,6 @@ Cloud Agents run on a remote Linux VM and **cannot read** `C:\Users\…\Download
 
 **We do not ship:** face-swap, photoreal fal “wow” path, or YouTube frame/thumbnail extraction from video.
 
-### SHIPPED from orchestrator master (this pass)
-
-- §26 Generation UX stages (real stages, no fake %)
-- §54 Frontend stage machine (idle → planning → generating → assembling → completed/failed/cancelled)
-- §8 / §48 Three packaging concepts surfaced in the maker UI
-- §49 Generate 3 new directions (strategy rotation)
-- §50 Failure UX + cooldown copy
-- §57 Editor handoff: editable title lines + placement (raster cover still honest — not fake layered editability)
-
 ### Still open (orchestrator / later — needs paid infra or larger build)
 
 - Preferred Gemini / Nano Banana provider abstraction + server keys (§2–3, Phase 1)
@@ -55,14 +83,14 @@ Cloud Agents run on a remote Linux VM and **cannot read** `C:\Users\…\Download
 
 ---
 
-## Acceptance — color (premium sky studio)
+## Acceptance — color (premium sky studio + themes)
 
-- [x] One cohesive sky surface (`#e3f0ff` / `#f0f5ff`) — no harsh full-height blue/lavender edge columns
-- [x] Corner radial lavenders + sky wash (not stripey side bars)
-- [x] Primary `#6366f1`, sky secondary `#0ea5e9` / `#38bdf8` for links and accents
-- [x] Cards: white, soft border, ~16–20px radius, single shadow level (`--shadow-card`)
-- [x] Hero mosaic very subtle (does not compete with headline)
-- [x] Primary CTAs: sky→purple gradient; outline buttons crisp on white
+- [x] Light: cohesive sky surface — deepened wash (less blank white); corner lavenders
+- [x] Dark: cool navy/slate sky-dark (not coral-black); soft sky + mild purple accents
+- [x] Theme toggle next to Sign in; `localStorage` `thumbric-theme`; `data-theme` on `<html>`
+- [x] Primary `#6366f1` (light) / brighter indigo accents in dark; sky secondary for links
+- [x] Cards use elevated surfaces in both themes (`--raise` / `--raise-2`)
+- [x] Primary CTAs: sky→purple gradient; readable contrast in both modes
 
 ## Acceptance — AI maker (`/ai-thumbnail-maker`)
 
@@ -74,7 +102,7 @@ Cloud Agents run on a remote Linux VM and **cannot read** `C:\Users\…\Download
 
 ## Acceptance — Editor (`/#editor`)
 
-- [x] One elevated card; canvas in light grey frame; empty canvas uses studio shell (not black void)
+- [x] One elevated card; canvas in light grey / dark stage frame; empty canvas uses studio shell
 - [x] AI maker handoff applies title + optional line 2 + placement
 - [x] Upload: dashed drop zone with icon + helper text
 - [x] Templates closed by default — compact summary row when closed
@@ -84,7 +112,7 @@ Cloud Agents run on a remote Linux VM and **cannot read** `C:\Users\…\Download
 
 ## Screenshot evidence
 
-Desktop 1440×900: `.walkthrough/polish-pass/` — `/`, `/#editor`, `/ai-thumbnail-maker`.
+Desktop 1440×900: `.walkthrough/theme-pass/` — light + dark for `/`, `/#editor`, `/ai-thumbnail-maker`, `/pricing`.
 
 ## Still open
 

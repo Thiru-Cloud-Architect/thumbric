@@ -17,17 +17,19 @@
 
 Visible UI brand is **Thumbric** (no .ai). The live domain stays https://thumbric.app/.
 
-**Color system (active):** cohesive sky studio (`--bg #e3f0ff`, `--bg-soft #f0f5ff`) + mild purple primary (`--accent/#cta #6366f1`) and sky secondary (`--accent-2 #0ea5e9`). Corner lavenders only — no edge stripe columns. Coral-on-black is retired.
+**Color system (active):** light/dark via `data-theme` + `thumbric-theme` localStorage. Light = deepened sky studio (`--bg #d4e6fb`) + mild purple (`#6366f1`) + sky secondary (`#0ea5e9`). Dark = cool navy/slate (`--bg #0f172a`), elevated cards, same sky/purple accents. Coral-on-black is retired. Theme toggle lives next to Sign in.
 
-Shipped: calm AI one-box maker (centered sky composition), **multi-stage generation progress**, **3 packaging concepts** with strategy/why, brief→variant wiring, structured cooldown/errors, editor handoff (title + line 2 + placement), canvas-first editor card, Tools mega-menu, freemium gates, Supabase auth client with local fallback.
+Shipped: calm AI one-box maker (centered sky composition), **multi-stage generation progress**, **3 packaging concepts** with strategy/why, brief→variant wiring, structured cooldown/errors, editor handoff (title + line 2 + placement), canvas-first editor card, Tools mega-menu, freemium gates, Supabase auth client with local fallback, **light/dark theme**.
 
 **Windows Downloads note:** Cloud Agents cannot read `C:\Users\…\Downloads\…` until the file is uploaded; the orchestrator master is now in `docs/`.
+
+**Honest AI gap:** free Pollinations path is live; paid fal wow, Gemini provider router, AI critic, ThumbnailDocument layers, Stripe, YouTube frames, OAuth CTR are **not** done. See `@my_team.md` Completion status.
 
 Missing / deferred: live Supabase project credentials in prod, Stripe checkout, paid fal AI (Worker ready; keys unset), YouTube frame extraction, AI critic / ThumbnailDocument / Gemini provider router.
 
 ## Current stamp
 
-`UI_BUILD=2026.10.09-orchestrator`
+`UI_BUILD=2026.10.09-theme`
 
 ## Open threads
 

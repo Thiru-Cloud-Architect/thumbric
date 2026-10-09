@@ -2,6 +2,7 @@ import { type MouseEvent, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { PRODUCT_NAME_FULL } from './brand'
 import { goToHash, useOnHomePage } from './nav'
+import { getActiveTheme, toggleTheme, type ThemeId } from './theme'
 import { TOOL_NAV_CATEGORIES, toolsByCategory } from './toolsCatalog'
 
 type SiteHeaderProps = {
@@ -13,6 +14,9 @@ export function SiteHeader({ userLabel, onLoginClick }: SiteHeaderProps) {
   const onHome = useOnHomePage()
   const navigate = useNavigate()
   const [toolsOpen, setToolsOpen] = useState(false)
+  const [theme, setTheme] = useState<ThemeId>(() =>
+    typeof document !== 'undefined' ? getActiveTheme() : 'light',
+  )
   const toolsRef = useRef<HTMLDivElement>(null)
   const closeTimer = useRef<number | null>(null)
 
@@ -146,6 +150,18 @@ export function SiteHeader({ userLabel, onLoginClick }: SiteHeaderProps) {
         </Link>
       </nav>
       <div className="top-actions">
+        <button
+          type="button"
+          className="theme-toggle"
+          aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+          onClick={() => setTheme(toggleTheme())}
+        >
+          <span className="theme-toggle-icon" aria-hidden="true">
+            {theme === 'dark' ? '☀' : '☾'}
+          </span>
+          <span className="theme-toggle-label">{theme === 'dark' ? 'Light' : 'Dark'}</span>
+        </button>
         {onLoginClick ? (
           <button type="button" className="top-login" onClick={onLoginClick}>
             {userLabel ? userLabel : 'Sign in'}
