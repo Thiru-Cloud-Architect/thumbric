@@ -9,7 +9,9 @@ Honest snapshot for product owners. The free AI path and coral studio UI are rea
 
 ### Live audit pointer
 
-See `docs/LIVE_SITE_AUDIT_2026-10-09.md`. P0 build break fixed so the title-options popover can deploy. Local `:43201` verified for More-options layout + download gate. Production post-deploy (`2026.10.09-live-audit`) verified: popover opens, `deltaScrollH=0`. No staging.
+See `docs/LIVE_SITE_AUDIT_2026-10-09.md` + `docs/THUMBRIC_LIVE_SITE_DEEP_REANALYSIS.md`.  
+P0: build + More-options — **prod verified**.  
+P1: export gate no modal stack — `exportGate.test.ts`; **local verified** (quality then auth). Prod after `2026.10.09-export-gate`. No staging.
 
 ### COMPLETED (in repo today)
 

@@ -84,7 +84,8 @@ import { pushThumbnailHistory } from './thumbnailHistory'
 import { upsertProject } from './projects'
 import { styleHintFromKit } from './creatorKit'
 import { autosaveAgeLabel, loadAutosave, saveAutosave } from './autosave'
-import { hasBlockingExportIssue, validateExport, type ExportCheck } from './exportValidation'
+import { validateExport, type ExportCheck } from './exportValidation'
+import { beginExportGate, confirmExportGate, resolveExportOverlay } from './exportGate'
 import { ShortcutsModal } from './ShortcutsModal'
 import { loadVersions, pushVersion } from './versionHistory'
 import {
@@ -249,6 +250,8 @@ export default function HomePage() {
   const [titleOpacity, setTitleOpacity] = useState(1)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const [exportChecks, setExportChecks] = useState<ExportCheck[] | null>(null)
+  /** Remembers Download vs Clean until the user confirms the quality checklist. */
+  const [pendingExportClean, setPendingExportClean] = useState(false)
   const [autosaveLabel, setAutosaveLabel] = useState('Autosave on')
   const [beforeUrl, setBeforeUrl] = useState('')
   const [compareBefore, setCompareBefore] = useState(false)
@@ -1004,13 +1007,26 @@ export default function HomePage() {
   }
 
   function requestExportWithChecks(clean: boolean) {
-    const checks = validateExport(previewInput)
-    setExportChecks(checks)
-    if (hasBlockingExportIssue(checks)) {
-      setStatus('Export paused — fix the highlighted issues or choose Export anyway.')
-      return
-    }
-    if (clean) requestCleanSave()
+    const gate = beginExportGate(validateExport(previewInput))
+    // Never open auth/pay under the quality checklist — one opaque layer at a time.
+    setAuthModalReason(null)
+    setModal('none')
+    setPendingExportClean(clean)
+    if (gate.type !== 'show-quality') return
+    setExportChecks(gate.checks)
+    setStatus(
+      gate.blocking
+        ? 'Export paused — fix the highlighted issues or choose Export anyway.'
+        : 'Review the quality checklist, then export.',
+    )
+  }
+
+  function confirmExportFromChecklist() {
+    const clean = pendingExportClean
+    const next = confirmExportGate(clean)
+    setExportChecks(null)
+    setPendingExportClean(false)
+    if (next.type === 'download-clean') requestCleanSave()
     else saveMarked()
     snapshotVersion(clean ? 'Clean export' : 'Preview export')
   }
@@ -1587,11 +1603,14 @@ export default function HomePage() {
 
   function saveMarked() {
     if (!isRegistered) {
+      setExportChecks(null)
       setAuthModalReason('download')
       setStatus('Register free to download — 5 mild-watermark PNGs per day.')
       return
     }
     if (!canDownloadWatermarked(isRegistered, paidActive)) {
+      setExportChecks(null)
+      setAuthModalReason(null)
       setModal('pay')
       setStatus(
         `Free daily limit is ${FREE_DAILY_DOWNLOADS} downloads. Upgrade for unlimited / clean exports.`,
@@ -1619,11 +1638,14 @@ export default function HomePage() {
       saveClean(entitlement)
       return
     }
+    setExportChecks(null)
     if (!entitlement.email) {
       setEmailDraft(entitlement.email)
+      setAuthModalReason(null)
       setModal('register')
       return
     }
+    setAuthModalReason(null)
     setModal('pay')
   }
 
@@ -1711,6 +1733,12 @@ export default function HomePage() {
     openEditorAi()
   }
 
+  const exportOverlay = resolveExportOverlay({
+    exportChecksOpen: exportChecks != null,
+    authModalOpen: authModalReason != null,
+    entitlementModalOpen: modal !== 'none',
+  })
+
   return (
     <div className="page">
       <DocumentHead path="/" />
@@ -1721,11 +1749,12 @@ export default function HomePage() {
             navigate('/account')
             return
           }
+          setExportChecks(null)
           setAuthModalReason('generic')
         }}
       />
       <AuthModal
-        open={authModalReason != null}
+        open={exportOverlay === 'auth'}
         reason={authModalReason || 'generic'}
         onClose={() => setAuthModalReason(null)}
         onSuccess={() => {
@@ -2513,8 +2542,15 @@ export default function HomePage() {
       </main>
 
       <ShortcutsModal open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
-      {exportChecks ? (
-        <div className="modal-backdrop" role="presentation" onClick={() => setExportChecks(null)}>
+      {exportOverlay === 'quality' && exportChecks ? (
+        <div
+          className="modal-backdrop"
+          role="presentation"
+          onClick={() => {
+            setExportChecks(null)
+            setPendingExportClean(false)
+          }}
+        >
           <div
             className="modal-card export-check-modal"
             role="dialog"
@@ -2542,23 +2578,23 @@ export default function HomePage() {
                     setTitleFontSizePx(clampTitleFontSize(110))
                   }
                   setExportChecks(null)
+                  setPendingExportClean(false)
                   setStatus('Applied automatic fixes where possible. Review and export again.')
                 }}
               >
                 Fix automatically
               </button>
+              <button type="button" className="chip" onClick={() => confirmExportFromChecklist()}>
+                {pendingExportClean ? 'Export clean anyway' : 'Export anyway'}
+              </button>
               <button
                 type="button"
-                className="chip"
+                className="chip ghost"
                 onClick={() => {
                   setExportChecks(null)
-                  saveMarked()
-                  snapshotVersion('Preview export')
+                  setPendingExportClean(false)
                 }}
               >
-                Export anyway
-              </button>
-              <button type="button" className="chip ghost" onClick={() => setExportChecks(null)}>
                 Cancel
               </button>
             </div>
@@ -2567,7 +2603,7 @@ export default function HomePage() {
       ) : null}
       <SiteFooter buildLabel={`${PRODUCT_NAME_FULL} · UI ${UI_BUILD}`} />
 
-      {modal !== 'none' ? (
+      {exportOverlay === 'entitlement' && modal !== 'none' ? (
         <div className="modal-backdrop" role="presentation" onClick={() => setModal('none')}>
           <div
             className="modal"

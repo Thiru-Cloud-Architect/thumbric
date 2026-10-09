@@ -1,6 +1,6 @@
 # LIVE SITE AUDIT — 2026-10-09
 
-**Directive source:** `THUMBRIC_LIVE_SITE_DEEP_REANALYSIS.md` was **not found** on this VM after searching `/home/ubuntu`, `/workspace`, `/home/ubuntu/.cursor/projects/workspace/uploads`, and the repo. Closest related docs already in-tree: `docs/THUMBRIC_DEEP_LIVE_AUDIT_PREMIUM_EDITOR_MASTER.md`, `docs/THUMBRIC_LIVE_AUDIT_REPORT.md`. Audit proceeded against production + `/home/ubuntu/thumbforge` using the user’s stated process.
+**Directive source:** `docs/THUMBRIC_LIVE_SITE_DEEP_REANALYSIS.md` (reconstructed from the chat brief after the Windows Downloads path was unavailable on the VM). Closest related docs: `docs/THUMBRIC_DEEP_LIVE_AUDIT_PREMIUM_EDITOR_MASTER.md`, `docs/THUMBRIC_LIVE_AUDIT_REPORT.md`. Audit proceeded against production + `/home/ubuntu/thumbforge` using the user’s stated process.
 
 **Staging:** no staging environment.
 
@@ -85,19 +85,20 @@ All listed routes **200**, including `/roast/demo-code/`.
   2. Observe TS6133 on `editorTab`.
 - **Fix target:** stop declaring an unread `editorTab` (keep `setEditorTab` or remove dead tab state entirely) so build+deploy can land the already-merged popover fix.
 
-### P1 — Production still shows always-expanded title extras (pre-fix UI)
+### P1 — Production still shows always-expanded title extras (pre-fix UI) — **FIXED**
 
 - **Symptom:** On production `#editor`, Line 2 / Tag / style chips appear inline in the inspector (no absolute `#title-options-popover`). Local `main` uses an anchored overlay; measured `deltaScrollH = 0` when opening More title options.
-- **Severity:** P1 editor reliability / layout (the user-reported “sliding inspector” class of bug). Fix already authored in `d893c2f`; blocked by P0 build break.
-- **Repro (prod):** open https://thumbric.app/#editor → inspect Title panel → Line 2/Tag visible without a working popover overlay.
-- **Repro (local, fixed behavior):** open http://127.0.0.1:43201/#editor → click **More title options** → panel `#title-options-popover` appears; document height unchanged.
-- **Do not fight parallel work:** if another agent lands the same fix, verify with the layout probe above rather than re-implementing.
+- **Severity:** P1 editor reliability / layout (the user-reported “sliding inspector” class of bug). Fix already authored in `d893c2f`; was blocked by P0 build break.
+- **Status:** **Implemented** (popover) + **verified production** after P0 unblock (`prod-p0-verify-more-options.png`, `deltaScrollH=0`, stamp `live-audit` / later builds).
 
-### P1 — Download flow can stack Register + Export quality modals
+### P1 — Download flow can stack Register + Export quality modals — **FIXED**
 
-- **Symptom:** Clicking **Download** can leave **Register to download** and **Export quality check** overlapping (see `local-editor-download-gate.png`).
-- **Repro:** local `#editor` → Download (guest) → observe stacked dialogs.
-- **Fix direction (later):** single gate sequence — auth first **or** quality checklist first, never both opaque layers.
+- **Symptom:** Clicking **Download** opened **Export quality check** and immediately called `saveMarked()`, which opened **Register to download** for guests — two opaque layers (see historical `local-editor-download-gate.png`).
+- **Root cause:** `requestExportWithChecks` set `exportChecks` **and** proceeded to download/auth in the same tick when issues were non-blocking.
+- **Fix:** `src/exportGate.ts` + HomePage — first click only shows quality; auth/pay/download run after **Export anyway**. Render uses `resolveExportOverlay` so at most one layer shows.
+- **Repro (fixed):** local `#editor` (guest) → Download → only quality dialog (`backdrops=1`) → Export anyway → only Register (`backdrops=1`).
+- **Regression:** `src/exportGate.test.ts`
+- **Status:** **Implemented** + **tested locally** (`local-p1-download-quality-only.png`, `local-p1-download-auth-after.png`). Production verification after Pages deploy of stamp `2026.10.09-export-gate`.
 
 ### P2 — `/roast/:code` returns HTTP 404 on production while UI works
 
@@ -135,9 +136,9 @@ All listed routes **200**, including `/roast/demo-code/`.
 | Home / pricing / tools / AI maker render | yes (screenshots) | yes (screenshots) | n/a |
 | Editor opens, canvas + inspector | yes | yes | n/a |
 | Title edit via `#title-input` | yes | yes | n/a |
-| More title options: no page-height growth | **yes** (`deltaScrollH=0`, popover DOM present) | **old UI** (popover absent in bundle) | n/a |
+| More title options: no page-height growth | **yes** (`deltaScrollH=0`, popover DOM present) | **yes** after deploy (`prod-p0-verify-more-options.png`) | n/a |
 | Upload fixture image | yes | not re-run (same client code path) | n/a |
-| Download gate (register / quality modal) | yes | not fully clicked (avoid account noise) | n/a |
+| Download gate (quality then auth, no stack) | **yes** (quality-only then auth-only) | pending / after `export-gate` deploy | n/a |
 | AI maker UI + demo stub | yes | maker UI yes; demo query not required on prod | n/a |
 | Roast deep link UX | 200 + UI | **404 status** + UI | n/a |
 | `npm run build` | **FAIL** (P0) at audit start | deploy of latest main blocked | n/a |
@@ -162,7 +163,17 @@ All listed routes **200**, including `/roast/demo-code/`.
 | Local More-options layout | **Verified runtime** | popover present, `deltaScrollH=0` → `.walkthrough/live-audit-2026-10-09/local-p0-verify-more-options.png` |
 | Production popover after Pages deploy | **Verified on live** | Pages run success for `fbac6a6`; asset `index-CQFGM_1w.js`; `data-ui-build=2026.10.09-live-audit`; `#title-options-popover` opens with `deltaScrollH=0` → `prod-p0-verify-more-options.png` |
 
-P1 modal stacking and roast 404 status **not** fixed in this pass (deferred per P0-first rule).
+---
+
+## P1 fix status (follow-up)
+
+| Item | Status | Proof |
+|------|--------|-------|
+| More title options popover on production | **Verified production** | earlier same-day deploy |
+| Download modal stacking | **Implemented + local runtime** | `exportGate.test.ts`; `local-p1-download-quality-only.png` → `local-p1-download-auth-after.png` |
+| Production download gate re-check | **After Pages** for `UI_BUILD=2026.10.09-export-gate` | see note below when live |
+
+P2 roast HTTP 404 / Unsplash ORB **not** fixed (deferred).
 
 ---
 
@@ -170,4 +181,4 @@ P1 modal stacking and roast 404 status **not** fixed in this pass (deferred per 
 
 - Date: 2026-10-09  
 - Repo: `/home/ubuntu/thumbforge` @ `main`  
-- Agent: live audit + P0 fix pass  
+- Agent: live audit + P0 + P1 export-gate pass  
