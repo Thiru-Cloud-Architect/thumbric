@@ -82,12 +82,12 @@
   --hero-scrim:
     radial-gradient(
       ellipse 62% 55% at 50% 42%,
-      rgba(28, 21, 21, 0.78),
-      rgba(22, 16, 16, 0.55) 52%,
-      rgba(13, 10, 10, 0.18) 78%,
+      rgba(36, 26, 26, 0.68),
+      rgba(28, 21, 21, 0.42) 52%,
+      rgba(13, 10, 10, 0.12) 78%,
       transparent 90%
     );
-  --hero-mosaic-filter: saturate(0.85) brightness(0.72);
+  --hero-mosaic-filter: saturate(0.9) brightness(0.88);
   --panel-surface: var(--raise-2);
   --panel-stage: var(--stage);
   font-family: 'DM Sans', 'Plus Jakarta Sans', system-ui, sans-serif;
