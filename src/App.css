@@ -7837,6 +7837,137 @@ footer {
   color: var(--ink);
 }
 
+/* Title extras: anchored popover — does not grow page / shove columns */
+.editor-card .studio-inspector {
+  position: relative;
+  overflow: visible;
+  z-index: 2;
+}
+
+.inspector-title-more {
+  position: relative;
+  margin: 0.1rem 0 0;
+  z-index: 4;
+}
+
+.inspector-title-more-toggle {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: auto;
+  margin: 0;
+  padding: 0.28rem 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.inspector-title-more-toggle:hover,
+.inspector-title-more-toggle[aria-expanded='true'] {
+  color: var(--ink);
+}
+
+.inspector-title-more-toggle::after {
+  content: '';
+  width: 0.35rem;
+  height: 0.35rem;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+  translate: 0 -0.08rem;
+  opacity: 0.7;
+}
+
+.inspector-title-more-toggle[aria-expanded='true']::after {
+  transform: rotate(225deg);
+  translate: 0 0.1rem;
+}
+
+.inspector-title-more-panel {
+  position: absolute;
+  z-index: 60;
+  left: auto;
+  right: 0;
+  bottom: calc(100% + 0.3rem);
+  width: min(17.5rem, calc(100vw - 1.5rem));
+  max-height: min(52vh, 22rem);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.55rem 0.6rem 0.65rem;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--raise-2);
+  color: var(--ink);
+  box-shadow: var(--shadow), 0 12px 28px color-mix(in srgb, var(--ink) 12%, transparent);
+}
+
+.inspector-title-more-panel .inspector-field {
+  gap: 0.22rem;
+  margin: 0;
+}
+
+.inspector-title-more-panel .inspector-field input,
+.inspector-title-more-panel .inspector-select {
+  padding: 0.35rem 0.45rem;
+  font-size: 0.82rem;
+}
+
+.inspector-title-more-panel .title-style-row-compact {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.28rem;
+}
+
+.inspector-title-more-panel .title-style-chip {
+  width: 100%;
+  justify-content: flex-start;
+  padding: 0.28rem 0.4rem;
+  border-radius: 8px;
+  min-height: 0;
+}
+
+.inspector-title-more-panel .title-style-sample {
+  font-size: 0.92rem;
+  min-width: 1.15rem;
+}
+
+.inspector-title-more-panel .title-style-label {
+  font-size: 0.68rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.inspector-title-more-panel .inspector-advanced {
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0.45rem;
+}
+
+.inspector-title-more-panel .inspector-advanced-toggle {
+  margin: 0;
+  font-size: 0.72rem;
+  padding: 0.28rem 0.5rem;
+}
+
+@media (max-width: 900px) {
+  .inspector-title-more-panel {
+    left: 0;
+    right: 0;
+    width: auto;
+    bottom: calc(100% + 0.25rem);
+    max-height: min(48vh, 18rem);
+  }
+}
+
 .editor-card .preview-tool {
   background: transparent;
   border-color: color-mix(in srgb, var(--line) 85%, transparent);

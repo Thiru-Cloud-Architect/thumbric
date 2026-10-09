@@ -255,6 +255,7 @@ export default function HomePage() {
   const [compareBefore, setCompareBefore] = useState(false)
   const [versions, setVersions] = useState(() => loadVersions())
   const [showMoreCanvasTools, setShowMoreCanvasTools] = useState(false)
+  const [showTitleOptions, setShowTitleOptions] = useState(false)
   const [showAdvancedText, setShowAdvancedText] = useState(false)
   const ZOOM_PRESETS = [0.25, 0.5, 0.75, 1, 2] as const
   const [layerState, setLayerState] = useState<LayerState>(() => defaultLayerState())
@@ -293,14 +294,28 @@ export default function HomePage() {
   const aiRunIdRef = useRef(0)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
-  const titleOptionsRef = useRef<HTMLDetailsElement>(null)
+  const titleOptionsRef = useRef<HTMLDivElement>(null)
   const dragIndexRef = useRef<number | null>(null)
   const dragTargetRef = useRef<DragTarget>(null)
   const dragOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
 
   useEffect(() => {
-    if (editorTab === 'title' && titleOptionsRef.current) titleOptionsRef.current.open = true
-  }, [editorTab])
+    if (!showTitleOptions) return
+    const onPointerDown = (event: PointerEvent) => {
+      const root = titleOptionsRef.current
+      if (!root || root.contains(event.target as Node)) return
+      setShowTitleOptions(false)
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setShowTitleOptions(false)
+    }
+    document.addEventListener('pointerdown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [showTitleOptions])
 
   const niche = useMemo(() => getNiche(nicheId), [nicheId])
   const platform = useMemo(() => getPlatform(platformId), [platformId])
@@ -2130,158 +2145,175 @@ export default function HomePage() {
                 />
               </div>
             </div>
-            <details className="editor-advanced" ref={titleOptionsRef}>
-              <summary>More title options</summary>
-              <label className="inspector-field">
-                Line 2 (optional)
-                <input
-                  value={titleLine2}
-                  maxLength={42}
-                  onChange={(event) => setTitleLine2(event.target.value)}
-                  placeholder="AND THIS HAPPENED"
-                />
-              </label>
-              <label className="inspector-field">
-                Tag (optional)
-                <input
-                  value={tag}
-                  maxLength={18}
-                  onChange={(event) => setTag(event.target.value)}
-                  placeholder={niche.badge}
-                />
-              </label>
-              <div className="title-style-row" role="listbox" aria-label="Title style">
-                {TEXT_STYLES.slice(0, 5).map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    role="option"
-                    aria-selected={textStyleId === item.id}
-                    className={
-                      textStyleId === item.id ? 'title-style-chip is-selected' : 'title-style-chip'
-                    }
-                    data-style={item.id}
-                    title={item.hint}
-                    onClick={() => setTextStyleId(item.id)}
-                  >
-                    <span className="title-style-sample" aria-hidden>
-                      Aa
-                    </span>
-                    <span className="title-style-label">{item.label}</span>
-                  </button>
-                ))}
-              </div>
-            <label className="inspector-field">
-              Outline {titleOutlineWidth < 0 ? 'auto' : `${titleOutlineWidth}px`}
-              <input
-                type="range"
-                min={TITLE_OUTLINE_MIN}
-                max={TITLE_OUTLINE_MAX}
-                value={titleOutlineWidth < 0 ? 12 : titleOutlineWidth}
-                onChange={(event) => setTitleOutlineWidth(clampOutlineWidth(Number(event.target.value)))}
-              />
-            </label>
-            <label className="inspector-field">
-              Font
-              <select
-                className="inspector-select"
-                value={fontId}
-                onChange={(event) => setFontId(event.target.value as FontId)}
-                aria-label="Title font"
+            <div className="inspector-title-more" ref={titleOptionsRef}>
+              <button
+                type="button"
+                className="inspector-title-more-toggle"
+                aria-expanded={showTitleOptions}
+                aria-controls="title-options-popover"
+                onClick={() => setShowTitleOptions((open) => !open)}
               >
-                {FONTS.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="inspector-check">
-              <input
-                type="checkbox"
-                checked={titleShadow}
-                onChange={(event) => setTitleShadow(event.target.checked)}
-              />
-              Drop shadow
-            </label>
-            <button
-              type="button"
-              className="chip ghost inspector-advanced-toggle"
-              onClick={() => setShowAdvancedText((v) => !v)}
-            >
-              {showAdvancedText ? 'Hide advanced text' : 'Advanced text'}
-            </button>
-            {showAdvancedText ? (
-              <div className="inspector-advanced">
-                <label className="inspector-field">
-                  Rotation {textRotationDeg}°
-                  <input
-                    type="range"
-                    min={-12}
-                    max={12}
-                    value={textRotationDeg}
-                    onChange={(event) => setTextRotationDeg(Number(event.target.value))}
-                  />
-                </label>
-                <label className="inspector-field">
-                  Letter spacing {letterSpacing}px
-                  <input
-                    type="range"
-                    min={-4}
-                    max={16}
-                    value={letterSpacing}
-                    onChange={(event) => setLetterSpacing(Number(event.target.value))}
-                  />
-                </label>
-                <label className="inspector-field">
-                  Line height {lineHeight.toFixed(2)}
-                  <input
-                    type="range"
-                    min={0.85}
-                    max={1.4}
-                    step={0.01}
-                    value={lineHeight}
-                    onChange={(event) => setLineHeight(Number(event.target.value))}
-                  />
-                </label>
-                <label className="inspector-field">
-                  Opacity {Math.round(titleOpacity * 100)}%
-                  <input
-                    type="range"
-                    min={0.2}
-                    max={1}
-                    step={0.05}
-                    value={titleOpacity}
-                    onChange={(event) => setTitleOpacity(Number(event.target.value))}
-                  />
-                </label>
-                <div className="inspector-row">
-                  <span className="inspector-label">Canvas align</span>
-                  <div className="inspector-pills">
-                    {(['left', 'center', 'right', 'top', 'middle', 'bottom'] as const).map((mode) => (
+                More title options
+              </button>
+              {showTitleOptions ? (
+                <div
+                  id="title-options-popover"
+                  className="inspector-title-more-panel"
+                  role="region"
+                  aria-label="More title options"
+                >
+                  <label className="inspector-field">
+                    Line 2 (optional)
+                    <input
+                      value={titleLine2}
+                      maxLength={42}
+                      onChange={(event) => setTitleLine2(event.target.value)}
+                      placeholder="AND THIS HAPPENED"
+                    />
+                  </label>
+                  <label className="inspector-field">
+                    Tag (optional)
+                    <input
+                      value={tag}
+                      maxLength={18}
+                      onChange={(event) => setTag(event.target.value)}
+                      placeholder={niche.badge}
+                    />
+                  </label>
+                  <div className="title-style-row title-style-row-compact" role="listbox" aria-label="Title style">
+                    {TEXT_STYLES.slice(0, 5).map((item) => (
                       <button
-                        key={mode}
+                        key={item.id}
                         type="button"
-                        className="inspector-pill"
-                        onClick={() => alignTitle(mode)}
+                        role="option"
+                        aria-selected={textStyleId === item.id}
+                        className={
+                          textStyleId === item.id ? 'title-style-chip is-selected' : 'title-style-chip'
+                        }
+                        data-style={item.id}
+                        title={item.hint}
+                        onClick={() => setTextStyleId(item.id)}
                       >
-                        {mode}
+                        <span className="title-style-sample" aria-hidden>
+                          Aa
+                        </span>
+                        <span className="title-style-label">{item.label}</span>
                       </button>
                     ))}
                   </div>
+                  <label className="inspector-field">
+                    Outline {titleOutlineWidth < 0 ? 'auto' : `${titleOutlineWidth}px`}
+                    <input
+                      type="range"
+                      min={TITLE_OUTLINE_MIN}
+                      max={TITLE_OUTLINE_MAX}
+                      value={titleOutlineWidth < 0 ? 12 : titleOutlineWidth}
+                      onChange={(event) => setTitleOutlineWidth(clampOutlineWidth(Number(event.target.value)))}
+                    />
+                  </label>
+                  <label className="inspector-field">
+                    Font
+                    <select
+                      className="inspector-select"
+                      value={fontId}
+                      onChange={(event) => setFontId(event.target.value as FontId)}
+                      aria-label="Title font"
+                    >
+                      {FONTS.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="inspector-check">
+                    <input
+                      type="checkbox"
+                      checked={titleShadow}
+                      onChange={(event) => setTitleShadow(event.target.checked)}
+                    />
+                    Drop shadow
+                  </label>
+                  <button
+                    type="button"
+                    className="chip ghost inspector-advanced-toggle"
+                    onClick={() => setShowAdvancedText((v) => !v)}
+                  >
+                    {showAdvancedText ? 'Hide advanced text' : 'Advanced text'}
+                  </button>
+                  {showAdvancedText ? (
+                    <div className="inspector-advanced">
+                      <label className="inspector-field">
+                        Rotation {textRotationDeg}°
+                        <input
+                          type="range"
+                          min={-12}
+                          max={12}
+                          value={textRotationDeg}
+                          onChange={(event) => setTextRotationDeg(Number(event.target.value))}
+                        />
+                      </label>
+                      <label className="inspector-field">
+                        Letter spacing {letterSpacing}px
+                        <input
+                          type="range"
+                          min={-4}
+                          max={16}
+                          value={letterSpacing}
+                          onChange={(event) => setLetterSpacing(Number(event.target.value))}
+                        />
+                      </label>
+                      <label className="inspector-field">
+                        Line height {lineHeight.toFixed(2)}
+                        <input
+                          type="range"
+                          min={0.85}
+                          max={1.4}
+                          step={0.01}
+                          value={lineHeight}
+                          onChange={(event) => setLineHeight(Number(event.target.value))}
+                        />
+                      </label>
+                      <label className="inspector-field">
+                        Opacity {Math.round(titleOpacity * 100)}%
+                        <input
+                          type="range"
+                          min={0.2}
+                          max={1}
+                          step={0.05}
+                          value={titleOpacity}
+                          onChange={(event) => setTitleOpacity(Number(event.target.value))}
+                        />
+                      </label>
+                      <div className="inspector-row">
+                        <span className="inspector-label">Canvas align</span>
+                        <div className="inspector-pills">
+                          {(['left', 'center', 'right', 'top', 'middle', 'bottom'] as const).map((mode) => (
+                            <button
+                              key={mode}
+                              type="button"
+                              className="inspector-pill"
+                              onClick={() => alignTitle(mode)}
+                            >
+                              {mode}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="inspector-row">
+                        <span className="inspector-label">Outline color</span>
+                        <input
+                          className="inspector-color"
+                          type="color"
+                          value={titleOutlineColor}
+                          onChange={(event) => setTitleOutlineColor(event.target.value)}
+                        />
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
-                <div className="inspector-row">
-                  <span className="inspector-label">Outline color</span>
-                  <input
-                    className="inspector-color"
-                    type="color"
-                    value={titleOutlineColor}
-                    onChange={(event) => setTitleOutlineColor(event.target.value)}
-                  />
-                </div>
-              </div>
-            ) : null}
-            </details>
+              ) : null}
+            </div>
             <details className="editor-advanced inspector-more">
               <summary>More tools</summary>
               <label className="inspector-field refine-field">
