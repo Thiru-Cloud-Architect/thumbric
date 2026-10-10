@@ -303,9 +303,21 @@ export type FillLooksOptions = {
   isolateCollage?: boolean
 }
 
+/** Keep engine lineage through local crop/grade so the UI never lies about fal vs free. */
+function inheritEngineSource(
+  parent: AiGeneratedImage['source'] | undefined,
+): AiGeneratedImage['source'] {
+  if (parent === 'premium' || parent === 'studio' || parent === 'model') return parent
+  return 'grade'
+}
+
 /**
  * Always return 3 usable looks. Extra slots are composition crops + color grades
  * of the first successful image — no extra model calls.
+ *
+ * When we already have `target` distinct premium (fal) stills, keep those pixels —
+ * restyling them into Punch/Warm/Cinematic was wiping `source: premium` and making
+ * Creator runs look like free Pollinations in the UI.
  */
 export async function fillLooksToTarget(
   results: AiGeneratedImage[],
@@ -316,6 +328,17 @@ export async function fillLooksToTarget(
 
   const isolate = options.isolateCollage === true
   const recipes = isolate ? COLLAGE_ISOLATION_RECIPES : LOCAL_LOOK_RECIPES
+  const allPremium =
+    results.length >= target && results.slice(0, target).every((item) => item.source === 'premium')
+
+  // Three unique fal concepts: ship them as-is (labels come from creative brief).
+  if (allPremium && !isolate) {
+    return results.slice(0, target).map((item, index) => ({
+      ...item,
+      lookLabel: item.lookLabel || (recipes[index] ?? recipes[0])!.label,
+      source: 'premium' as const,
+    }))
+  }
 
   if (results.length >= target && !isolate) {
     const finished: AiGeneratedImage[] = []
@@ -330,10 +353,14 @@ export async function fillLooksToTarget(
           objectUrl: styled.objectUrl,
           lookLabel: recipe.label,
           derived: Boolean(source.derived),
-          source: source.source === 'studio' ? 'studio' : 'grade',
+          source: inheritEngineSource(source.source),
         })
       } catch {
-        finished.push({ ...source, lookLabel: source.lookLabel ?? recipe.label })
+        finished.push({
+          ...source,
+          lookLabel: source.lookLabel ?? recipe.label,
+          source: inheritEngineSource(source.source),
+        })
       }
     }
     return finished
@@ -345,6 +372,7 @@ export async function fillLooksToTarget(
   const keepOriginal = options.keepOriginal === true && !isolate
   const filled: AiGeneratedImage[] = keepOriginal ? [...results] : []
   const startRecipe = keepOriginal ? Math.min(results.length, recipes.length - 1) : 0
+  const inherited = inheritEngineSource(source.source)
   for (let i = startRecipe; filled.length < target && i < recipes.length; i++) {
     const recipe = recipes[i]!
     try {
@@ -357,7 +385,8 @@ export async function fillLooksToTarget(
         styleId: options.styleId,
         lookLabel: recipe.label,
         derived: true,
-        source: 'grade',
+        // Local fill of a fal still is still Pro imaging — not Pollinations.
+        source: inherited === 'premium' ? 'premium' : inherited === 'studio' ? 'studio' : 'grade',
       })
     } catch {
       // Canvas/toBlob can fail in tests — skip rather than empty the picker.

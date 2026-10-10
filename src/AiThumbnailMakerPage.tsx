@@ -74,6 +74,8 @@ export default function AiThumbnailMakerPage() {
   const [directionRotate, setDirectionRotate] = useState(0)
   const [entitlement, setEntitlement] = useState<Entitlement>(() => loadEntitlement())
   const [providerBase, setProviderBase] = useState<ProviderReadiness>(() => getProviderReadiness())
+  /** How many fal/Worker images the last finished batch spent (for honest engine copy). */
+  const [lastPremiumUsed, setLastPremiumUsed] = useState(0)
   const provider = useMemo(
     () => readinessWithQuota(providerBase, entitlement),
     [providerBase, entitlement],
@@ -259,6 +261,7 @@ export default function AiThumbnailMakerPage() {
       if (batch.premiumImagesUsed > 0) {
         setEntitlement(consumeProImages(liveEntitlement, batch.premiumImagesUsed))
       }
+      setLastPremiumUsed(batch.premiumImagesUsed)
 
       job = completeImagingJob(imagingJobRef.current ?? job)
       applyImagingJob(job)
@@ -392,9 +395,20 @@ export default function AiThumbnailMakerPage() {
               ? `I found ${variants.length} ways to package your video.`
               : 'Your thumbnail is ready'}
           </p>
-          <p className="ai-source-line" data-source={chosen.source || 'model'}>
-            {chosen.source === 'premium'
-              ? 'Engine: Pro imaging (fal) — no Pollinations watermark'
+          <p
+            className="ai-source-line"
+            data-source={
+              chosen.source === 'premium' || lastPremiumUsed > 0
+                ? 'premium'
+                : chosen.source || 'model'
+            }
+          >
+            {chosen.source === 'premium' || lastPremiumUsed > 0
+              ? lastPremiumUsed > 0
+                ? `Engine: Pro imaging (fal) — ${lastPremiumUsed} look${
+                    lastPremiumUsed === 1 ? '' : 's'
+                  }, no Pollinations watermark`
+                : 'Engine: Pro imaging (fal) — no Pollinations watermark'
               : chosen.source === 'studio'
                 ? 'Engine: studio fallback (Pro imaging unavailable)'
                 : 'Engine: free preview (may show a Pollinations mark)'}
