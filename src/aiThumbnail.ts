@@ -155,7 +155,7 @@ export type AiGeneratedImage = {
   /** True when this look is a crop/grade of another look, not a new model call. */
   derived?: boolean
   /** Where the pixels came from — never dump provider names in the UI. */
-  source?: 'model' | 'grade' | 'studio'
+  source?: 'premium' | 'model' | 'grade' | 'studio'
 }
 
 /** Soft ceiling so hung Pollinations requests still surface an error in the UI. */
@@ -682,6 +682,7 @@ export async function generateAiThumbnailImage(
   options: AiThumbOptions,
   signal?: AbortSignal,
   seedOverride?: number,
+  allowPremium = true,
 ): Promise<AiGeneratedImage> {
   const styleId = getAiStyle(options.styleId).id
   const prompt = buildAiThumbnailPrompt({ ...options, styleId })
@@ -694,12 +695,12 @@ export async function generateAiThumbnailImage(
 
   let lastError: Error | null = null
   try {
-    if (backend.premium) {
+    if (allowPremium && backend.premium) {
       try {
         const blob = await generatePremiumBlob(prompt, width, height, seed, gate.signal)
         const objectUrl = URL.createObjectURL(blob)
         const image = await loadImage(objectUrl, gate.signal)
-        return { image, objectUrl, prompt, seed, styleId, lookLabel: 'Hero', source: 'model' }
+        return { image, objectUrl, prompt, seed, styleId, lookLabel: 'Hero', source: 'premium' }
       } catch (error) {
         if (isAbortError(error) || (error instanceof DOMException && error.name === 'TimeoutError')) {
           throw error
@@ -763,6 +764,8 @@ export type AiVariantBatch = {
   startIndex: number
   /** True when pixels came from local studio stills, not a model. */
   usedStudioFallback: boolean
+  /** How many fal/Worker images succeeded in this batch (for quota). */
+  premiumImagesUsed: number
 }
 
 export type GenerateAiVariantsHooks = {
@@ -770,6 +773,11 @@ export type GenerateAiVariantsHooks = {
   signal?: AbortSignal
   /** Continue compositions from this look index (1 when retrying looks 2–3). */
   startIndex?: number
+  /**
+   * Max fal/Worker calls allowed this batch. `0` = free path only.
+   * Omit to use the full configured premium look budget when the Worker is set.
+   */
+  premiumBudget?: number
   onProgress?: (done: number, total: number) => void
   onItem?: (item: AiGeneratedImage, index: number) => void
   onWait?: (lookIndex: number, waitMs: number) => void
@@ -779,7 +787,7 @@ export type GenerateAiVariantsHooks = {
  * Generate looks so the user can pick the best backdrop.
  * Free path: one model call, then local crop/grade fills to 3 looks.
  * If the model is busy or unreachable, 3 cinematic studio stills still fill the picker.
- * Premium (Worker/fal): up to 3 model calls, then local fill if a call fails.
+ * Premium (Worker/fal): up to `premiumBudget` model calls, then local/free fill.
  * `onItem` fires as soon as a look lands so the canvas is not empty until all 3 finish.
  */
 export async function generateAiThumbnailVariants(
@@ -788,18 +796,34 @@ export async function generateAiThumbnailVariants(
     count = AI_LOOK_TARGET,
     signal,
     startIndex = 0,
+    premiumBudget,
     onProgress,
     onItem,
     onWait,
   }: GenerateAiVariantsHooks = {},
 ): Promise<AiVariantBatch> {
   const backend = resolveAiBackend()
-  const budget = Math.min(count, apiLookBudget(backend.kind), AI_LOOK_TARGET - startIndex)
-  const total = Math.max(1, budget)
+  const configuredPremium = backend.premium
+  let premiumLeft =
+    premiumBudget === undefined
+      ? configuredPremium
+        ? apiLookBudget(backend.kind)
+        : 0
+      : Math.max(0, Math.floor(premiumBudget))
+  const usePremiumPacing = configuredPremium && premiumLeft > 0
+  const budget = Math.min(
+    count,
+    usePremiumPacing ? apiLookBudget(backend.kind) : apiLookBudget('pollinations'),
+    AI_LOOK_TARGET - startIndex,
+  )
+  // When some premium quota remains but less than 3, still attempt `count` looks;
+  // later looks fall back to free/local once premiumLeft hits 0.
+  const total = Math.max(1, usePremiumPacing ? Math.min(count, AI_LOOK_TARGET - startIndex) : budget)
   const results: AiGeneratedImage[] = []
   const base = Math.floor(Math.random() * 1_000_000)
   let rateLimited = false
   let usedStudioFallback = false
+  let premiumImagesUsed = 0
   const width = Math.min(1280, options.platform.width)
   const height = Math.round((width * options.platform.height) / options.platform.width)
   const styleId = getAiStyle(options.styleId).id
@@ -808,7 +832,8 @@ export async function generateAiThumbnailVariants(
   for (let i = 0; i < total; i++) {
     if (signal?.aborted) break
     const lookIndex = startIndex + i
-    const waitMs = backend.premium
+    const allowPremium = premiumLeft > 0
+    const waitMs = allowPremium && usePremiumPacing
       ? waitMsBeforeLook(lookIndex, { firstOfRetryBatch: i === 0 && startIndex > 0 })
       : 0
     if (waitMs > 0) {
@@ -826,7 +851,12 @@ export async function generateAiThumbnailVariants(
         { ...options, variantIndex: lookIndex },
         signal,
         base + lookIndex * 9973,
+        allowPremium,
       )
+      if (item.source === 'premium') {
+        premiumImagesUsed += 1
+        premiumLeft = Math.max(0, premiumLeft - 1)
+      }
       results.push(item)
       onItem?.(item, results.length - 1)
       onProgress?.(i + 1, total)
@@ -900,7 +930,14 @@ export async function generateAiThumbnailVariants(
   }
   onProgress?.(filled.length, AI_LOOK_TARGET)
 
-  return { results: filled, rateLimited, requested: total, startIndex, usedStudioFallback }
+  return {
+    results: filled,
+    rateLimited,
+    requested: total,
+    startIndex,
+    usedStudioFallback,
+    premiumImagesUsed,
+  }
 }
 
 function loadImage(src: string, signal?: AbortSignal) {

@@ -17,8 +17,6 @@ jobs:
     env:
       VITE_BASE_PATH: /
       VITE_SITE_URL: https://thumbric.app/
-      # Cloudflare Worker (thumbric-api) holding FAL_KEY — public base URL only.
-      VITE_API_BASE: https://thumbric-api.thirumalaikumarpappaiah.workers.dev
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -26,8 +24,12 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # Keep VITE_API_BASE off tests — simpleAuth expects device-only without it.
       - run: npm test
       - run: npm run build
+        env:
+          # Cloudflare Worker (thumbric-api) holding FAL_KEY — public base URL only.
+          VITE_API_BASE: https://thumbric-api.thirumalaikumarpappaiah.workers.dev
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

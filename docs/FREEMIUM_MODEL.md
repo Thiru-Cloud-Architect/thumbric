@@ -10,7 +10,8 @@ Inspired by Canva / vidIQ free → paid conversion: **try freely, register to ke
 | Save projects | ❌ → register | ✅ | ✅ | ✅ |
 | Download PNG | ❌ → register | **5 / day** mild `thumbric` corner mark | Unlimited marked | Unlimited |
 | Clean (no mark) | — | — | **30 / month** | Unlimited |
-| AI Maker | Free Pollinations | Same | Same (+ priority later) | Same |
+| Pro AI imaging (fal) | **3 / month** | **3 / month** | **60 / month** | **Unlimited** |
+| AI Maker after Pro quota | Free Pollinations | Same | Same | — |
 
 ## Why this mix
 

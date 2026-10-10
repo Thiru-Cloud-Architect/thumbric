@@ -1,4 +1,9 @@
-import { CREATOR_CLEAN_DOWNLOADS_PER_MONTH, TRIAL_DAYS } from './entitlement'
+import {
+  CREATOR_CLEAN_DOWNLOADS_PER_MONTH,
+  CREATOR_PRO_IMAGES_PER_MONTH,
+  FREE_PRO_IMAGES_PER_MONTH,
+  TRIAL_DAYS,
+} from './entitlement'
 
 export type PlanId = 'free' | 'creator' | 'pro'
 export type BillingCurrency = 'USD' | 'INR'
@@ -33,6 +38,7 @@ export const PLANS: Plan[] = [
       '8 guest designs, then free register to continue',
       'Save projects after you register',
       '5 mild-watermark downloads / day',
+      `${FREE_PRO_IMAGES_PER_MONTH} Pro AI images / month, then free preview`,
       'AI Maker, Doctor, Score & Resizer',
     ],
     cta: 'Start free',
@@ -48,6 +54,7 @@ export const PLANS: Plan[] = [
     features: [
       'Unlimited watermarked downloads',
       `${CREATOR_CLEAN_DOWNLOADS_PER_MONTH} clean exports / month (no mark)`,
+      `${CREATOR_PRO_IMAGES_PER_MONTH} Pro AI images / month (fal)`,
       'Cloud save when Supabase is connected',
       `${TRIAL_DAYS}-day trial unlock (demo until Stripe)`,
     ],
@@ -59,11 +66,11 @@ export const PLANS: Plan[] = [
     tagline: 'Daily publishers',
     usd: { amount: 3, compareAt: 9, symbol: '$' },
     inr: { amount: 49, compareAt: 149, symbol: '₹' },
-    highlight: 'Unlimited clean downloads',
+    highlight: 'Unlimited clean downloads + Pro AI',
     features: [
       'Everything in Creator',
       'Unlimited clean exports',
-      'Priority when paid AI ships',
+      'Unlimited Pro AI imaging (fal)',
       `${TRIAL_DAYS}-day trial unlock available (demo)`,
     ],
     cta: 'Go Pro',

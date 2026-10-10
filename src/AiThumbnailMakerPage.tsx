@@ -34,8 +34,14 @@ import {
 } from './aiImaging'
 import { consumeAiHandoff, objectUrlToDataUrl, saveAiHandoff } from './aiHandoff'
 import { buildCreativeBrief, visualHintForConcept, type CreativeBrief } from './creativeBrief'
+import {
+  consumeProImages,
+  loadEntitlement,
+  type Entitlement,
+} from './entitlement'
 import { getNiche } from './niches'
 import { getPlatform } from './platforms'
+import { premiumBudgetForRun, readinessWithQuota } from './proImagingQuota'
 import { ToolShell } from './ToolShell'
 import {
   looksLikeYoutubeUrl,
@@ -61,7 +67,12 @@ export default function AiThumbnailMakerPage() {
   const [cooldown, setCooldown] = useState(0)
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null)
   const [directionRotate, setDirectionRotate] = useState(0)
-  const [provider, setProvider] = useState<ProviderReadiness>(() => getProviderReadiness())
+  const [entitlement, setEntitlement] = useState<Entitlement>(() => loadEntitlement())
+  const [providerBase, setProviderBase] = useState<ProviderReadiness>(() => getProviderReadiness())
+  const provider = useMemo(
+    () => readinessWithQuota(providerBase, entitlement),
+    [providerBase, entitlement],
+  )
   const imagingJobRef = useRef<ImagingJob | null>(null)
   const abortRef = useRef<AbortController | null>(null)
   const runIdRef = useRef(0)
@@ -77,7 +88,7 @@ export default function AiThumbnailMakerPage() {
   useEffect(() => {
     const controller = new AbortController()
     void resolveProviderReadiness(controller.signal).then((next) => {
-      if (!controller.signal.aborted) setProvider(next)
+      if (!controller.signal.aborted) setProviderBase(next)
     })
     return () => controller.abort()
   }, [])
@@ -152,9 +163,14 @@ export default function AiThumbnailMakerPage() {
     objectUrls.current = []
     setVariants([])
 
+    const liveEntitlement = loadEntitlement()
+    setEntitlement(liveEntitlement)
+    const premiumBudget = premiumBudgetForRun(liveEntitlement, AI_LOOK_TARGET)
+    const runProvider = readinessWithQuota(providerBase, liveEntitlement)
+
     let job = createImagingJob({
       conceptTotal: AI_LOOK_TARGET,
-      provider,
+      provider: runProvider,
     })
     applyImagingJob(job)
 
@@ -191,6 +207,7 @@ export default function AiThumbnailMakerPage() {
         {
           count: AI_LOOK_TARGET,
           signal: controller.signal,
+          premiumBudget,
           onProgress: (done, total) => {
             if (runId !== runIdRef.current) return
             const current = imagingJobRef.current ?? job
@@ -215,6 +232,10 @@ export default function AiThumbnailMakerPage() {
       )
       if (runId !== runIdRef.current) return
 
+      if (batch.premiumImagesUsed > 0) {
+        setEntitlement(consumeProImages(liveEntitlement, batch.premiumImagesUsed))
+      }
+
       job = completeImagingJob(imagingJobRef.current ?? job)
       applyImagingJob(job)
       const merged = attachCreativeConcepts(batch.results.slice(0, AI_LOOK_TARGET), nextBrief)
@@ -231,7 +252,9 @@ export default function AiThumbnailMakerPage() {
         count: merged.length,
         studio: batch.usedStudioFallback,
         youtube: Boolean(meta),
-        providerTier: provider.tier,
+        providerTier: runProvider.tier,
+        premiumUsed: batch.premiumImagesUsed,
+        premiumBudget,
       })
       track('thumbnail_generated', { tool: 'ai-thumbnail-maker', looks: merged.length })
     } catch (error) {

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   SIMPLE_USER_STORAGE_KEY,
   loadSimpleUser,
@@ -9,6 +9,12 @@ import {
 describe('simpleAuth', () => {
   beforeEach(() => {
     localStorage.clear()
+    vi.stubEnv('VITE_API_BASE', '')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.unstubAllGlobals()
   })
 
   it('is device-only unless VITE_API_BASE is set', () => {

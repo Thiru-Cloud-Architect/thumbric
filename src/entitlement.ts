@@ -7,6 +7,10 @@ const LEGACY_STORAGE_KEYS = [
 ]
 
 export const CREATOR_CLEAN_DOWNLOADS_PER_MONTH = 30
+/** Guest + Free: taste of fal Pro imaging per calendar month. */
+export const FREE_PRO_IMAGES_PER_MONTH = 3
+/** Creator: enough for weekly uploads + regenerates (~20 full 3-look runs). */
+export const CREATOR_PRO_IMAGES_PER_MONTH = 60
 export const TRIAL_DAYS = 7
 export const DEMO_PAID_DAYS = 30
 
@@ -16,6 +20,8 @@ export type Entitlement = {
   email: string
   plan: PlanTier
   cleanDownloadsUsed: number
+  /** Successful fal / Worker pro images used in the current quota month. */
+  proImagesUsed: number
   quotaPeriodStart: number
   paidUntil: number | null
   /** True when the current unlock came from the 7-day trial demo. */
@@ -28,6 +34,7 @@ function emptyEntitlement(): Entitlement {
     email: '',
     plan: 'free',
     cleanDownloadsUsed: 0,
+    proImagesUsed: 0,
     quotaPeriodStart: monthStart(now),
     paidUntil: null,
     trial: false,
@@ -46,6 +53,7 @@ function normalizeEntitlement(raw: Partial<Entitlement>, now = Date.now()): Enti
       raw.plan === 'creator' || raw.plan === 'pro' || raw.plan === 'free' ? raw.plan : 'free',
     cleanDownloadsUsed:
       typeof raw.cleanDownloadsUsed === 'number' ? raw.cleanDownloadsUsed : 0,
+    proImagesUsed: typeof raw.proImagesUsed === 'number' ? Math.max(0, Math.floor(raw.proImagesUsed)) : 0,
     quotaPeriodStart:
       typeof raw.quotaPeriodStart === 'number' ? raw.quotaPeriodStart : monthStart(now),
     paidUntil: typeof raw.paidUntil === 'number' ? raw.paidUntil : null,
@@ -63,15 +71,18 @@ function normalizeEntitlement(raw: Partial<Entitlement>, now = Date.now()): Enti
       paidUntil: null,
       trial: false,
       cleanDownloadsUsed: 0,
+      proImagesUsed: 0,
       quotaPeriodStart: monthStart(now),
     }
   }
 
-  if (base.plan === 'creator' && base.quotaPeriodStart !== monthStart(now)) {
+  const period = monthStart(now)
+  if (base.quotaPeriodStart !== period) {
     return {
       ...base,
-      cleanDownloadsUsed: 0,
-      quotaPeriodStart: monthStart(now),
+      cleanDownloadsUsed: base.plan === 'creator' ? 0 : base.cleanDownloadsUsed,
+      proImagesUsed: 0,
+      quotaPeriodStart: period,
     }
   }
 
@@ -122,6 +133,57 @@ export function canDownloadClean(entitlement: Entitlement, now = Date.now()) {
   return cleanDownloadsLeft(entitlement, now) > 0
 }
 
+/** Monthly fal/Worker image cap for the active plan. Infinity = Pro unlimited. */
+export function proImageLimit(entitlement: Entitlement, now = Date.now()) {
+  const ent = normalizeEntitlement(entitlement, now)
+  if (isPaid(ent, now) && ent.plan === 'pro') return Number.POSITIVE_INFINITY
+  if (isPaid(ent, now) && ent.plan === 'creator') return CREATOR_PRO_IMAGES_PER_MONTH
+  return FREE_PRO_IMAGES_PER_MONTH
+}
+
+export function proImagesLeft(entitlement: Entitlement, now = Date.now()) {
+  const ent = normalizeEntitlement(entitlement, now)
+  const limit = proImageLimit(ent, now)
+  if (!Number.isFinite(limit)) return Number.POSITIVE_INFINITY
+  return Math.max(0, limit - ent.proImagesUsed)
+}
+
+export function canUseProImaging(entitlement: Entitlement, count = 1, now = Date.now()) {
+  return proImagesLeft(entitlement, now) >= Math.max(1, count)
+}
+
+/** Spend successful pro image generations against this month’s quota. */
+export function consumeProImages(entitlement: Entitlement, count: number): Entitlement {
+  const ent = normalizeEntitlement(entitlement)
+  const n = Math.max(0, Math.floor(count))
+  if (n === 0) return ent
+  if (!Number.isFinite(proImageLimit(ent))) return ent
+  const next: Entitlement = {
+    ...ent,
+    proImagesUsed: ent.proImagesUsed + n,
+  }
+  saveEntitlement(next)
+  return next
+}
+
+export function proImagingStatusLabel(entitlement: Entitlement, now = Date.now()) {
+  const ent = normalizeEntitlement(entitlement, now)
+  const left = proImagesLeft(ent, now)
+  const limit = proImageLimit(ent, now)
+  if (!Number.isFinite(limit)) {
+    return ent.trial ? 'Pro imaging · unlimited (trial)' : 'Pro imaging · unlimited'
+  }
+  if (left <= 0) {
+    return isPaid(ent, now) && ent.plan === 'creator'
+      ? 'Pro imaging quota used — upgrade to Pro for unlimited'
+      : 'Pro imaging quota used — free preview still works'
+  }
+  if (isPaid(ent, now) && ent.plan === 'creator') {
+    return `Pro imaging · ${left} of ${limit} left this month`
+  }
+  return `Pro imaging · ${left} of ${limit} free this month`
+}
+
 export function registerEmail(email: string): Entitlement {
   const current = loadEntitlement()
   const next: Entitlement = {
@@ -169,6 +231,7 @@ export function activateDemoPlan(
     plan,
     paidUntil: now + days * 24 * 60 * 60 * 1000,
     cleanDownloadsUsed: 0,
+    proImagesUsed: 0,
     quotaPeriodStart: monthStart(now),
     trial: days <= TRIAL_DAYS,
   }

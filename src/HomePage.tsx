@@ -17,6 +17,7 @@ import {
   canDownloadClean,
   cleanDownloadsLeft,
   consumeCleanDownload,
+  consumeProImages,
   entitlementStatusLabel,
   isPaid,
   isValidEmail,
@@ -24,6 +25,7 @@ import {
   registerEmail,
   type Entitlement,
 } from './entitlement'
+import { premiumBudgetForRun } from './proImagingQuota'
 import {
   DEFAULT_TITLE_FONT_SIZE,
   FONTS,
@@ -1460,6 +1462,8 @@ export default function HomePage() {
     setStatus(busyMsg)
 
     try {
+      const liveEntitlement = loadEntitlement()
+      const premiumBudget = premiumBudgetForRun(liveEntitlement, wantCount)
       const batch = await generateAiThumbnailVariants(
         {
           title: brief?.concepts[0]?.headline || title,
@@ -1472,6 +1476,7 @@ export default function HomePage() {
           count: wantCount,
           signal: controller.signal,
           startIndex: prior.length,
+          premiumBudget,
           onProgress: (done, total) => {
             if (runId !== aiRunIdRef.current) return
             setAiProgressDone(prior.length + done)
@@ -1507,6 +1512,10 @@ export default function HomePage() {
       )
       if (runId !== aiRunIdRef.current) return
 
+      if (batch.premiumImagesUsed > 0) {
+        setEntitlement(consumeProImages(liveEntitlement, batch.premiumImagesUsed))
+      }
+
       const merged = attachConcepts(
         [...prior, ...batch.results].slice(0, AI_LOOK_TARGET),
         brief,
@@ -1519,7 +1528,9 @@ export default function HomePage() {
       if (chosen) applyAiLook(chosen, pickIndex, merged.length)
 
       const missing = AI_LOOK_TARGET - merged.length
-      const canMore = missing > 0 && !batch.rateLimited && resolveAiBackend().premium
+      const quotaLeft = premiumBudgetForRun(loadEntitlement(), missing)
+      const canMore =
+        missing > 0 && !batch.rateLimited && resolveAiBackend().premium && quotaLeft > 0
       setAiCanFetchMore(canMore)
       setAiAwaitingRetry(false)
       if (batch.rateLimited) {
