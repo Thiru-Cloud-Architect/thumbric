@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   buildCreativeBrief,
   fullHeadline,
+  nicheIdForTopicKind,
+  parseTopic,
   pickStrategyIds,
   visualHintForConcept,
 } from './creativeBrief'
@@ -36,5 +38,33 @@ describe('creativeBrief', () => {
     const rotated = pickStrategyIds('I tested 10 AI coding tools', 2)
     expect(rotated).toHaveLength(3)
     expect(rotated).not.toEqual(base)
+  })
+
+  it('parses artist-song prompts and never invents WHAT X HIDES for music', () => {
+    const parsed = parseTopic('Vishwanath and sons - pattamboochi song')
+    expect(parsed.kind).toBe('music')
+    expect(parsed.subject.toLowerCase()).toContain('vishwanath')
+    expect(parsed.detail.toLowerCase()).toContain('pattamboochi')
+    expect(nicheIdForTopicKind(parsed.kind)).toBe('music')
+
+    const brief = buildCreativeBrief('Vishwanath and sons - pattamboochi song')
+    expect(brief.kind).toBe('music')
+    for (const concept of brief.concepts) {
+      expect(concept.headline).not.toMatch(/^WHAT\s+\w+\s+HIDES$/i)
+      expect(`${concept.headline} ${concept.subheadline || ''}`).toMatch(/pattamboochi|vishwanath|new drop|must hear|full song|out now|from silence/i)
+    }
+    const curiosity = brief.concepts.find((c) => c.id === 'curiosity')
+    if (curiosity) {
+      expect(curiosity.headline).toMatch(/PATTAMBOOCHI|NEW/i)
+      expect(curiosity.headline).not.toMatch(/VISHWANATH HIDES/i)
+    }
+  })
+
+  it('uses topic hook phrases instead of first-token HIDES for general curiosity', () => {
+    const brief = buildCreativeBrief('iPhone 16 vs Pixel camera test')
+    const curiosity = brief.concepts.find((c) => c.id === 'curiosity')
+    if (curiosity) {
+      expect(curiosity.headline).not.toMatch(/HIDES/i)
+    }
   })
 })

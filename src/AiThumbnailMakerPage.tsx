@@ -33,7 +33,12 @@ import {
   type ImagingJob,
 } from './aiImaging'
 import { consumeAiHandoff, objectUrlToDataUrl, saveAiHandoff } from './aiHandoff'
-import { buildCreativeBrief, visualHintForConcept, type CreativeBrief } from './creativeBrief'
+import {
+  buildCreativeBrief,
+  nicheIdForTopicKind,
+  visualHintForConcept,
+  type CreativeBrief,
+} from './creativeBrief'
 import {
   consumeProImages,
   loadEntitlement,
@@ -78,7 +83,6 @@ export default function AiThumbnailMakerPage() {
   const runIdRef = useRef(0)
   const objectUrls = useRef<string[]>([])
 
-  const niche = useMemo(() => getNiche('vlog'), [])
   const platform = useMemo(() => getPlatform('youtube'), [])
   const urlMode = looksLikeYoutubeUrl(input)
   const canGenerate = input.trim().length >= 3 && phase !== 'busy' && cooldown === 0
@@ -187,13 +191,18 @@ export default function AiThumbnailMakerPage() {
     const nextBrief = buildCreativeBrief(sceneText || input || 'YouTube video idea', { rotate })
     setBrief(nextBrief)
     setDirectionRotate(rotate)
-    const thumbOptions = thumbOptionsFromBrief({
-      brief: nextBrief,
-      niche,
-      platform,
-      fallbackTitle: meta?.title || input || 'Thumbnail',
-      conceptIndex: 0,
-    })
+    const niche = getNiche(nicheIdForTopicKind(nextBrief.kind))
+    const fallbackTitle = meta?.title || nextBrief.parsed.hookPhrase || input || 'Thumbnail'
+    const lookOptions = nextBrief.concepts.map((_, conceptIndex) =>
+      thumbOptionsFromBrief({
+        brief: nextBrief,
+        niche,
+        platform,
+        fallbackTitle,
+        conceptIndex,
+      }),
+    )
+    const thumbOptions = lookOptions[0]!
 
     job = markImagingPlanningDone(job)
     applyImagingJob(job)
@@ -208,6 +217,7 @@ export default function AiThumbnailMakerPage() {
           count: AI_LOOK_TARGET,
           signal: controller.signal,
           premiumBudget,
+          lookOptions,
           onProgress: (done, total) => {
             if (runId !== runIdRef.current) return
             const current = imagingJobRef.current ?? job

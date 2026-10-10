@@ -34,7 +34,8 @@ P1: export gate no modal stack — `exportGate.test.ts`; **local + production ve
 
 ### NOT COMPLETED (orchestrator / paid infra — do not claim)
 
-- Paid **fal** / `FAL_KEY` “wow” photoreal path (Worker + readiness exist; keys unset here) — master Phase 1 image quality
+- ~~Paid **fal** path~~ — Worker + `VITE_API_BASE` live; quota Free 3 / Creator 60 / Pro unlimited
+- Creative brief still heuristic (no LLM) — improved for music/artist-song; Nano Banana / critic still open
 - YouTube **frame extraction** from video (public title only today) — §32 optional future
 - Gemini / Nano Banana **provider router** — §2–3 (documented only; not wired)
 - AI **critic** + targeted patch ops — §16–21

@@ -26,11 +26,11 @@ Shipped: calm AI one-box maker, **multi-stage generation progress**, **3 packagi
 
 **Windows Downloads note:** Cloud Agents cannot read `C:\Users\…\Downloads\…` until the file is uploaded; the orchestrator master is now in `docs/`.
 
-**Honest AI gap:** free Pollinations path is live; imaging **infra** (readiness + job types + Worker `/api/ai/ready`) is started. Paid fal wow pixels need keys. Gemini provider router, AI critic, ThumbnailDocument layers, Stripe, YouTube frames, OAuth CTR are **not** done. See `@my_team.md`.
+**Honest AI gap:** free Pollinations + paid fal (Worker `FAL_KEY` + Pages `VITE_API_BASE`) are live. Creative brief now parses artist/song prompts (no more `WHAT {firstWord} HIDES`). Gemini / Nano Banana router, AI critic, ThumbnailDocument layers, Stripe, YouTube frames, OAuth CTR are **not** done. See `@my_team.md`.
 
 ## Current stamp
 
-`UI_BUILD=2026.10.09-export-gate`
+`UI_BUILD=2026.10.10-creative-brief`
 
 ## Live audit note (2026-10-09)
 

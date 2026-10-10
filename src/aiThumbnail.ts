@@ -808,6 +808,11 @@ export type GenerateAiVariantsHooks = {
    * Omit to use the full configured premium look budget when the Worker is set.
    */
   premiumBudget?: number
+  /**
+   * Per-look option patches so each concept gets its own visual hint / title /
+   * placement — not three grades of concept #0.
+   */
+  lookOptions?: Array<Partial<AiThumbOptions> | undefined>
   onProgress?: (done: number, total: number) => void
   onItem?: (item: AiGeneratedImage, index: number) => void
   onWait?: (lookIndex: number, waitMs: number) => void
@@ -827,6 +832,7 @@ export async function generateAiThumbnailVariants(
     signal,
     startIndex = 0,
     premiumBudget,
+    lookOptions,
     onProgress,
     onItem,
     onWait,
@@ -862,6 +868,15 @@ export async function generateAiThumbnailVariants(
   for (let i = 0; i < total; i++) {
     if (signal?.aborted) break
     const lookIndex = startIndex + i
+    const patch = lookOptions?.[lookIndex]
+    const lookAiOptions: AiThumbOptions = {
+      ...options,
+      ...patch,
+      niche: patch?.niche ?? options.niche,
+      platform: patch?.platform ?? options.platform,
+      styleId: patch?.styleId ?? options.styleId,
+      variantIndex: patch?.variantIndex ?? lookIndex,
+    }
     const allowPremium = premiumLeft > 0
     // During a Pro batch, never call Pollinations for leftover looks — fill locally instead.
     if (!allowPremium && usePremiumPacing) break
@@ -881,7 +896,7 @@ export async function generateAiThumbnailVariants(
     onProgress?.(i, total)
     try {
       const item = await generateAiThumbnailImage(
-        { ...options, variantIndex: lookIndex },
+        lookAiOptions,
         signal,
         base + lookIndex * 9973,
         allowPremium,

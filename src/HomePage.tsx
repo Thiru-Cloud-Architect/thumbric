@@ -1434,6 +1434,17 @@ export default function HomePage() {
       brief?.concepts[0] != null
         ? visualHintForConcept(brief, brief.concepts[0])
         : aiHint
+    const lookOptions = brief
+      ? brief.concepts.map((concept) => ({
+          title: concept.headline || title,
+          niche,
+          platform,
+          hint: visualHintForConcept(brief, concept),
+          styleId,
+          variantIndex:
+            concept.placement === 'left' ? 1 : concept.placement === 'right' ? 0 : 2,
+        }))
+      : undefined
 
     aiAbortRef.current?.abort()
     const controller = new AbortController()
@@ -1477,6 +1488,7 @@ export default function HomePage() {
           signal: controller.signal,
           startIndex: prior.length,
           premiumBudget,
+          lookOptions,
           onProgress: (done, total) => {
             if (runId !== aiRunIdRef.current) return
             setAiProgressDone(prior.length + done)
