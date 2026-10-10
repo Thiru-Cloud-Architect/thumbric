@@ -4,6 +4,7 @@ import {
   looksLikeYoutubeUrl,
   parseYoutubeInput,
   sceneBriefFromInput,
+  topicFromYoutubeMeta,
 } from './youtubeUrl'
 
 describe('youtubeUrl', () => {
@@ -19,18 +20,20 @@ describe('youtubeUrl', () => {
     expect(looksLikeYoutubeUrl('shocked creator in neon studio')).toBe(false)
   })
 
-  it('builds a scene brief from title meta', () => {
-    const brief = sceneBriefFromInput('https://youtu.be/dQw4w9WgXcQ', {
+  it('builds a clean topic from title meta (no packaging boilerplate)', () => {
+    const meta = {
       videoId: 'dQw4w9WgXcQ',
       canonicalUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-      title: 'Never Gonna Give You Up',
-      authorName: 'Rick Astley',
-      fetched: true,
-      framesAvailable: false,
-    })
-    expect(brief).toMatch(/Never Gonna Give You Up/)
-    expect(brief).toMatch(/Rick Astley/)
-    expect(brief).toMatch(/High-CTR packaging/)
+      title: 'Why did i not book slavia? (My sad skoda story)',
+      authorName: 'tech panda tamil',
+      fetched: true as const,
+      framesAvailable: false as const,
+    }
+    const brief = sceneBriefFromInput('https://youtu.be/dQw4w9WgXcQ', meta)
+    expect(brief).toBe('Why did i not book slavia? (My sad skoda story)')
+    expect(brief).not.toMatch(/High-CTR packaging/i)
+    expect(brief).not.toMatch(/titled/i)
+    expect(topicFromYoutubeMeta(meta)).toBe(brief)
   })
 
   it('parses canonical watch URLs', () => {

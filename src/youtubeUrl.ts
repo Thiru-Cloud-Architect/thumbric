@@ -111,18 +111,21 @@ export async function resolveYoutubeMeta(
   }
 }
 
-/** Turn describe-or-URL input into a scene brief for free image AI. */
+/**
+ * Topic string for creative packaging — title only, never packaging instructions.
+ * Mixing "High-CTR packaging still: …" into the topic caused colon-splits and
+ * garbage headlines like "TITLED DID NOT BOOK".
+ */
+export function topicFromYoutubeMeta(meta: YoutubeMeta): string {
+  if (meta.title?.trim()) return meta.title.trim()
+  return `YouTube video ${meta.videoId}`
+}
+
+/** Turn describe-or-URL input into a topic for creative brief + image AI. */
 export function sceneBriefFromInput(raw: string, meta: YoutubeMeta | null): string {
-  const trimmed = raw.trim()
-  if (meta) {
-    if (meta.title) {
-      return `YouTube video titled “${meta.title}”${
-        meta.authorName ? ` by ${meta.authorName}` : ''
-      }. High-CTR packaging still: one clear subject, dramatic light, empty space for a bold title. Do not invent burned-in text.`
-    }
-    return `YouTube video ${meta.videoId}. High-CTR packaging still from the topic implied by a typical clickable cover — one clear subject, empty third for a title. Frames were not available; invent a strong cover concept, not a collage.`
-  }
-  return trimmed
+  if (meta?.title?.trim()) return topicFromYoutubeMeta(meta)
+  if (meta) return `YouTube video ${meta.videoId}`
+  return raw.trim()
 }
 
 export const YOUTUBE_FRAME_HONESTY =

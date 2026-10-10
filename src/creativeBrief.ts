@@ -108,6 +108,20 @@ const STOP = new Set([
   'create',
   'thumbnail',
   'youtube',
+  'titled',
+  'title',
+  'packaging',
+  'still',
+  'clear',
+  'subject',
+  'dramatic',
+  'empty',
+  'space',
+  'bold',
+  'invent',
+  'burned-in',
+  'burned',
+  'text',
 ])
 
 /** Keep short connectors so titles stay grammatical ("fell into a dug well"). */
@@ -132,10 +146,30 @@ const KEEP_CONNECTORS = new Set([
 ])
 
 function cleanTopic(raw: string) {
-  return raw
+  let t = raw.trim()
+
+  // Prefer the real YouTube title if a wrapper like: titled "Why did i not book…"
+  const titledQuote =
+    t.match(/\btitled\s+[“"'](.+?)[”"']/i) ||
+    t.match(/[“"](.+?)[”"]/)
+  if (titledQuote?.[1] && titledQuote[1].trim().length >= 8) {
+    t = titledQuote[1].trim()
+  }
+
+  // Strip leftover packaging instructions that must never become the topic.
+  t = t.replace(/\.\s*High-CTR packaging[\s\S]*$/i, '')
+  t = t.replace(/^YouTube video\b[^.]*\.\s*/i, '')
+  t = t.replace(/\s+by\s+[^.]+$/i, (tail) => {
+    // Keep "by Artist" only when the left side is short (music). Long tails are channel spam.
+    return t.length - tail.length < 48 ? tail : ''
+  })
+
+  return t
     .replace(/^(cinematic\s+)?(still|shot|image|photo|photograph|thumbnail)\s+that\s+matches\s*:?\s*/i, '')
     .replace(/^(my\s+video\s+is\s+about\s+|this\s+video\s+is\s+about\s+|i\s+made\s+a\s+video\s+about\s+)/i, '')
     .replace(/^(generate|make|create)\s+(me\s+)?(a\s+)?(thumbnail|cover|image)\s+(for|of|about)\s+/i, '')
+    // Drop trailing emoji / decorative symbols so "(My sad skoda story) ❤️" still parses.
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]+/gu, ' ')
     .replace(/\s+/g, ' ')
     .trim()
 }
@@ -194,6 +228,12 @@ function subjectFromNatural(title: string) {
   return titleCasePhrase(words.slice(0, 2).join(' '), 2) || titleCasePhrase(title, 2)
 }
 
+function isAutoProductTopic(topic: string) {
+  return /\b(car|cars|skoda|slavia|kushaq|kodiaq|dealer|dealership|tesla|bmw|audi|hyundai|toyota|honda|suzuki|vehicle|test\s*drive|booking|booked|emi|showroom)\b/i.test(
+    topic,
+  )
+}
+
 function detectKind(topic: string): TopicKind {
   const t = topic.toLowerCase()
   if (
@@ -205,16 +245,27 @@ function detectKind(topic: string): TopicKind {
   }
   if (/\b(vs|versus|compared|comparison)\b/.test(t)) return 'vs'
   if (/\b(gamer|gaming|ranked|fps|minecraft|fortnite|valorant)\b/.test(t)) return 'gaming'
-  if (/\b(invest|money|finance|stock|crypto|house|mortgage|loan)\b/.test(t)) return 'finance'
-  if (/\b(iphone|android|ai|coding|developer|gadget|review|unbox)\b/.test(t)) return 'tech'
+  if (/\b(invest|stock|crypto|mortgage|loan)\b/.test(t) && !isAutoProductTopic(t)) return 'finance'
+  // Cars / booking / dealer reviews are product-tech, not "sad story → face close-up".
+  if (
+    isAutoProductTopic(t) ||
+    /\b(iphone|android|ai|coding|developer|gadget|review|unbox|scam|dealer)\b/.test(t)
+  ) {
+    return 'tech'
+  }
   if (/\b(how to|tutorial|guide|learn|course|tips)\b/.test(t)) return 'tutorial'
-  if (/\b(story|storytime|relationship|couple|broke up|love story)\b/.test(t)) return 'story'
+  if (/\b(storytime|relationship|couple|broke up|love story)\b/.test(t)) return 'story'
+  // "sad skoda story" is still a product story — handled above via auto detect.
+  if (/\b(story)\b/.test(t) && !isAutoProductTopic(t)) return 'story'
   return 'general'
 }
 
-/** Split "Artist - Song title" / "Artist: Song" patterns common on YouTube. */
+/**
+ * Split "Artist - Song title" only. Never split packaging boilerplate on ":" —
+ * that produced subject="YouTube video titled…" detail="one clear subject…".
+ */
 function splitArtistTitle(topic: string): { subject: string; detail: string } | null {
-  const match = topic.match(/^(.+?)\s*[-–—|:]\s+(.+)$/)
+  const match = topic.match(/^(.{2,42}?)\s*[-–—|]\s+(.+)$/)
   if (!match) return null
   const subject = match[1]!.trim()
   const detail = match[2]!
@@ -223,13 +274,28 @@ function splitArtistTitle(topic: string): { subject: string; detail: string } | 
     .replace(/\s+/g, ' ')
     .trim()
   if (subject.length < 2 || detail.length < 2) return null
+  // Reject sentence-like left sides (questions, long clauses).
+  if (/[?]/.test(subject)) return null
+  if (subject.split(/\s+/).length > 6) return null
+  if (/\b(titled|packaging|youtube video)\b/i.test(subject)) return null
   return { subject, detail }
+}
+
+/** Pull "(My sad skoda story)" style subtitles out of YouTube titles. */
+function extractParenDetail(topic: string): { core: string; detail: string } {
+  const match = topic.match(/^(.*?)\s*[\-(]\s*([^)\]]+)[)\]]\s*$/u)
+  if (!match) return { core: topic, detail: '' }
+  const core = match[1]!.trim()
+  const detail = match[2]!.trim()
+  if (core.length < 4 || detail.length < 3) return { core: topic, detail: '' }
+  return { core, detail }
 }
 
 export function parseTopic(rawTopic: string): ParsedTopic {
   const raw = cleanTopic(rawTopic) || 'my YouTube video'
   const kind = detectKind(raw)
   const split = splitArtistTitle(raw)
+  const paren = extractParenDetail(raw)
   const keys = raw
     .toLowerCase()
     .replace(/[^a-z0-9\s$-']/g, ' ')
@@ -249,6 +315,20 @@ export function parseTopic(rawTopic: string): ParsedTopic {
       detail: titleCasePhrase(split.detail, 6),
       keys,
       hookPhrase: hookPhrase || titleCasePhrase(split.subject, 3),
+    }
+  }
+
+  // "Why did i not book slavia? (My sad skoda story)" → core + story subtitle
+  if (paren.detail) {
+    const coreTitle = naturalTitle(paren.core, 32)
+    const detailTitle = titleCasePhrase(paren.detail, 6)
+    return {
+      raw,
+      kind,
+      subject: subjectFromNatural(coreTitle),
+      detail: detailTitle,
+      keys,
+      hookPhrase: detailTitle || titleCasePhrase(coreTitle.toLowerCase(), 6),
     }
   }
 
@@ -424,94 +504,116 @@ function visualSubject(p: ParsedTopic) {
   return line || p.raw
 }
 
+function productVisualBlock(p: ParsedTopic) {
+  const topic = visualSubject(p)
+  if (isAutoProductTopic(p.raw)) {
+    const model = /\b(slavia|kushaq|kodiaq|swift|creta|nexon|city|virtus|venue)\b/i.exec(p.raw)?.[1]
+    const brand = /\b(skoda|hyundai|tata|honda|maruti|suzuki|toyota|kia|mg)\b/i.exec(p.raw)?.[1]
+    const car = [brand, model].filter(Boolean).join(' ') || 'sedan car'
+    return `real ${car} as the hero product filling the frame, showroom or street, photoreal automotive photography about ${topic}, optional disappointed buyer reacting beside the car — never a face-only crop`
+  }
+  if (/\b(iphone|android|phone|laptop|gadget|camera)\b/i.test(p.raw)) {
+    return `hero product still of the device in ${topic}, hand-scale, photoreal, optional creator reaction in the same frame`
+  }
+  return `scene that clearly depicts ${topic}, one hero, photoreal`
+}
+
 const GENERAL_FACTORIES: Record<CreativeStrategyId, StrategyFactory> = {
   warning: (p) => {
-    const title = naturalTitle(p.raw, 24)
-    const mistake = /\b(mistake|mistakes|avoid|don't|dont|danger|scam|wrong)\b/i.test(p.raw)
+    const storyHook = p.detail ? clipHeadline(p.detail.toUpperCase(), 28) : naturalTitle(p.raw, 24)
+    const core = naturalTitle(p.raw, 24)
+    const scam = /\b(scam|dealer|money|refund|book|booking)\b/i.test(p.raw)
     return {
       id: 'warning',
       strategy: 'The Warning',
       why: 'Creates urgency — viewers pause before they make a mistake.',
       emotion: 'fear',
       visual: wowFrame(
-        `dramatic documentary-style warning still of ${visualSubject(p)}, clear hero subject, urgent expression, scene matches the real topic`,
+        `${productVisualBlock(p)}, urgent documentary energy, rejected-vs-chosen tension without painting letters or icons`,
         'red-rim urgency light, high contrast',
         'left',
       ),
-      headline: mistake ? 'AVOID THIS' : title,
-      subheadline: mistake ? clipHeadline(title, 22) : 'WATCH OUT',
+      headline: scam ? 'DEALER SCAM?' : 'AVOID THIS',
+      subheadline: scam ? storyHook || core : clipHeadline(core, 22),
       placement: 'left',
     }
   },
   curiosity: (p) => {
-    // Lead with the real topic — never "WHY {scrambled keys} MATTERS".
-    const title = naturalTitle(p.raw, 30)
+    const storyHook = p.detail ? clipHeadline(p.detail.toUpperCase(), 28) : ''
+    const title = storyHook || naturalTitle(p.raw, 30)
     const vs = p.kind === 'vs' || /\bvs\.?\b|versus/i.test(p.raw)
+    const money = /\b(money|refund|book|booking|emi|dealer)\b/i.test(p.raw)
     return {
       id: 'curiosity',
       strategy: 'The Curiosity Gap',
       why: 'Puts the real story up front, then teases the missing piece.',
       emotion: 'curiosity',
       visual: wowFrame(
-        `cinematic still of ${visualSubject(p)}, one clear hero, intrigue without spoiling the ending`,
+        `${productVisualBlock(p)}, intrigue without spoiling the ending`,
         'shallow depth of field, moody key light',
         'left',
       ),
       headline: title,
-      subheadline: vs ? 'WHO WINS?' : 'WHAT HAPPENED?',
+      subheadline: vs ? 'WHO WINS?' : money ? 'MONEY BACK?' : 'WHAT HAPPENED?',
       placement: 'left',
     }
   },
   outcome: (p) => {
-    const title = naturalTitle(p.raw, 28)
+    const storyHook = p.detail ? clipHeadline(p.detail.toUpperCase(), 28) : naturalTitle(p.raw, 28)
     const rescue = /\b(rescue|saved|survive|win|won|escaped?)\b/i.test(p.raw)
+    const money = /\b(money|refund|book|booking)\b/i.test(p.raw)
     return {
       id: 'outcome',
       strategy: 'The Outcome',
       why: 'Sells the result viewers came for — readable on a phone tile.',
       emotion: 'desire',
       visual: wowFrame(
-        `hopeful aftermath still for ${visualSubject(p)}, ${
-          rescue ? 'relief and rescue energy' : 'successful outcome energy'
-        }, one hero subject`,
+        `${productVisualBlock(p)}, ${
+          money ? 'refund / resolution energy' : rescue ? 'relief and rescue energy' : 'aftermath energy'
+        }`,
         'brighter premium light, clean background',
         'right',
       ),
-      headline: rescue ? 'THEY MADE IT' : 'THE REAL ENDING',
-      subheadline: clipHeadline(title, 28),
+      headline: money ? 'GOT MONEY BACK?' : rescue ? 'THEY MADE IT' : 'THE REAL ENDING',
+      subheadline: clipHeadline(storyHook, 28),
       placement: 'right',
     }
   },
   contrarian: (p) => {
-    const title = naturalTitle(p.raw, 28)
+    const storyHook = p.detail ? clipHeadline(p.detail.toUpperCase(), 28) : naturalTitle(p.raw, 28)
     return {
       id: 'contrarian',
       strategy: 'The Contrarian',
       why: 'Challenges the obvious take — spikes curiosity CTR.',
       emotion: 'surprise',
       visual: wowFrame(
-        `unexpected angle on ${visualSubject(p)}, subject looking at camera in disbelief`,
+        `${productVisualBlock(p)}, unexpected angle, subject or product in disbelief framing`,
         'cinematic grade, single frame',
         'center',
       ),
-      headline: title,
+      headline: storyHook,
       subheadline: 'NOT THE STORY',
       placement: 'center',
     }
   },
   emotion: (p) => {
-    const title = naturalTitle(p.raw, 22)
+    const storyHook = p.detail ? clipHeadline(p.detail.toUpperCase(), 28) : naturalTitle(p.raw, 24)
+    const product = isAutoProductTopic(p.raw) || /\b(iphone|gadget|review)\b/i.test(p.raw)
     return {
       id: 'emotion',
       strategy: 'The Emotion',
-      why: 'Face-forward reaction that reads as a tiny phone tile.',
+      why: product
+        ? 'Creator reaction with the product visible — not a random face crop.'
+        : 'Face-forward reaction that reads as a tiny phone tile.',
       emotion: 'intensity',
       visual: wowFrame(
-        `expressive human face reacting to ${visualSubject(p)}, close-up catchlights, scene context in background bokeh`,
+        product
+          ? `${productVisualBlock(p)}, disappointed or intense creator face readable on mobile`
+          : `expressive human face reacting to ${visualSubject(p)}, close-up catchlights, scene context in background bokeh`,
         'emotional intensity, soft bokeh',
         'right',
       ),
-      headline: title,
+      headline: storyHook,
       subheadline: 'WATCH THIS',
       placement: 'right',
     }
@@ -524,7 +626,7 @@ const GENERAL_FACTORIES: Record<CreativeStrategyId, StrategyFactory> = {
       why: 'Positions you as the guide who already figured it out.',
       emotion: 'trust',
       visual: wowFrame(
-        `confident creator or expert framing for ${visualSubject(p)}, clean studio light, topic props visible`,
+        `${productVisualBlock(p)}, confident creator or expert framing, topic props visible`,
         'premium still, calm negative space for type',
         'left',
       ),
@@ -541,7 +643,7 @@ const GENERAL_FACTORIES: Record<CreativeStrategyId, StrategyFactory> = {
       why: 'Shows change — classic YouTube packaging for tutorials and stories.',
       emotion: 'hope',
       visual: wowFrame(
-        `single cinematic still suggesting transformation around ${visualSubject(p)}, brighter key light on the subject`,
+        `${productVisualBlock(p)}, single cinematic still suggesting before/after change`,
         'hopeful grade — one frame only',
         'center',
       ),
@@ -559,7 +661,7 @@ const GENERAL_FACTORIES: Record<CreativeStrategyId, StrategyFactory> = {
       why: 'Teases a ranking or reveal that feels worth the click.',
       emotion: 'anticipation',
       visual: wowFrame(
-        `reveal moment still for ${visualSubject(p)}, spotlight on the key object or person`,
+        `${productVisualBlock(p)}, spotlight reveal moment`,
         'dark surrounding, one photograph',
         'left',
       ),
@@ -586,6 +688,9 @@ export function pickStrategyIds(topic: string, rotate = 0): CreativeStrategyId[]
 
   if (parsed.kind === 'music') {
     ranked.push('emotion', 'curiosity', 'outcome', 'authority', 'reveal', 'transformation')
+  } else if (isAutoProductTopic(t) || /\b(dealer|scam|booking|booked|refund)\b/.test(t)) {
+    // Car / dealer stories → product packaging, not three face close-ups.
+    ranked.push('warning', 'curiosity', 'outcome', 'contrarian', 'emotion')
   } else {
     if (/\b(mistake|mistakes|avoid|don't|dont|danger|risk|wrong|scam)\b/.test(t)) ranked.push('warning')
     if (parsed.kind === 'vs' || /\b(better|best|rank|top|review|test|tested)\b/.test(t)) {
@@ -599,16 +704,18 @@ export function pickStrategyIds(topic: string, rotate = 0): CreativeStrategyId[]
   const fallback: CreativeStrategyId[] =
     parsed.kind === 'music'
       ? ['emotion', 'curiosity', 'outcome', 'authority', 'reveal', 'transformation']
-      : [
-          'curiosity',
-          'outcome',
-          'contrarian',
-          'warning',
-          'emotion',
-          'authority',
-          'reveal',
-          'transformation',
-        ]
+      : isAutoProductTopic(t)
+        ? ['warning', 'curiosity', 'outcome', 'contrarian', 'emotion', 'reveal', 'authority']
+        : [
+            'curiosity',
+            'outcome',
+            'contrarian',
+            'warning',
+            'emotion',
+            'authority',
+            'reveal',
+            'transformation',
+          ]
 
   const ordered = [...ranked, ...fallback]
   const unique: CreativeStrategyId[] = []

@@ -104,4 +104,27 @@ describe('creativeBrief', () => {
     expect(fullHeadline(warning!)).not.toMatch(/DON'T MISTAKES/i)
     expect(fullHeadline(warning!)).toMatch(/HOME|BUYER|MISTAKE|AVOID/i)
   })
+
+  it('packages a Skoda Slavia YouTube title as a car story, not TITLED DID NOT BOOK faces', () => {
+    const title = 'Why did i not book slavia? (My sad skoda story)'
+    // Old bug: wrapping title in "YouTube video titled … High-CTR packaging still: …"
+    const poisoned = `YouTube video titled “${title}” by tech panda tamil. High-CTR packaging still: one clear subject, dramatic light, empty space for a bold title. Do not invent burned-in text.`
+    const cleaned = parseTopic(poisoned)
+    expect(cleaned.raw.toLowerCase()).toMatch(/slavia|skoda/)
+    expect(cleaned.raw).not.toMatch(/High-CTR packaging/i)
+    expect(naturalTitle(poisoned)).not.toMatch(/TITLED/i)
+
+    const brief = buildCreativeBrief(title)
+    expect(brief.kind).toBe('tech')
+    expect(brief.parsed.detail.toLowerCase()).toMatch(/sad skoda story/)
+    expect(brief.concepts.map((c) => c.id).slice(0, 3)).toEqual(
+      expect.arrayContaining(['warning', 'curiosity', 'outcome']),
+    )
+    for (const concept of brief.concepts) {
+      expect(fullHeadline(concept)).not.toMatch(/TITLED DID NOT BOOK/i)
+      expect(concept.visual.toLowerCase()).toMatch(/skoda|slavia|car|sedan|automotive/)
+    }
+    const curiosity = brief.concepts.find((c) => c.id === 'curiosity')
+    expect(curiosity?.headline).toMatch(/SAD SKODA STORY/i)
+  })
 })

@@ -203,12 +203,19 @@ export default function AiThumbnailMakerPage() {
       setYoutubeMeta(meta)
     }
 
+    // Use the clean oEmbed title for packaging — never mix packaging instructions into the topic.
     const sceneText = sceneBriefFromInput(input, meta)
-    const nextBrief = buildCreativeBrief(sceneText || input || 'YouTube video idea', { rotate })
+    const topicForBrief = meta?.title?.trim() || sceneText || input || 'YouTube video idea'
+    const nextBrief = buildCreativeBrief(topicForBrief, { rotate })
     setBrief(nextBrief)
     setDirectionRotate(rotate)
     const niche = getNiche(nicheIdForTopicKind(nextBrief.kind))
-    const fallbackTitle = meta?.title || nextBrief.parsed.hookPhrase || input || 'Thumbnail'
+    const fallbackTitle =
+      nextBrief.parsed.detail ||
+      meta?.title ||
+      nextBrief.parsed.hookPhrase ||
+      input ||
+      'Thumbnail'
     const lookOptions = nextBrief.concepts.map((_, conceptIndex) =>
       thumbOptionsFromBrief({
         brief: nextBrief,
