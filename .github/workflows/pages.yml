@@ -30,6 +30,7 @@ jobs:
         env:
           # Cloudflare Worker (thumbric-api) holding FAL_KEY — public base URL only.
           VITE_API_BASE: https://thumbric-api.thirumalaikumarpappaiah.workers.dev
+          VITE_BUILD_ID: ${{ github.sha }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

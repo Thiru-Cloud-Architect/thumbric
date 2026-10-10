@@ -589,6 +589,22 @@ async function blobFromFalJson(data: FalImageResult, signal: AbortSignal) {
   return fetchImageBlob(url, signal)
 }
 
+/** Ensure blob has an image MIME even when some browsers leave `type` empty. */
+async function asImageBlob(blob: Blob): Promise<Blob> {
+  if (blob.type.startsWith('image/')) return blob
+  const head = new Uint8Array(await blob.slice(0, 12).arrayBuffer())
+  if (head[0] === 0xff && head[1] === 0xd8) {
+    return new Blob([blob], { type: 'image/jpeg' })
+  }
+  if (head[0] === 0x89 && head[1] === 0x50 && head[2] === 0x4e && head[3] === 0x47) {
+    return new Blob([blob], { type: 'image/png' })
+  }
+  if (head[0] === 0x52 && head[1] === 0x49 && head[2] === 0x46 && head[3] === 0x46) {
+    return new Blob([blob], { type: 'image/webp' })
+  }
+  throw new Error('Studio AI did not return an image.')
+}
+
 /** Worker proxy — FAL_KEY stays on the server. */
 async function generateViaWorker(
   prompt: string,
@@ -601,26 +617,41 @@ async function generateViaWorker(
   const response = await fetch(`${base}/api/ai/image`, {
     method: 'POST',
     signal,
-    headers: { 'content-type': 'application/json' },
+    headers: {
+      'content-type': 'application/json',
+      accept: 'image/jpeg,application/json',
+    },
     body: JSON.stringify({ prompt, width, height, seed, model: FAL_MODEL }),
   })
   if (response.status === 501 || response.status === 404) {
     throw new Error('premium-unconfigured')
   }
   if (!response.ok) {
+    let detail = ''
+    try {
+      const errJson = (await response.clone().json()) as { error?: string; hint?: string }
+      detail = errJson.hint || errJson.error || ''
+    } catch {
+      detail = ''
+    }
+    if (detail) {
+      throw new Error(
+        detail.includes('billing') || detail.includes('top-up')
+          ? 'Pro imaging needs a fal balance top-up. Free preview is paused for this run.'
+          : `Pro imaging failed (${detail}).`,
+      )
+    }
     throw new AiHttpError(response.status, friendlyAiHttpMessage(response.status), true)
   }
   const contentType = response.headers.get('content-type') || ''
   if (contentType.includes('application/json')) {
-    const data = (await response.json()) as FalImageResult & { error?: string }
-    if (data.error) throw new Error('Studio AI is busy. Trying the free path.')
+    const data = (await response.json()) as FalImageResult & { error?: string; hint?: string }
+    if (data.error) {
+      throw new Error(data.hint || 'Pro imaging is busy right now.')
+    }
     return blobFromFalJson(data, signal)
   }
-  const blob = await response.blob()
-  if (!blob.type.startsWith('image/')) {
-    throw new Error('Studio AI did not return an image.')
-  }
-  return blob
+  return asImageBlob(await response.blob())
 }
 
 /**
@@ -683,6 +714,8 @@ export async function generateAiThumbnailImage(
   signal?: AbortSignal,
   seedOverride?: number,
   allowPremium = true,
+  /** When false, skip Pollinations (avoids surprise watermarks during a Pro run). */
+  allowPollinations = true,
 ): Promise<AiGeneratedImage> {
   const styleId = getAiStyle(options.styleId).id
   const prompt = buildAiThumbnailPrompt({ ...options, styleId })
@@ -696,18 +729,15 @@ export async function generateAiThumbnailImage(
   let lastError: Error | null = null
   try {
     if (allowPremium && backend.premium) {
-      try {
-        const blob = await generatePremiumBlob(prompt, width, height, seed, gate.signal)
-        const objectUrl = URL.createObjectURL(blob)
-        const image = await loadImage(objectUrl, gate.signal)
-        return { image, objectUrl, prompt, seed, styleId, lookLabel: 'Hero', source: 'premium' }
-      } catch (error) {
-        if (isAbortError(error) || (error instanceof DOMException && error.name === 'TimeoutError')) {
-          throw error
-        }
-        lastError = friendlyNetworkError(error)
-        // Fall through to free Pollinations so demos still work without a live key.
-      }
+      // Pro path: do NOT silently fall through to watermarked Pollinations.
+      const blob = await generatePremiumBlob(prompt, width, height, seed, gate.signal)
+      const objectUrl = URL.createObjectURL(blob)
+      const image = await loadImage(objectUrl, gate.signal)
+      return { image, objectUrl, prompt, seed, styleId, lookLabel: 'Hero', source: 'premium' }
+    }
+
+    if (!allowPollinations) {
+      throw lastError ?? new Error('Pro imaging unavailable for this look.')
     }
 
     for (const candidate of candidates) {
@@ -833,6 +863,9 @@ export async function generateAiThumbnailVariants(
     if (signal?.aborted) break
     const lookIndex = startIndex + i
     const allowPremium = premiumLeft > 0
+    // During a Pro batch, never call Pollinations for leftover looks — fill locally instead.
+    if (!allowPremium && usePremiumPacing) break
+    const allowPollinations = !usePremiumPacing
     const waitMs = allowPremium && usePremiumPacing
       ? waitMsBeforeLook(lookIndex, { firstOfRetryBatch: i === 0 && startIndex > 0 })
       : 0
@@ -852,6 +885,7 @@ export async function generateAiThumbnailVariants(
         signal,
         base + lookIndex * 9973,
         allowPremium,
+        allowPollinations,
       )
       if (item.source === 'premium') {
         premiumImagesUsed += 1

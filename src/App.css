@@ -7989,11 +7989,17 @@ footer {
   box-shadow: var(--shadow-card);
 }
 
+.ai-provider-status-block {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0 0 0.85rem;
+}
+
 .ai-provider-status {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  margin: 0 0 0.75rem;
+  margin: 0;
   padding: 0.35rem 0.7rem;
   border-radius: 999px;
   font-size: 0.76rem;
@@ -8002,6 +8008,7 @@ footer {
   border: 1px solid var(--line);
   background: color-mix(in srgb, var(--panel-surface) 88%, transparent);
   color: var(--muted);
+  width: fit-content;
 }
 
 .ai-provider-status[data-tier='pro'] {
@@ -8012,6 +8019,25 @@ footer {
 
 .ai-provider-status[data-tier='free'] {
   border-color: color-mix(in srgb, var(--accent) 30%, var(--line));
+}
+
+.ai-provider-hint {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: var(--muted);
+  max-width: 40rem;
+}
+
+.ai-source-line {
+  margin: 0 0 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.ai-source-line[data-source='premium'] {
+  color: color-mix(in srgb, var(--accent-2) 70%, var(--ink));
 }
 
 .tool-page-main.ai-maker-shell {

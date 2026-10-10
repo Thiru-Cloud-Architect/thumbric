@@ -41,10 +41,11 @@ export function readinessWithQuota(
     }
   }
 
+  const build = String(import.meta.env.VITE_BUILD_ID || '').slice(0, 7)
   return {
     ...readiness,
     tier: 'pro',
-    statusLabel: label,
+    statusLabel: build ? `${label} · ${build}` : label,
     statusHint: Number.isFinite(limit)
       ? 'Each pro look spends one of your monthly fal images. After that, free preview continues.'
       : 'Pro plan — unlimited fal imaging on this device unlock.',

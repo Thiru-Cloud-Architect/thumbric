@@ -355,20 +355,25 @@ export default function AiThumbnailMakerPage() {
       lede="One field: paste a YouTube link or describe the scene. We create a cover you can download or finish in the editor."
       hideMoreTools
     >
-      <p
-        className="ai-provider-status"
-        data-tier={provider.tier}
-        title={provider.statusHint}
-        aria-live="polite"
-      >
-        {provider.statusLabel}
-      </p>
+      <div className="ai-provider-status-block" aria-live="polite">
+        <p className="ai-provider-status" data-tier={provider.tier} title={provider.statusHint}>
+          {provider.statusLabel}
+        </p>
+        <p className="ai-provider-hint">{provider.statusHint}</p>
+      </div>
       {phase === 'ready' && chosen ? (
         <section className="ai-canva-result" aria-label="Thumbnail result">
           <p className="ai-canva-hook">
             {variants.length > 1
               ? `I found ${variants.length} ways to package your video.`
               : 'Your thumbnail is ready'}
+          </p>
+          <p className="ai-source-line" data-source={chosen.source || 'model'}>
+            {chosen.source === 'premium'
+              ? 'Engine: Pro imaging (fal) — no Pollinations watermark'
+              : chosen.source === 'studio'
+                ? 'Engine: studio fallback (Pro imaging unavailable)'
+                : 'Engine: free preview (may show a Pollinations mark)'}
           </p>
           {variants.length > 1 ? (
             <div className="ai-canva-thumbs" role="listbox" aria-label="Concept picks">
