@@ -230,7 +230,6 @@ export default {
     }
 
     if (request.method === 'POST' && (path === '/api/register' || path === '/register')) {
-      if (!env.THUMBRIC_USERS) return json({ error: 'KV is not bound' }, 501)
       let body: Partial<UserRow>
       try {
         body = (await request.json()) as Partial<UserRow>
@@ -243,17 +242,27 @@ export default {
         return json({ error: 'Valid name and email required' }, 400)
       }
 
-      const users = await readUsers(env)
-      const existing = users.findIndex((u) => u.email === email)
       const row: UserRow = {
         name,
         email,
-        createdAt: existing >= 0 ? users[existing]!.createdAt : new Date().toISOString(),
+        createdAt: new Date().toISOString(),
       }
-      if (existing >= 0) users[existing] = { ...users[existing], ...row }
-      else users.push(row)
+
+      // Device signup must never hard-fail if KV is missing — SPA already saved locally.
+      if (!env.THUMBRIC_USERS) {
+        return json({ ok: true, stored: false, user: row, total: 0 })
+      }
+
+      const users = await readUsers(env)
+      const existing = users.findIndex((u) => u.email === email)
+      if (existing >= 0) {
+        row.createdAt = users[existing]!.createdAt
+        users[existing] = { ...users[existing], ...row }
+      } else {
+        users.push(row)
+      }
       await writeUsers(env, users)
-      return json({ ok: true, user: row, total: users.length })
+      return json({ ok: true, stored: true, user: row, total: users.length })
     }
 
     if (request.method === 'GET' && (path === '/api/users' || path === '/users')) {

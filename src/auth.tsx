@@ -145,11 +145,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) {
         // Still keep local session so the creator can save today.
         setUser(next)
+        ;(next as AuthUser & { cloudNote?: string }).cloudNote =
+          local.cloudNote || 'Account saved on this device.'
         return next
       }
       next.provider = 'supabase'
     }
     setUser(next)
+    // Attach soft cloud note for the modal when sync is best-effort only.
+    ;(next as AuthUser & { cloudNote?: string }).cloudNote = local.cloudNote
     return next
   }, [])
 

@@ -17,6 +17,7 @@ export function AuthModal({ open, reason = 'generic', onClose, onSuccess }: Auth
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
+  const [done, setDone] = useState(false)
   const [error, setError] = useState('')
   const [note, setNote] = useState('')
 
@@ -42,22 +43,44 @@ export function AuthModal({ open, reason = 'generic', onClose, onSuccess }: Auth
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault()
+    if (busy || done) return
     setBusy(true)
     setError('')
     setNote('')
     try {
+      if (!email.trim()) {
+        throw new Error('Enter your email to continue.')
+      }
+      if (mode === 'register' && !name.trim() && !email.trim()) {
+        throw new Error('Enter your name and email.')
+      }
       if (mode === 'register') {
-        await signUp(name || email.split('@')[0] || 'Creator', email, password || undefined)
+        const created = await signUp(
+          name || email.split('@')[0] || 'Creator',
+          email,
+          password || undefined,
+        )
+        const cloudNote = (created as { cloudNote?: string }).cloudNote
         if (supabaseReady && !password) {
-          setNote('Check your email for a magic link if Supabase mail is enabled. You are signed in on this device now.')
+          setNote(
+            cloudNote ||
+              'Check your email for a magic link if Supabase mail is enabled. You are signed in on this device now.',
+          )
+        } else if (cloudNote) {
+          setNote(cloudNote)
+        } else {
+          setNote('Account ready on this device. You can save and download now.')
         }
       } else {
         await signIn(email, password || undefined)
+        setNote('Signed in. You can save and download now.')
       }
+      setDone(true)
       onSuccess?.()
-      onClose()
+      // Hold success state so mobile users see confirmation before the modal closes.
+      window.setTimeout(() => onClose(), 1400)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not continue.')
+      setError(err instanceof Error ? err.message : 'Could not continue. Try again.')
     } finally {
       setBusy(false)
     }
@@ -131,14 +154,30 @@ export function AuthModal({ open, reason = 'generic', onClose, onSuccess }: Auth
               Free account on this browser. You can save designs and download after you sign up.
             </p>
           )}
-          {error ? <p className="auth-error">{error}</p> : null}
-          {note ? <p className="auth-note">{note}</p> : null}
+          {error ? (
+            <p className="auth-error" role="alert">
+              {error}
+            </p>
+          ) : null}
+          {note ? (
+            <p className={done ? 'auth-note auth-note-success' : 'auth-note'} role="status">
+              {note}
+            </p>
+          ) : null}
           <div className="auth-actions">
-            <button type="submit" className="primary" disabled={busy}>
-              {busy ? 'Working…' : mode === 'register' ? 'Create free account' : 'Sign in'}
+            <button type="submit" className="primary" disabled={busy || done}>
+              {busy
+                ? 'Working…'
+                : done
+                  ? mode === 'register'
+                    ? 'Account created'
+                    : 'Signed in'
+                  : mode === 'register'
+                    ? 'Create free account'
+                    : 'Sign in'}
             </button>
-            <button type="button" className="chip" onClick={onClose}>
-              Cancel
+            <button type="button" className="chip" onClick={onClose} disabled={busy}>
+              {done ? 'Close' : 'Cancel'}
             </button>
           </div>
         </form>

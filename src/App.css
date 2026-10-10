@@ -6323,10 +6323,37 @@ footer {
   line-height: 1.4;
 }
 
+.auth-note-success {
+  padding: 0.55rem 0.7rem;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, #34d399 50%, var(--line));
+  background: color-mix(in srgb, #34d399 14%, var(--raise));
+  color: #a7f3d0;
+  font-size: 0.9rem;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+[data-theme='light'] .auth-note-success {
+  color: #065f46;
+  background: color-mix(in srgb, #6ee7b7 22%, #fff);
+}
+
 .auth-error {
   margin: 0;
-  color: #ff8f9a;
-  font-size: 0.86rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, #ff5c6a 55%, var(--line));
+  background: color-mix(in srgb, #ff5c6a 16%, var(--raise));
+  color: #ffb4bc;
+  font-size: 0.9rem;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+[data-theme='light'] .auth-error {
+  color: #9f1239;
+  background: color-mix(in srgb, #fb7185 18%, #fff);
 }
 
 .auth-actions {

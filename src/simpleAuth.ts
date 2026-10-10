@@ -7,6 +7,12 @@ export type SimpleUser = {
   createdAt: string
 }
 
+export type RegisterSimpleUserResult = SimpleUser & {
+  /** False when Worker cloud sync failed or was skipped — local account still works. */
+  cloudSynced: boolean
+  cloudNote?: string
+}
+
 function apiBase() {
   const fromEnv = import.meta.env.VITE_API_BASE as string | undefined
   return (fromEnv || '').replace(/\/$/, '')
@@ -37,8 +43,11 @@ export function saveSimpleUserLocal(user: SimpleUser) {
   localStorage.setItem(LOCAL_KEY, JSON.stringify(user))
 }
 
-/** Register / “login”: always save locally; sync to Worker JSON when VITE_API_BASE is set. */
-export async function registerSimpleUser(name: string, email: string): Promise<SimpleUser> {
+/**
+ * Register / “login”: always save locally first.
+ * Worker sync is best-effort — never block signup when KV/cloud is down.
+ */
+export async function registerSimpleUser(name: string, email: string): Promise<RegisterSimpleUserResult> {
   const user: SimpleUser = {
     name: name.trim(),
     email: email.trim().toLowerCase(),
@@ -54,18 +63,39 @@ export async function registerSimpleUser(name: string, email: string): Promise<S
   saveSimpleUserLocal(user)
 
   const base = apiBase()
-  if (base) {
+  if (!base) {
+    return { ...user, cloudSynced: false, cloudNote: 'Saved on this device.' }
+  }
+
+  try {
     const res = await fetch(`${base}/api/register`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(user),
     })
     if (!res.ok) {
-      throw new Error('Saved on this device. Cloud sync is not available yet.')
+      return {
+        ...user,
+        cloudSynced: false,
+        cloudNote: 'Account saved on this device. Cloud sync is unavailable right now.',
+      }
+    }
+    const data = (await res.json().catch(() => ({}))) as { stored?: boolean }
+    return {
+      ...user,
+      cloudSynced: data.stored !== false,
+      cloudNote:
+        data.stored === false
+          ? 'Account saved on this device. Cloud sync is not configured yet.'
+          : undefined,
+    }
+  } catch {
+    return {
+      ...user,
+      cloudSynced: false,
+      cloudNote: 'Account saved on this device. Could not reach the sync server.',
     }
   }
-
-  return user
 }
 
 export function clearSimpleUser() {

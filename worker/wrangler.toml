@@ -2,11 +2,9 @@ name = "thumbric-api"
 main = "src/index.ts"
 compatibility_date = "2026-10-01"
 
-# After creating KV: wrangler kv namespace create THUMBRIC_USERS
-# then paste the id below and uncomment.
-# [[kv_namespaces]]
-# binding = "THUMBRIC_USERS"
-# id = "YOUR_KV_NAMESPACE_ID"
+[[kv_namespaces]]
+binding = "THUMBRIC_USERS"
+id = "60a7eb5c5fc646b7b5c417c1c0193e79"
 
 [vars]
 # Optional: set ADMIN_TOKEN via `wrangler secret put ADMIN_TOKEN` for GET /api/users
