@@ -30,7 +30,7 @@ Shipped: calm AI one-box maker, **multi-stage generation progress**, **3 packagi
 
 ## Current stamp
 
-`UI_BUILD=2026.10.10-account-plan`
+`UI_BUILD=2026.10.10-packaging`
 
 ## Live audit note (2026-10-09)
 

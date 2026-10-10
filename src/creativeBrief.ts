@@ -61,6 +61,7 @@ export type CreativeBrief = {
   concepts: CreativeConcept[]
 }
 
+/** Words dropped when building keyword lists — NOT used to scramble titles. */
 const STOP = new Set([
   'a',
   'an',
@@ -84,7 +85,6 @@ const STOP = new Set([
   'that',
   'when',
   'from',
-  'into',
   'how',
   'why',
   'what',
@@ -103,12 +103,39 @@ const STOP = new Set([
   'full',
   'hd',
   '4k',
+  'please',
+  'make',
+  'create',
+  'thumbnail',
+  'youtube',
+])
+
+/** Keep short connectors so titles stay grammatical ("fell into a dug well"). */
+const KEEP_CONNECTORS = new Set([
+  'a',
+  'an',
+  'the',
+  'into',
+  'onto',
+  'from',
+  'with',
+  'without',
+  'vs',
+  'versus',
+  'and',
+  'or',
+  'of',
+  'in',
+  'on',
+  'for',
+  'to',
 ])
 
 function cleanTopic(raw: string) {
   return raw
     .replace(/^(cinematic\s+)?(still|shot|image|photo|photograph|thumbnail)\s+that\s+matches\s*:?\s*/i, '')
     .replace(/^(my\s+video\s+is\s+about\s+|this\s+video\s+is\s+about\s+|i\s+made\s+a\s+video\s+about\s+)/i, '')
+    .replace(/^(generate|make|create)\s+(me\s+)?(a\s+)?(thumbnail|cover|image)\s+(for|of|about)\s+/i, '')
     .replace(/\s+/g, ' ')
     .trim()
 }
@@ -122,10 +149,49 @@ function titleCasePhrase(value: string, maxWords = 5) {
     .join(' ')
 }
 
-function clipHeadline(value: string, max = 28) {
-  const cleaned = value.replace(/\s+/g, ' ').trim()
+function clipHeadline(value: string, max = 32) {
+  let cleaned = value.replace(/\s+/g, ' ').trim()
+  if (cleaned.length <= max) return cleaned
+  // Drop optional articles first so endings like WELL survive the mobile cap.
+  cleaned = cleaned.replace(/\s+\b(A|AN|THE)\b\s+/gi, ' ').replace(/\s+/g, ' ').trim()
   if (cleaned.length <= max) return cleaned
   return cleaned.slice(0, max).replace(/\s+\S*$/, '').trim() || cleaned.slice(0, max)
+}
+
+/**
+ * Mobile title from the user's words in order — never a bag-of-keywords scramble.
+ * "elephant fell into a dug well" → "ELEPHANT FELL INTO DUG WELL"
+ * not "ELEPHANT FELL DUG".
+ */
+export function naturalTitle(rawTopic: string, maxChars = 32) {
+  let t = cleanTopic(rawTopic)
+  t = t.replace(/^(why|how|what|when|who)\s+/i, '')
+  const words = t
+    .split(/\s+/)
+    .filter(Boolean)
+    .filter((w) => {
+      const lower = w.toLowerCase().replace(/[^a-z0-9'-]/g, '')
+      if (!lower) return false
+      if (KEEP_CONNECTORS.has(lower)) return true
+      if (STOP.has(lower)) return false
+      return true
+    })
+  // Drop leading connectors ("into a …")
+  while (words.length && KEEP_CONNECTORS.has(words[0]!.toLowerCase().replace(/[^a-z0-9'-]/g, ''))) {
+    words.shift()
+  }
+  const phrase = words.join(' ') || cleanTopic(rawTopic)
+  return clipHeadline(phrase.toUpperCase(), maxChars)
+}
+
+function subjectFromNatural(title: string) {
+  const words = title
+    .split(/\s+/)
+    .filter((w) => {
+      const lower = w.toLowerCase()
+      return lower.length > 2 && !KEEP_CONNECTORS.has(lower) && !STOP.has(lower)
+    })
+  return titleCasePhrase(words.slice(0, 2).join(' '), 2) || titleCasePhrase(title, 2)
 }
 
 function detectKind(topic: string): TopicKind {
@@ -166,16 +232,16 @@ export function parseTopic(rawTopic: string): ParsedTopic {
   const split = splitArtistTitle(raw)
   const keys = raw
     .toLowerCase()
-    .replace(/[^a-z0-9\s$-]/g, ' ')
+    .replace(/[^a-z0-9\s$-']/g, ' ')
     .split(/\s+/)
-    .filter((w) => w.length > 2 && !STOP.has(w))
+    .filter((w) => w.length > 2 && !STOP.has(w) && !KEEP_CONNECTORS.has(w))
     .slice(0, 8)
 
   if (split) {
     const hookPhrase =
       kind === 'music'
         ? titleCasePhrase(split.detail, 4)
-        : titleCasePhrase(split.detail || split.subject, 4)
+        : titleCasePhrase(split.detail || split.subject, 5)
     return {
       raw,
       kind,
@@ -186,11 +252,12 @@ export function parseTopic(rawTopic: string): ParsedTopic {
     }
   }
 
-  const hookPhrase = titleCasePhrase(keys.slice(0, 3).join(' '), 3) || 'This Video'
+  const title = naturalTitle(raw, 36)
+  const hookPhrase = titleCasePhrase(title.toLowerCase(), 6) || 'This Video'
   return {
     raw,
     kind,
-    subject: titleCasePhrase(keys.slice(0, 2).join(' '), 2) || hookPhrase,
+    subject: subjectFromNatural(title),
     detail: '',
     keys,
     hookPhrase,
@@ -274,8 +341,8 @@ function musicFactories(): Partial<Record<CreativeStrategyId, StrategyFactory>> 
         'passionate eyes to camera, tear-catch light, concert-cinematic grade',
         'right',
       ),
-      headline: clipHeadline((p.detail || p.hookPhrase).toUpperCase()),
-      subheadline: p.subject ? clipHeadline(p.subject.toUpperCase(), 18) : 'FULL SONG',
+      headline: clipHeadline((p.detail || p.hookPhrase).toUpperCase(), 22),
+      subheadline: p.subject ? clipHeadline(p.subject.toUpperCase(), 24) : 'FULL SONG',
       placement: 'right',
     }),
     curiosity: (p) => ({
@@ -288,7 +355,7 @@ function musicFactories(): Partial<Record<CreativeStrategyId, StrategyFactory>> 
         'half-lit face or couple moment, intrigue without horror',
         'left',
       ),
-      headline: clipHeadline(`NEW ${p.detail || p.hookPhrase}`.toUpperCase()),
+      headline: clipHeadline((p.detail || p.hookPhrase).toUpperCase(), 22),
       subheadline: 'OUT NOW',
       placement: 'left',
     }),
@@ -302,7 +369,7 @@ function musicFactories(): Partial<Record<CreativeStrategyId, StrategyFactory>> 
         'celebration / catharsis mood, premium film still',
         'left',
       ),
-      headline: clipHeadline((p.detail || p.hookPhrase).toUpperCase()),
+      headline: clipHeadline((p.detail || p.hookPhrase).toUpperCase(), 22),
       subheadline: 'MUST HEAR',
       placement: 'left',
     }),
@@ -316,8 +383,8 @@ function musicFactories(): Partial<Record<CreativeStrategyId, StrategyFactory>> 
         'direct eye contact, calm power, sharp grooming',
         'left',
       ),
-      headline: clipHeadline(p.subject.toUpperCase(), 22),
-      subheadline: clipHeadline((p.detail || 'OFFICIAL').toUpperCase(), 18),
+      headline: clipHeadline(p.subject.toUpperCase(), 24),
+      subheadline: clipHeadline((p.detail || 'OFFICIAL').toUpperCase(), 20),
       placement: 'left',
     }),
     reveal: (p) => ({
@@ -351,122 +418,156 @@ function musicFactories(): Partial<Record<CreativeStrategyId, StrategyFactory>> 
   }
 }
 
+/** Concrete nouns/verbs from the topic for image prompts (order preserved). */
+function visualSubject(p: ParsedTopic) {
+  const line = naturalTitle(p.raw, 48).toLowerCase()
+  return line || p.raw
+}
+
 const GENERAL_FACTORIES: Record<CreativeStrategyId, StrategyFactory> = {
-  warning: (p) => ({
-    id: 'warning',
-    strategy: 'The Warning',
-    why: 'Creates urgency — viewers pause before they make a mistake.',
-    emotion: 'fear',
-    visual: wowFrame(
-      `dramatic warning scene about ${p.raw}, oversized hero subject with urgent expression`,
-      'red-rim urgency light, high contrast',
-      'left',
-    ),
-    headline: clipHeadline(`DON'T ${p.hookPhrase}`.toUpperCase()),
-    subheadline: 'YET',
-    placement: 'left',
-  }),
-  curiosity: (p) => {
-    // Never "WHAT {firstToken} HIDES" — use a real hook phrase from the topic.
-    const phrase = p.hookPhrase || p.subject
+  warning: (p) => {
+    const title = naturalTitle(p.raw, 24)
+    const mistake = /\b(mistake|mistakes|avoid|don't|dont|danger|scam|wrong)\b/i.test(p.raw)
     return {
-      id: 'curiosity',
-      strategy: 'The Curiosity Gap',
-      why: 'Hints at a reveal without spoiling it — strong for browse sessions.',
-      emotion: 'curiosity',
+      id: 'warning',
+      strategy: 'The Warning',
+      why: 'Creates urgency — viewers pause before they make a mistake.',
+      emotion: 'fear',
       visual: wowFrame(
-        `mysterious cinematic still about ${p.raw}, subject half-lit with intrigue`,
-        'shallow depth of field, one clear hero',
+        `dramatic documentary-style warning still of ${visualSubject(p)}, clear hero subject, urgent expression, scene matches the real topic`,
+        'red-rim urgency light, high contrast',
         'left',
       ),
-      headline: clipHeadline(`WHY ${phrase}`.toUpperCase()),
-      subheadline: 'MATTERS',
+      headline: mistake ? 'AVOID THIS' : title,
+      subheadline: mistake ? clipHeadline(title, 22) : 'WATCH OUT',
       placement: 'left',
     }
   },
-  outcome: (p) => ({
-    id: 'outcome',
-    strategy: 'The Outcome',
-    why: 'Sells the result viewers want — clear promise on mobile.',
-    emotion: 'desire',
-    visual: wowFrame(
-      `aspirational hero still of the successful outcome for ${p.raw}`,
-      'bright premium light, clean background',
-      'right',
-    ),
-    headline: clipHeadline(`${p.hookPhrase}`.toUpperCase()),
-    subheadline: 'THAT WORKS',
-    placement: 'right',
-  }),
-  contrarian: (p) => ({
-    id: 'contrarian',
-    strategy: 'The Contrarian',
-    why: 'Challenges the default advice — spikes curiosity CTR.',
-    emotion: 'surprise',
-    visual: wowFrame(
-      `unexpected twist visual for ${p.raw}, subject looking at camera in disbelief`,
-      'cinematic grade, single frame',
-      'center',
-    ),
-    headline: 'THEY LIED',
-    subheadline: clipHeadline(`ABOUT ${p.hookPhrase}`.toUpperCase(), 22),
-    placement: 'center',
-  }),
-  emotion: (p) => ({
-    id: 'emotion',
-    strategy: 'The Emotion',
-    why: 'Face-forward reaction that reads as a tiny phone tile.',
-    emotion: 'intensity',
-    visual: wowFrame(
-      `expressive human face reacting to ${p.raw}, close-up catchlights`,
-      'emotional intensity, soft bokeh',
-      'right',
-    ),
-    headline: 'WAIT…',
-    subheadline: clipHeadline(p.hookPhrase.toUpperCase(), 18),
-    placement: 'right',
-  }),
-  authority: (p) => ({
-    id: 'authority',
-    strategy: 'The Authority',
-    why: 'Positions you as the guide who already figured it out.',
-    emotion: 'trust',
-    visual: wowFrame(
-      `confident creator or expert framing for ${p.raw}, clean studio light`,
-      'premium still, calm negative space for type',
-      'left',
-    ),
-    headline: clipHeadline(`${p.hookPhrase}`.toUpperCase()),
-    subheadline: 'GUIDE',
-    placement: 'left',
-  }),
-  transformation: (p) => ({
-    id: 'transformation',
-    strategy: 'Before → After',
-    why: 'Shows change — classic YouTube packaging for tutorials.',
-    emotion: 'hope',
-    visual: wowFrame(
-      `single cinematic still suggesting transformation around ${p.raw}, brighter key light on the subject`,
-      'hopeful grade — one frame only',
-      'center',
-    ),
-    headline: 'FROM ZERO',
-    subheadline: 'TO THIS',
-    placement: 'center',
-  }),
-  reveal: (p) => ({
-    id: 'reveal',
-    strategy: 'The Reveal',
-    why: 'Teases a secret or ranking that feels worth the click.',
-    emotion: 'anticipation',
-    visual: wowFrame(
-      `reveal moment still for ${p.raw}, spotlight on the key object or person`,
-      'dark surrounding, one photograph',
-      'left',
-    ),
-    headline: clipHeadline(`#1 ${p.hookPhrase}`.toUpperCase()),
-    placement: 'left',
-  }),
+  curiosity: (p) => {
+    // Lead with the real topic — never "WHY {scrambled keys} MATTERS".
+    const title = naturalTitle(p.raw, 30)
+    const vs = p.kind === 'vs' || /\bvs\.?\b|versus/i.test(p.raw)
+    return {
+      id: 'curiosity',
+      strategy: 'The Curiosity Gap',
+      why: 'Puts the real story up front, then teases the missing piece.',
+      emotion: 'curiosity',
+      visual: wowFrame(
+        `cinematic still of ${visualSubject(p)}, one clear hero, intrigue without spoiling the ending`,
+        'shallow depth of field, moody key light',
+        'left',
+      ),
+      headline: title,
+      subheadline: vs ? 'WHO WINS?' : 'WHAT HAPPENED?',
+      placement: 'left',
+    }
+  },
+  outcome: (p) => {
+    const title = naturalTitle(p.raw, 28)
+    const rescue = /\b(rescue|saved|survive|win|won|escaped?)\b/i.test(p.raw)
+    return {
+      id: 'outcome',
+      strategy: 'The Outcome',
+      why: 'Sells the result viewers came for — readable on a phone tile.',
+      emotion: 'desire',
+      visual: wowFrame(
+        `hopeful aftermath still for ${visualSubject(p)}, ${
+          rescue ? 'relief and rescue energy' : 'successful outcome energy'
+        }, one hero subject`,
+        'brighter premium light, clean background',
+        'right',
+      ),
+      headline: rescue ? 'THEY MADE IT' : 'THE REAL ENDING',
+      subheadline: clipHeadline(title, 28),
+      placement: 'right',
+    }
+  },
+  contrarian: (p) => {
+    const title = naturalTitle(p.raw, 28)
+    return {
+      id: 'contrarian',
+      strategy: 'The Contrarian',
+      why: 'Challenges the obvious take — spikes curiosity CTR.',
+      emotion: 'surprise',
+      visual: wowFrame(
+        `unexpected angle on ${visualSubject(p)}, subject looking at camera in disbelief`,
+        'cinematic grade, single frame',
+        'center',
+      ),
+      headline: title,
+      subheadline: 'NOT THE STORY',
+      placement: 'center',
+    }
+  },
+  emotion: (p) => {
+    const title = naturalTitle(p.raw, 22)
+    return {
+      id: 'emotion',
+      strategy: 'The Emotion',
+      why: 'Face-forward reaction that reads as a tiny phone tile.',
+      emotion: 'intensity',
+      visual: wowFrame(
+        `expressive human face reacting to ${visualSubject(p)}, close-up catchlights, scene context in background bokeh`,
+        'emotional intensity, soft bokeh',
+        'right',
+      ),
+      headline: title,
+      subheadline: 'WATCH THIS',
+      placement: 'right',
+    }
+  },
+  authority: (p) => {
+    const title = naturalTitle(p.raw, 24)
+    return {
+      id: 'authority',
+      strategy: 'The Authority',
+      why: 'Positions you as the guide who already figured it out.',
+      emotion: 'trust',
+      visual: wowFrame(
+        `confident creator or expert framing for ${visualSubject(p)}, clean studio light, topic props visible`,
+        'premium still, calm negative space for type',
+        'left',
+      ),
+      headline: title,
+      subheadline: 'EXPLAINED',
+      placement: 'left',
+    }
+  },
+  transformation: (p) => {
+    const title = naturalTitle(p.raw, 20)
+    return {
+      id: 'transformation',
+      strategy: 'Before → After',
+      why: 'Shows change — classic YouTube packaging for tutorials and stories.',
+      emotion: 'hope',
+      visual: wowFrame(
+        `single cinematic still suggesting transformation around ${visualSubject(p)}, brighter key light on the subject`,
+        'hopeful grade — one frame only',
+        'center',
+      ),
+      headline: 'BEFORE / AFTER',
+      subheadline: clipHeadline(title, 20),
+      placement: 'center',
+    }
+  },
+  reveal: (p) => {
+    const title = naturalTitle(p.raw, 24)
+    const vs = p.kind === 'vs' || /\bvs\.?\b|versus/i.test(p.raw)
+    return {
+      id: 'reveal',
+      strategy: 'The Reveal',
+      why: 'Teases a ranking or reveal that feels worth the click.',
+      emotion: 'anticipation',
+      visual: wowFrame(
+        `reveal moment still for ${visualSubject(p)}, spotlight on the key object or person`,
+        'dark surrounding, one photograph',
+        'left',
+      ),
+      headline: vs ? title : clipHeadline(title, 24),
+      subheadline: vs ? 'WHO WINS?' : 'THE TRUTH',
+      placement: 'left',
+    }
+  },
 }
 
 function factoryFor(kind: TopicKind, id: CreativeStrategyId): StrategyFactory {

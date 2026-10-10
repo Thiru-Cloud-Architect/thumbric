@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildCreativeBrief,
   fullHeadline,
+  naturalTitle,
   nicheIdForTopicKind,
   parseTopic,
   pickStrategyIds,
@@ -51,7 +52,9 @@ describe('creativeBrief', () => {
     expect(brief.kind).toBe('music')
     for (const concept of brief.concepts) {
       expect(concept.headline).not.toMatch(/^WHAT\s+\w+\s+HIDES$/i)
-      expect(`${concept.headline} ${concept.subheadline || ''}`).toMatch(/pattamboochi|vishwanath|new drop|must hear|full song|out now|from silence/i)
+      expect(`${concept.headline} ${concept.subheadline || ''}`).toMatch(
+        /pattamboochi|vishwanath|new drop|must hear|full song|out now|from silence/i,
+      )
     }
     const curiosity = brief.concepts.find((c) => c.id === 'curiosity')
     if (curiosity) {
@@ -60,11 +63,45 @@ describe('creativeBrief', () => {
     }
   })
 
+  it('keeps natural word order for story topics (no WHY…MATTERS scramble)', () => {
+    const title = naturalTitle('elephant fell into a dug well')
+    expect(title).toMatch(/ELEPHANT FELL INTO/)
+    expect(title).toMatch(/WELL/)
+    expect(title).not.toMatch(/^ELEPHANT FELL DUG$/)
+
+    const brief = buildCreativeBrief('elephant fell into a dug well')
+    const curiosity = brief.concepts.find((c) => c.id === 'curiosity')
+    expect(curiosity).toBeTruthy()
+    expect(curiosity!.headline).toMatch(/ELEPHANT/)
+    expect(curiosity!.headline).toMatch(/FELL/)
+    expect(curiosity!.headline).toMatch(/WELL/)
+    expect(curiosity!.headline).not.toMatch(/^WHY\b/)
+    expect(fullHeadline(curiosity!)).not.toMatch(/WHY .+ MATTERS/i)
+    expect(fullHeadline(curiosity!)).not.toMatch(/FELL DUG(?! WELL)/i)
+    expect(curiosity!.visual.toLowerCase()).toMatch(/elephant/)
+
+    for (const concept of brief.concepts) {
+      expect(fullHeadline(concept)).not.toMatch(/THAT WORKS/i)
+      expect(fullHeadline(concept)).not.toMatch(/WHY .+ MATTERS/i)
+      expect(concept.visual.toLowerCase()).toMatch(/elephant|dug|well|fell/)
+    }
+  })
+
   it('uses topic hook phrases instead of first-token HIDES for general curiosity', () => {
     const brief = buildCreativeBrief('iPhone 16 vs Pixel camera test')
     const curiosity = brief.concepts.find((c) => c.id === 'curiosity')
     if (curiosity) {
       expect(curiosity.headline).not.toMatch(/HIDES/i)
+      expect(curiosity.headline).not.toMatch(/^WHY\b/)
+      expect(fullHeadline(curiosity)).toMatch(/IPHONE|PIXEL|CAMERA/i)
     }
+  })
+
+  it('does not scramble home-buyer mistake titles into DON\'T MISTAKES', () => {
+    const brief = buildCreativeBrief('5 mistakes first-time home buyers make')
+    const warning = brief.concepts.find((c) => c.id === 'warning')
+    expect(warning).toBeTruthy()
+    expect(fullHeadline(warning!)).not.toMatch(/DON'T MISTAKES/i)
+    expect(fullHeadline(warning!)).toMatch(/HOME|BUYER|MISTAKE|AVOID/i)
   })
 })
