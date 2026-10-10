@@ -172,8 +172,18 @@ async function handleAiImage(request: Request, env: Env) {
       ? await generateWithFal(env, prompt, width, height, seed)
       : await generateWithWorkersAi(env, prompt, seed)
     return imageResponse(generated.bytes, generated.mime)
-  } catch {
-    return json({ error: 'generate_failed' }, 502)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'generate_failed'
+    const billingLocked = /TOP_UP|locked|exhausted|payment|balance/i.test(message)
+    return json(
+      {
+        error: billingLocked ? 'billing_required' : 'generate_failed',
+        hint: billingLocked
+          ? 'fal.ai account needs a balance top-up at https://fal.ai/dashboard/billing'
+          : 'Image generation failed. Retry shortly or check Worker logs.',
+      },
+      502,
+    )
   }
 }
 
