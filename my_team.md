@@ -35,7 +35,7 @@ P1: export gate no modal stack — `exportGate.test.ts`; **local + production ve
 ### NOT COMPLETED (orchestrator / paid infra — do not claim)
 
 - ~~Paid **fal** path~~ — Worker + `VITE_API_BASE` live; quota Free 3 / Creator 60 / Pro unlimited
-- Creative brief still heuristic (no LLM) — improved for music/artist-song; Nano Banana / critic still open
+- Creative brief still heuristic (no LLM) — guarded by `src/packagingCorpus.ts` (20+ failure-class cases in CI); Nano Banana / critic still open
 - YouTube **frame extraction** from video (public title only today) — §32 optional future
 - Gemini / Nano Banana **provider router** — §2–3 (documented only; not wired)
 - AI **critic** + targeted patch ops — §16–21
@@ -67,6 +67,7 @@ Cloud Agents run on a remote Linux VM and **cannot read** `C:\Users\…\Download
 |------------|--------|
 | One-box scene **or** YouTube URL input | `/ai-thumbnail-maker`, `AiThumbnailMakerPage.tsx` |
 | `buildCreativeBrief()` — topic → concepts / headlines (+ rotate for new directions) | `creativeBrief.ts` |
+| **Packaging golden corpus** — failure classes (YouTube wrapper, music, auto, finance, tech, gaming, …) | `packagingCorpus.ts` + `packagingCorpus.test.ts` (CI) |
 | `generateAiThumbnailVariants()` — free Pollinations + studio fallback looks | `aiThumbnail.ts` |
 | **Multi-stage progress UI** (`planning → generating → assembling`) matching master §26/§54 | `aiOrchestrator.ts`, maker page |
 | **Brief → variant wiring** (concept visual + placement-aligned composition index) | `thumbOptionsFromBrief`, `attachCreativeConcepts` |

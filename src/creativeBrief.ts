@@ -170,6 +170,12 @@ function cleanTopic(raw: string) {
     .replace(/^(generate|make|create)\s+(me\s+)?(a\s+)?(thumbnail|cover|image)\s+(for|of|about)\s+/i, '')
     // Drop trailing emoji / decorative symbols so "(My sad skoda story) ❤️" still parses.
     .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]+/gu, ' ')
+    // YouTube upload noise — not packaging content.
+    .replace(
+      /\b(\(?\s*(official\s+)?(music\s+)?video\s*\)?|\(?\s*\d*k\s*remaster\s*\)?|\(?\s*lyrics?\s*\)?|\(?\s*lyric\s+video\s*\)?|\(?\s*hd\s*\)?|\(?\s*4k\s*\)?)\b/gi,
+      ' ',
+    )
+    .replace(/\(\s*\)/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
 }
@@ -228,6 +234,15 @@ function subjectFromNatural(title: string) {
   return titleCasePhrase(words.slice(0, 2).join(' '), 2) || titleCasePhrase(title, 2)
 }
 
+/** Content tokens for overlap checks (corpus / QA). */
+export function sceneTopicTokens(raw: string): string[] {
+  return cleanTopic(raw)
+    .toLowerCase()
+    .replace(/[^a-z0-9\s'-]/g, ' ')
+    .split(/\s+/)
+    .filter((w) => w.length > 2 && !STOP.has(w) && !KEEP_CONNECTORS.has(w))
+}
+
 function isAutoProductTopic(topic: string) {
   return /\b(car|cars|skoda|slavia|kushaq|kodiaq|dealer|dealership|tesla|bmw|audi|hyundai|toyota|honda|suzuki|vehicle|test\s*drive|booking|booked|emi|showroom)\b/i.test(
     topic,
@@ -237,9 +252,10 @@ function isAutoProductTopic(topic: string) {
 function detectKind(topic: string): TopicKind {
   const t = topic.toLowerCase()
   if (
-    /\b(song|songs|lyric|lyrics|music|album|melody|cover|singer|rap|ost|soundtrack|mv|karaoke|pattamboochi|gaana|melody)\b/.test(
+    /\b(song|songs|lyric|lyrics|music|album|melody|cover|singer|rap|ost|soundtrack|mv|karaoke|pattamboochi|gaana|anirudh|ariana)\b/.test(
       t,
-    )
+    ) ||
+    /\blyric\s+video\b/.test(t)
   ) {
     return 'music'
   }
@@ -249,7 +265,9 @@ function detectKind(topic: string): TopicKind {
   // Cars / booking / dealer reviews are product-tech, not "sad story → face close-up".
   if (
     isAutoProductTopic(t) ||
-    /\b(iphone|android|ai|coding|developer|gadget|review|unbox|scam|dealer)\b/.test(t)
+    /\b(iphone|android|macbook|laptop|ai|coding|developer|gadget|review|unbox(?:ing)?|scam|dealer)\b/.test(
+      t,
+    )
   ) {
     return 'tech'
   }
@@ -292,8 +310,9 @@ function extractParenDetail(topic: string): { core: string; detail: string } {
 }
 
 export function parseTopic(rawTopic: string): ParsedTopic {
+  // Kind from the original string so upload-noise stripping does not drop "lyric video" / "unboxing".
+  const kind = detectKind(rawTopic)
   const raw = cleanTopic(rawTopic) || 'my YouTube video'
-  const kind = detectKind(raw)
   const split = splitArtistTitle(raw)
   const paren = extractParenDetail(raw)
   const keys = raw

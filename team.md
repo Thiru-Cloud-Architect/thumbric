@@ -26,11 +26,22 @@ Shipped: calm AI one-box maker, **multi-stage generation progress**, **3 packagi
 
 **Windows Downloads note:** Cloud Agents cannot read `C:\Users\…\Downloads\…` until the file is uploaded; the orchestrator master is now in `docs/`.
 
-**Honest AI gap:** free Pollinations + paid fal (Worker `FAL_KEY` + Pages `VITE_API_BASE`) are live. Creative brief now parses artist/song prompts (no more `WHAT {firstWord} HIDES`). Gemini / Nano Banana router, AI critic, ThumbnailDocument layers, Stripe, YouTube frames, OAuth CTR are **not** done. See `@my_team.md`.
+**Honest AI gap:** free Pollinations + paid fal (Worker `FAL_KEY` + Pages `VITE_API_BASE`) are live. Creative packaging is guarded by a **golden corpus** (failure classes, not one-off screenshots). Gemini / Nano Banana router, AI critic, ThumbnailDocument layers, Stripe, YouTube frames, OAuth CTR are **not** done. See `@my_team.md`.
+
+## Packaging validation (do not one-off fix)
+
+Whack-a-mole on single URLs is banned. When packaging is wrong:
+
+1. Add a case to `src/packagingCorpus.ts` under the right **failure class** (`youtube-wrapper`, `music`, `auto-dealer`, `finance`, `tech-vs`, `gaming`, `tutorial`, `story`, `myth`, edges).
+2. Run `npm test -- src/packagingCorpus.test.ts` (also runs in CI via `npm test`).
+3. Fix the **class** in `creativeBrief.ts` / `youtubeUrl.ts` until the whole corpus is green.
+4. Never ship a screenshot fix without a corpus row.
+
+Invariants enforced for every case: no `TITLED` / High-CTR wrapper / `WHAT X HIDES` / `WHY … MATTERS`; topic tokens survive; visuals carry product/scene anchors; oEmbed titles stay clean.
 
 ## Current stamp
 
-`UI_BUILD=2026.10.10-yt-topic`
+`UI_BUILD=2026.10.10-pack-corpus`
 
 ## Live audit note (2026-10-09)
 
