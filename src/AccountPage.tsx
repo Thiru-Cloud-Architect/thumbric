@@ -1,32 +1,81 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { referralUrl, getOrCreateReferralId } from './analytics'
 import { PRODUCT_NAME_FULL, SITE_URL, UI_BUILD } from './brand'
 import { DocumentHead } from './DocumentHead'
 import { SiteFooter } from './LandingSections'
 import { SiteHeader } from './SiteHeader'
 import { AuthModal } from './AuthModal'
-import { loadEntitlement } from './entitlement'
+import {
+  CREATOR_CLEAN_DOWNLOADS_PER_MONTH,
+  CREATOR_PRO_IMAGES_PER_MONTH,
+  FREE_PRO_IMAGES_PER_MONTH,
+  cleanDownloadsLeft,
+  isPaid,
+  loadEntitlement,
+  planDisplayName,
+  proImageLimit,
+  proImagesLeft,
+  type Entitlement,
+} from './entitlement'
 import { planPriceLabel } from './plans'
 import { useBillingCurrency } from './useBillingCurrency'
 import { useAuth } from './auth'
 import { FREE_DAILY_DOWNLOADS, loadDailyDownloads } from './usageLimits'
 import { loadThumbnailHistory } from './thumbnailHistory'
+import { loadSimpleUser } from './simpleAuth'
+import { useHeaderAuth } from './useHeaderAuth'
 import './App.css'
+
+function quotaLabel(left: number, limit: number) {
+  if (!Number.isFinite(limit)) return 'Unlimited'
+  return `${Math.max(0, left)} / ${limit}`
+}
 
 export default function AccountPage() {
   const { user, signOut } = useAuth()
+  const header = useHeaderAuth()
   const { currency } = useBillingCurrency()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [authOpen, setAuthOpen] = useState(false)
   const [copied, setCopied] = useState(false)
-  const entitlement = loadEntitlement()
+  const [entitlement, setEntitlement] = useState<Entitlement>(() => loadEntitlement())
   const history = loadThumbnailHistory()
+  const simple = loadSimpleUser()
   const refLink = referralUrl(SITE_URL)
-  const name = user?.name || 'Guest'
-  const email = user?.email || entitlement.email || ''
+  const name = user?.name || simple?.name || entitlement.email?.split('@')[0] || 'Guest'
+  const email = user?.email || simple?.email || entitlement.email || ''
   const initial = name.trim().charAt(0).toUpperCase() || 'T'
   const usedToday = loadDailyDownloads().count
-  const leftToday = user ? Math.max(0, FREE_DAILY_DOWNLOADS - usedToday) : 0
+  const watermarkLeft = email
+    ? Math.max(0, FREE_DAILY_DOWNLOADS - usedToday)
+    : 0
+  const planName = planDisplayName(entitlement)
+  const paid = isPaid(entitlement)
+  const cleanLeft = cleanDownloadsLeft(entitlement)
+  const proLeft = proImagesLeft(entitlement)
+  const proLimit = proImageLimit(entitlement)
+  const paidUntilLabel =
+    entitlement.paidUntil && paid
+      ? new Date(entitlement.paidUntil).toLocaleDateString(undefined, {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        })
+      : null
+
+  useEffect(() => {
+    setEntitlement(loadEntitlement())
+  }, [user?.email])
+
+  useEffect(() => {
+    if (searchParams.get('signin') === '1' && !user && !simple) {
+      setAuthOpen(true)
+      const next = new URLSearchParams(searchParams)
+      next.delete('signin')
+      setSearchParams(next, { replace: true })
+    }
+  }, [searchParams, setSearchParams, user, simple])
 
   async function copyRef() {
     try {
@@ -41,8 +90,20 @@ export default function AccountPage() {
   return (
     <div className="page">
       <DocumentHead path="/account" />
-      <SiteHeader userLabel={user?.name ?? null} onLoginClick={user ? undefined : () => setAuthOpen(true)} />
-      <AuthModal open={authOpen} reason="generic" onClose={() => setAuthOpen(false)} />
+      <SiteHeader
+        userLabel={header.userLabel}
+        planLabel={header.signedIn ? header.planLabel : null}
+        onLoginClick={header.onLoginClick}
+      />
+      <AuthModal
+        open={authOpen}
+        reason="generic"
+        onClose={() => setAuthOpen(false)}
+        onSuccess={() => {
+          setEntitlement(loadEntitlement())
+          setAuthOpen(false)
+        }}
+      />
       <main className="account-home">
         <header className="account-hero">
           <div className="account-avatar" aria-hidden>
@@ -51,11 +112,13 @@ export default function AccountPage() {
           <div className="account-identity">
             <p className="account-kicker">Account</p>
             <h1>{name}</h1>
-            <p>{email || 'Not signed in'}</p>
+            <p>{email || 'Not signed in — register free to save work'}</p>
           </div>
           <div className="account-hero-side">
-            <span className="account-plan">Free</span>
-            {user ? (
+            <span className="account-plan" data-plan={entitlement.plan}>
+              {planName}
+            </span>
+            {email ? (
               <button type="button" className="account-signout" onClick={() => void signOut()}>
                 Sign out
               </button>
@@ -69,17 +132,45 @@ export default function AccountPage() {
 
         <section className="account-meters" aria-label="Plan summary">
           <article>
-            <strong>{user ? leftToday : '—'}</strong>
-            <span>downloads left today</span>
+            <strong>{planName}</strong>
+            <span>
+              {paidUntilLabel
+                ? `${entitlement.trial ? 'Trial' : 'Plan'} through ${paidUntilLabel}`
+                : 'Current plan on this device'}
+            </span>
+            {!paid ? (
+              <Link to="/pricing">Upgrade to Creator {planPriceLabel('creator', currency)}</Link>
+            ) : (
+              <Link to="/pricing">Compare plans</Link>
+            )}
           </article>
           <article>
-            <strong>{FREE_DAILY_DOWNLOADS}</strong>
-            <span>free downloads each day</span>
+            <strong>
+              {paid
+                ? entitlement.plan === 'pro'
+                  ? 'Unlimited'
+                  : quotaLabel(cleanLeft, CREATOR_CLEAN_DOWNLOADS_PER_MONTH)
+                : quotaLabel(watermarkLeft, FREE_DAILY_DOWNLOADS)}
+            </strong>
+            <span>
+              {paid
+                ? entitlement.plan === 'pro'
+                  ? 'clean PNG exports'
+                  : 'clean PNGs left this month'
+                : 'watermarked downloads left today'}
+            </span>
           </article>
           <article>
-            <strong>Free</strong>
-            <span>upgrade for a clean PNG</span>
-            <Link to="/pricing">See Creator {planPriceLabel('creator', currency)}</Link>
+            <strong>{quotaLabel(proLeft, Number.isFinite(proLimit) ? proLimit : Infinity)}</strong>
+            <span>
+              Pro AI images left
+              {!Number.isFinite(proLimit)
+                ? ' (unlimited)'
+                : paid && entitlement.plan === 'creator'
+                  ? ` of ${CREATOR_PRO_IMAGES_PER_MONTH}/mo`
+                  : ` of ${FREE_PRO_IMAGES_PER_MONTH}/mo free`}
+            </span>
+            <Link to="/ai-thumbnail-maker">Open AI Maker</Link>
           </article>
         </section>
 
@@ -90,7 +181,9 @@ export default function AccountPage() {
               <Link to="/#editor">Create</Link>
             </div>
             {history.length === 0 ? (
-              <p className="account-empty">Nothing saved yet. Make one in the editor and it will show up here.</p>
+              <p className="account-empty">
+                Nothing saved yet. Make one in the editor and it will show up here.
+              </p>
             ) : (
               <ul className="account-thumbs">
                 {history
@@ -117,6 +210,10 @@ export default function AccountPage() {
             <button type="button" className="chip solid" onClick={() => void copyRef()}>
               {copied ? 'Copied' : 'Copy link'}
             </button>
+            <p className="account-empty" style={{ marginTop: '0.75rem' }}>
+              Tip: Creator unlock and Pro AI quota are stored in this browser until Stripe is
+              connected. Use the same email when you sign in.
+            </p>
           </aside>
         </section>
       </main>

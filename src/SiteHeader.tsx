@@ -7,10 +7,12 @@ import { TOOL_NAV_CATEGORIES, toolsByCategory } from './toolsCatalog'
 
 type SiteHeaderProps = {
   userLabel?: string | null
+  /** Optional plan chip next to the account control (Creator / Pro / Free). */
+  planLabel?: string | null
   onLoginClick?: () => void
 }
 
-export function SiteHeader({ userLabel, onLoginClick }: SiteHeaderProps) {
+export function SiteHeader({ userLabel, planLabel, onLoginClick }: SiteHeaderProps) {
   const onHome = useOnHomePage()
   const navigate = useNavigate()
   const [toolsOpen, setToolsOpen] = useState(false)
@@ -162,12 +164,17 @@ export function SiteHeader({ userLabel, onLoginClick }: SiteHeaderProps) {
           </span>
           <span className="theme-toggle-label">{theme === 'dark' ? 'Light' : 'Dark'}</span>
         </button>
+        {userLabel && planLabel ? (
+          <span className="top-plan-chip" data-plan={planLabel.toLowerCase().split(' ')[0]}>
+            {planLabel}
+          </span>
+        ) : null}
         {onLoginClick ? (
           <button type="button" className="top-login" onClick={onLoginClick}>
             {userLabel ? userLabel : 'Sign in'}
           </button>
         ) : (
-          <Link className="top-login" to="/account">
+          <Link className="top-login" to={userLabel ? '/account' : '/account?signin=1'}>
             {userLabel ? userLabel : 'Sign in'}
           </Link>
         )}

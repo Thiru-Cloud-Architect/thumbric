@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { PRODUCT_NAME_FULL, UI_BUILD } from './brand'
 import { DocumentHead } from './DocumentHead'
 import { SiteFooter } from './LandingSections'
-import { SiteHeader } from './SiteHeader'
+import { SharedSiteHeader } from './SharedSiteHeader'
 import { deleteProject, duplicateProject, loadProjects, type Project } from './projects'
 import { track } from './analytics'
 import './App.css'
@@ -31,7 +31,7 @@ export default function ProjectsPage() {
   return (
     <div className="page">
       <DocumentHead path="/projects" />
-      <SiteHeader />
+      <SharedSiteHeader />
       <main className="projects-main tool-page-main">
         <p className="section-eyebrow">Projects</p>
         <h1 className="section-title">

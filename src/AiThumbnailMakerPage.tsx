@@ -97,6 +97,20 @@ export default function AiThumbnailMakerPage() {
     return () => controller.abort()
   }, [])
 
+  // Pricing / sign-in can change entitlement in another tab or after unlock.
+  useEffect(() => {
+    function refreshEntitlement() {
+      setEntitlement(loadEntitlement())
+    }
+    refreshEntitlement()
+    window.addEventListener('focus', refreshEntitlement)
+    document.addEventListener('visibilitychange', refreshEntitlement)
+    return () => {
+      window.removeEventListener('focus', refreshEntitlement)
+      document.removeEventListener('visibilitychange', refreshEntitlement)
+    }
+  }, [])
+
   useEffect(() => {
     track('landing_page_view', { path: '/ai-thumbnail-maker' })
     const handoff = consumeAiHandoff()
@@ -408,6 +422,9 @@ export default function AiThumbnailMakerPage() {
               {chosen.lookLabel ? <p className="ai-concept-strategy">{chosen.lookLabel}</p> : null}
               {chosen.lookHeadline ? (
                 <p className="ai-concept-headline">{chosen.lookHeadline}</p>
+              ) : null}
+              {chosen.lookSubheadline ? (
+                <p className="ai-concept-subheadline">{chosen.lookSubheadline}</p>
               ) : null}
               {chosen.lookWhy ? <p className="ai-concept-why">{chosen.lookWhy}</p> : null}
             </div>

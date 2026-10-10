@@ -4,7 +4,7 @@ import { eventsByDay, summarizeEvents } from './analyticsSummary'
 import { PRODUCT_NAME_FULL, UI_BUILD } from './brand'
 import { DocumentHead } from './DocumentHead'
 import { SiteFooter } from './LandingSections'
-import { SiteHeader } from './SiteHeader'
+import { SharedSiteHeader } from './SharedSiteHeader'
 import { loadProjects } from './projects'
 import { loadThumbnailHistory } from './thumbnailHistory'
 import './App.css'
@@ -21,7 +21,7 @@ export default function DashboardPage() {
   return (
     <div className="page">
       <DocumentHead path="/dashboard" />
-      <SiteHeader />
+      <SharedSiteHeader />
       <main className="dashboard-main tool-page-main">
         <p className="section-eyebrow">Creator dashboard</p>
         <h1 className="section-title">

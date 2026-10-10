@@ -194,17 +194,39 @@ export function registerEmail(email: string): Entitlement {
   return next
 }
 
-/** A new free signup should not inherit an old demo Creator/Pro unlock. */
+/**
+ * Attach email for a free signup without wiping an active Creator/Pro unlock.
+ * (Previously this reset plan → Free and silently killed Pro imaging quota.)
+ */
 export function startFreeAccount(email: string): Entitlement {
+  const current = loadEntitlement()
+  const normalizedEmail = email.trim().toLowerCase()
+  if (isPaid(current) && (current.plan === 'creator' || current.plan === 'pro')) {
+    const keep: Entitlement = { ...current, email: normalizedEmail }
+    saveEntitlement(keep)
+    return keep
+  }
+  // Same browser email returning: keep counters, stay free.
+  if (current.email && current.email === normalizedEmail && current.plan === 'free') {
+    return current
+  }
   const next: Entitlement = {
     ...emptyEntitlement(),
-    email: email.trim().toLowerCase(),
+    email: normalizedEmail,
     plan: 'free',
     paidUntil: null,
     trial: false,
   }
   saveEntitlement(next)
   return next
+}
+
+/** Human plan label for account / header chips. */
+export function planDisplayName(entitlement: Entitlement, now = Date.now()) {
+  const ent = normalizeEntitlement(entitlement, now)
+  if (isPaid(ent, now) && ent.plan === 'pro') return ent.trial ? 'Pro trial' : 'Pro'
+  if (isPaid(ent, now) && ent.plan === 'creator') return ent.trial ? 'Creator trial' : 'Creator'
+  return 'Free'
 }
 
 export function consumeCleanDownload(entitlement: Entitlement): Entitlement {

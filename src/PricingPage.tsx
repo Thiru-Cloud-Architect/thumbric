@@ -13,36 +13,63 @@ import { SiteFooter } from './LandingSections'
 import { SiteHeader } from './SiteHeader'
 import { PLANS, formatCompareAt, formatPlanPrice, type PlanId } from './plans'
 import { useBillingCurrency } from './useBillingCurrency'
+import { loadSimpleUser } from './simpleAuth'
+import { useAuth } from './auth'
+import { useHeaderAuth } from './useHeaderAuth'
 import './App.css'
 
 export default function PricingPage() {
   const { currency, chooseCurrency } = useBillingCurrency()
+  const { signIn } = useAuth()
+  const header = useHeaderAuth()
   const [entitlement, setEntitlement] = useState<Entitlement>(() => loadEntitlement())
 
-  function ensureEmail(current: Entitlement) {
+  async function ensureEmail(current: Entitlement) {
     if (current.email) return current
+    const existing = loadSimpleUser()
+    if (existing?.email) return registerEmail(existing.email)
     const email = window.prompt(
       'Enter your email to attach this plan (demo unlock on this browser — payments come later):',
     )
     if (!email) return null
+    try {
+      // Creates local session + keeps any existing paid unlock (startFreeAccount is safe now).
+      await signIn(email.trim())
+    } catch {
+      /* still attach email for the plan */
+    }
     return registerEmail(email)
   }
 
-  function onDemoSelect(planId: Exclude<PlanId, 'free'>) {
-    let next = ensureEmail(entitlement)
+  async function onDemoSelect(planId: Exclude<PlanId, 'free'>) {
+    let next = await ensureEmail(entitlement)
     if (!next) return
 
     next = activateDemoPlan(next, planId)
     setEntitlement(next)
+    // Re-sync header identity after unlock.
+    if (next.email) {
+      try {
+        await signIn(next.email)
+      } catch {
+        /* header still updates from entitlement email on next navigation */
+      }
+    }
     window.alert(
-      `${planId === 'pro' ? 'Pro' : 'Creator'} unlocked for 30 days in this browser (demo). Open the editor to export clean PNGs.`,
+      `${planId === 'pro' ? 'Pro' : 'Creator'} unlocked for 30 days in this browser (demo).\n\n` +
+        `You get ${planId === 'pro' ? 'unlimited' : '60'} Pro AI images/month and clean PNG exports.\n` +
+        `Open AI Maker or Account to confirm your plan chip.`,
     )
   }
 
   return (
     <div className="page">
       <DocumentHead path="/pricing" />
-      <SiteHeader />
+      <SiteHeader
+        userLabel={header.userLabel}
+        planLabel={header.signedIn ? header.planLabel : null}
+        onLoginClick={header.onLoginClick}
+      />
       <main className="pricing-page-main">
         <section className="pricing-hero" aria-labelledby="pricing-page-title">
           <p className="section-eyebrow">Pricing</p>

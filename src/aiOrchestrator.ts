@@ -71,6 +71,7 @@ export function attachCreativeConcepts(
       ...item,
       lookLabel: concept.strategy,
       lookWhy: concept.why,
+      // Prefer song/topic hook as the visible title; artist stays as subline.
       lookHeadline: concept.headline,
       lookSubheadline: concept.subheadline,
       lookPlacement: concept.placement,

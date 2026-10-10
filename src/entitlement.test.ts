@@ -14,8 +14,10 @@ import {
   isPaid,
   isValidEmail,
   loadEntitlement,
+  planDisplayName,
   proImagesLeft,
   registerEmail,
+  startFreeAccount,
 } from './entitlement'
 
 describe('entitlement', () => {
@@ -62,6 +64,15 @@ describe('entitlement', () => {
     const dayMs = 24 * 60 * 60 * 1000
     expect(remainingMs).toBeGreaterThan((TRIAL_DAYS - 0.05) * dayMs)
     expect(remainingMs).toBeLessThanOrEqual(TRIAL_DAYS * dayMs)
+  })
+
+  it('does not wipe Creator when startFreeAccount runs after unlock', () => {
+    const creator = activateDemoPlan(registerEmail('keep@email.com'), 'creator')
+    expect(isPaid(creator)).toBe(true)
+    const afterSignUp = startFreeAccount('keep@email.com')
+    expect(afterSignUp.plan).toBe('creator')
+    expect(isPaid(afterSignUp)).toBe(true)
+    expect(planDisplayName(afterSignUp)).toMatch(/Creator/)
   })
 
   it('gives everyone 3 pro images / month, creator 60, pro unlimited', () => {

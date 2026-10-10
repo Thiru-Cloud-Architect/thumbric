@@ -5,6 +5,7 @@ import { DocumentHead } from './DocumentHead'
 import { SiteFooter } from './LandingSections'
 import { SiteHeader } from './SiteHeader'
 import { TOOL_NAV } from './toolsCatalog'
+import { useHeaderAuth } from './useHeaderAuth'
 import './App.css'
 
 export type Crumb = {
@@ -36,6 +37,7 @@ export function ToolShell({
   onLoginClick,
   hideMoreTools = false,
 }: ToolShellProps) {
+  const header = useHeaderAuth()
   const crumbs =
     breadcrumbs ??
     ([
@@ -45,11 +47,17 @@ export function ToolShell({
     ] satisfies Crumb[])
 
   const mainClass = hideMoreTools ? 'tool-page-main ai-maker-shell' : 'tool-page-main'
+  const resolvedLabel = userLabel === undefined ? header.userLabel : userLabel
+  const resolvedLogin = onLoginClick ?? header.onLoginClick
 
   return (
     <div className="page">
       <DocumentHead path={path} />
-      <SiteHeader userLabel={userLabel} onLoginClick={onLoginClick} />
+      <SiteHeader
+        userLabel={resolvedLabel}
+        planLabel={header.signedIn ? header.planLabel : null}
+        onLoginClick={resolvedLogin}
+      />
       <main className={mainClass}>
         <div className="tool-lead">
           <nav className="tool-breadcrumbs" aria-label="Breadcrumb">

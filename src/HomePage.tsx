@@ -22,6 +22,7 @@ import {
   isPaid,
   isValidEmail,
   loadEntitlement,
+  planDisplayName,
   registerEmail,
   type Entitlement,
 } from './entitlement'
@@ -1766,9 +1767,12 @@ export default function HomePage() {
     <div className="page">
       <DocumentHead path="/" />
       <SiteHeader
-        userLabel={authUser?.name || simpleUser?.name || null}
+        userLabel={authUser?.name || simpleUser?.name || entitlement.email?.split('@')[0] || null}
+        planLabel={
+          authUser || simpleUser || entitlement.email ? planDisplayName(entitlement) : null
+        }
         onLoginClick={() => {
-          if (authUser || simpleUser) {
+          if (authUser || simpleUser || entitlement.email) {
             navigate('/account')
             return
           }
